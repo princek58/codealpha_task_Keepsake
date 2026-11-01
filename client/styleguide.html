@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design System &amp; Component Styleguide — Bloomly</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+
+  <style>
+    .sg-container {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: var(--space-8) var(--space-4) var(--space-20);
+    }
+    .sg-section {
+      margin-bottom: var(--space-16);
+      background-color: var(--color-surface);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-8);
+      box-shadow: var(--shadow-sm);
+    }
+    .sg-header {
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .sg-title {
+      font-family: var(--font-heading);
+      font-size: var(--text-2xl);
+      color: var(--color-text);
+      margin: 0 0 var(--space-1);
+    }
+    .sg-subtitle {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+    .sg-grid-colors {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: var(--space-4);
+    }
+    .sg-color-card {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--color-surface);
+    }
+    .sg-color-swatch {
+      height: 70px;
+      width: 100%;
+    }
+    .sg-color-info {
+      padding: var(--space-3);
+      font-size: var(--text-xs);
+    }
+    .sg-color-name {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 2px;
+    }
+    .sg-color-hex {
+      color: var(--color-text-light);
+      font-family: monospace;
+    }
+    .sg-color-var {
+      color: var(--color-text-muted);
+      font-size: 11px;
+    }
+    .sg-flex-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+      align-items: center;
+    }
+    .sg-sticker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: var(--space-4);
+    }
+    .sg-sticker-card {
+      background-color: var(--color-bg);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-smooth);
+    }
+    .sg-sticker-card:hover {
+      transform: translateY(-4px) scale(1.05);
+      border-color: var(--color-primary);
+      box-shadow: var(--shadow-md);
+    }
+    .sg-sticker-card span {
+      font-family: var(--font-heading);
+      font-size: var(--text-xs);
+      color: var(--color-text);
+      text-transform: capitalize;
+    }
+  </style>
+
+  <script type="module">
+    import { getAllStickers, getStickerSvg } from '/js/stickers.js';
+    import { toast, openModal, createSkeletonPost, createAvatar, buildPostCard, buildUserRow, buildCommentItem, buildNotificationItem } from '/js/ui.js';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Populate Stickers Grid
+      const stickerGrid = document.getElementById('sticker-grid');
+      const stickers = getAllStickers();
+      stickers.forEach((s) => {
+        const card = document.createElement('div');
+        card.className = 'sg-sticker-card';
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.innerHTML = `
+          <div style="width: 56px; height: 56px;">${s.svg}</div>
+          <span>${s.label}</span>
+        `;
+        card.addEventListener('click', () => {
+          toast(`Selected sticker: "${s.label}"`, 'success');
+        });
+        stickerGrid.appendChild(card);
+      });
+
+      // 2. Toast Demo Triggers
+      document.getElementById('btn-toast-info').addEventListener('click', () => {
+        toast('Here is a gentle info message for you!', 'info');
+      });
+      document.getElementById('btn-toast-success').addEventListener('click', () => {
+        toast('Your bloom was planted successfully!', 'success');
+      });
+      document.getElementById('btn-toast-error').addEventListener('click', () => {
+        toast('Oops! That handle is already taken.', 'error');
+      });
+
+      // 3. Modal Demo Trigger
+      document.getElementById('btn-modal-demo').addEventListener('click', () => {
+        const content = document.createElement('div');
+        content.innerHTML = `
+          <p style="margin-bottom: var(--space-4); color: var(--color-text-muted);">
+            This modal supports focus trapping, Escape key closing, and backdrop dismissal.
+          </p>
+          <div class="form-group">
+            <label class="form-label">Plant a warm comment</label>
+            <input type="text" class="form-input" placeholder="Write something sweet...">
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4);">
+            <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+            <button class="btn btn-primary" id="modal-confirm-btn">Bloom It</button>
+          </div>
+        `;
+        const modal = openModal({
+          title: 'Plant a Moment',
+          content
+        });
+        content.querySelector('#modal-cancel-btn').addEventListener('click', () => modal.close());
+        content.querySelector('#modal-confirm-btn').addEventListener('click', () => {
+          toast('Moment planted!', 'success');
+          modal.close();
+        });
+      });
+
+      // 4. Skeletons Demo
+      const skeletonMount = document.getElementById('skeleton-mount');
+      skeletonMount.appendChild(createSkeletonPost());
+
+      // 5. Mock Components Mounting
+      const mockPostMount = document.getElementById('mock-post-mount');
+      const mockPost = buildPostCard({
+        id: 'mock_123',
+        text: 'Morning walks in the fog, warm jasmine tea, and reading by the kitchen window. Wishing you a peaceful start to your day! 🌱',
+        image: '',
+        author: {
+          id: 'user_mock',
+          username: 'lavender_breeze',
+          displayName: 'Lavender Breeze',
+          avatar: '',
+          moodSticker: 'flower'
+        },
+        likesCount: 24,
+        commentsCount: 6,
+        likedByMe: true,
+        createdAt: new Date().toISOString()
+      }, {
+        onLike: (post, btn) => {
+          const countEl = btn.querySelector('.like-count');
+          const isLiked = btn.classList.toggle('active');
+          const current = parseInt(countEl.textContent, 10);
+          countEl.textContent = isLiked ? current + 1 : current - 1;
+          toast(isLiked ? 'Liked bloom!' : 'Unliked bloom', 'info');
+        }
+      });
+      mockPostMount.appendChild(mockPost);
+
+      // User Row Mount
+      const mockUserMount = document.getElementById('mock-user-mount');
+      const mockUser = buildUserRow({
+        id: 'u_daisy',
+        username: 'daisy_bloom',
+        displayName: 'Daisy Bloom',
+        avatar: '',
+        moodSticker: 'heart',
+        isFollowing: false,
+        isMe: false
+      }, {
+        onFollow: (user, btn) => {
+          const isFollowing = btn.textContent === 'Following';
+          btn.textContent = isFollowing ? 'Follow' : 'Following';
+          btn.className = `btn btn-sm ${isFollowing ? 'btn-primary' : 'btn-secondary'}`;
+          toast(isFollowing ? 'Unfollowed @daisy_bloom' : 'Following @daisy_bloom!', 'success');
+        }
+      });
+      mockUserMount.appendChild(mockUser);
+
+      // Comment Mount
+      const mockCommentMount = document.getElementById('mock-comment-mount');
+      const mockComment = buildCommentItem({
+        id: 'c_1',
+        text: 'This made my morning so much brighter. Thank you for sharing!',
+        author: {
+          username: 'sunny_cloud',
+          displayName: 'Sunny Cloud',
+          avatar: '',
+          moodSticker: 'cloud'
+        },
+        createdAt: new Date(Date.now() - 3600000).toISOString()
+      });
+      mockCommentMount.appendChild(mockComment);
+
+      // Notification Mount
+      const mockNotifMount = document.getElementById('mock-notif-mount');
+      const mockNotif = buildNotificationItem({
+        id: 'n_1',
+        type: 'like',
+        from: {
+          username: 'rose_petal',
+          displayName: 'Rose Petal',
+          avatar: ''
+        },
+        postPreview: 'Morning walks in the fog...',
+        read: false,
+        createdAt: new Date(Date.now() - 600000).toISOString()
+      });
+      mockNotifMount.appendChild(mockNotif);
+    });
+  </script>
+</head>
+<body>
+
+  <!-- Sticky Pill Navbar -->
+  <div class="navbar-wrapper">
+    <nav class="navbar" aria-label="Main Navigation">
+      <a href="/" class="nav-brand">
+        <span style="width: 32px; height: 32px; display: inline-flex;" data-sticker="logo"></span>
+        <span class="nav-brand-text">Bloomly</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/feed.html" class="nav-link">Feed</a>
+        <a href="/explore.html" class="nav-link">Explore</a>
+        <a href="/styleguide.html" class="nav-link active">Styleguide</a>
+      </div>
+
+      <div class="nav-actions">
+        <a href="/" class="btn btn-secondary btn-sm">Home</a>
+      </div>
+    </nav>
+  </div>
+
+  <main class="sg-container">
+    <div style="text-align: center; margin-bottom: var(--space-12);">
+      <span class="badge badge-mint" style="margin-bottom: var(--space-2);">Design System</span>
+      <h1 style="font-family: var(--font-heading); font-size: clamp(2.2rem, 4vw, 3.2rem); margin-bottom: var(--space-2);">
+        Bloomly Styleguide &amp; Tokens
+      </h1>
+      <p style="font-size: var(--text-base); color: var(--color-text-muted); max-width: 600px; margin: 0 auto;">
+        Single source of truth for all colors, typography, radii, sticker assets, and reusable UI components.
+      </p>
+    </div>
+
+    <!-- 1. COLOR TOKENS -->
+    <section class="sg-section">
+      <div class="sg-header">
+        <h2 class="sg-title">1. Color Palette Tokens</h2>
+        <p class="sg-subtitle">Defined once in tokens.css, referenced everywhere via CSS variables.</p>
+      </div>
+
+      <div class="sg-grid-colors">
+        <div class="sg-color-card">
+          <div class="sg-color-swatch" style="background-color: var(--color-bg); border-bottom: 1px solid var(--color-border);"></div>
+          <div class="sg-color-info">
+            <div class="sg-color-name">Cream (Background)</div>
+            <div class="sg-color-hex">#FFF8F3</div>
+            <div class="sg-color-var">--color-bg</div>
+          </div>
+        </div>
+
+        <div class="sg-color-card">
+          <div class="sg-color-swatch" style="background-color: var(--color-surface); border-bottom: 1px solid var(--color-border);"></div>
+          <div class="sg-color-info">
+            <div class="sg-color-name">Milk White (Surface)</div>
+            <div class="sg-color-hex">#FFFFFF</div>
+            <div class="sg-color-var">--color-surface</div>
+          </div>
+        </div>
+
+        <div class="sg-color-card">
+          <div class="sg-color-swatch" style="background-color: var(--color-primary-strong);"></div>
+          <div class="sg-color-info">
+            <div class="sg-color-name">Berry (Primary)</div>
+            <div class="sg-color-hex">#FF6F91</div>
+            <div class="sg-color-var">--color-primary-strong</div>
+          </div>
+        </div>
+
+        <div class="sg-color-card">
+          <div class="sg-color-swatch" style="background-color: var(--color-primary);"></div>
+          <div class="sg-color-info">
+            <div class="sg-color-name">Blush Pink</div>
+            <div class="sg-color-hex">#FFB3C7</div>
+            <div class="sg-color-var">--color-primary</div>
+          </div>
+        </div>
+
+        <div class="sg-color-card">
+          <div class="sg-color-swatch" style="background-color: var(--color-secondary);"></div>
+          <div class="sg-color-info">
+            <div class="sg-color-name">Lavender</div>
+            <div class="sg-color-hex">#D9C8FF</div>
+            <div class="sg-color-var">--color-secondary</div>
+          </div>
+        </div>
+
+        <div class="sg-color-card">
+          <div class="sg-color-swatch" style="background-color: var(--color-accent-peach);"></div>
+          <div class="sg-color-info">
+            <div class="sg-color-name">Peach</div>
+            <div class="sg-color-hex">#FFCDB2</div>
+            <div class="sg-color-var">--color-accent-peach</div>
+          </div>
+        </div>
+
+        <div class="sg-color-card">
+          <div class="sg-color-swatch" style="background-color: var(--color-accent-mint);"></div>
+          <div class="sg-color-info">
+            <div class="sg-color-name">Mint</div>
+            <div class="sg-color-hex">#CDEFE2</div>
+            <div class="sg-color-var">--color-accent-mint</div>
+          </div>
+        </div>
+
+        <div class="sg-color-card">
+          <div class="sg-color-swatch" style="background-color: var(--color-accent-butter);"></div>
+          <div class="sg-color-info">
+            <div class="sg-color-name">Butter</div>
+            <div class="sg-color-hex">#FFF0B3</div>
+            <div class="sg-color-var">--color-accent-butter</div>
+          </div>
+        </div>
+
+        <div class="sg-color-card">
+          <div class="sg-color-swatch" style="background-color: var(--color-text);"></div>
+          <div class="sg-color-info">
+            <div class="sg-color-name">Deep Plum (Text)</div>
+            <div class="sg-color-hex">#4A2C4F</div>
+            <div class="sg-color-var">--color-text</div>
+          </div>
+        </div>
+
+        <div class="sg-color-card">
+          <div class="sg-color-swatch" style="background-color: var(--color-text-muted);"></div>
+          <div class="sg-color-info">
+            <div class="sg-color-name">Mauve (Muted Text)</div>
+            <div class="sg-color-hex">#8E7391</div>
+            <div class="sg-color-var">--color-text-muted</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. TYPOGRAPHY -->
+    <section class="sg-section">
+      <div class="sg-header">
+        <h2 class="sg-title">2. Typography</h2>
+        <p class="sg-subtitle">Fredoka for rounded headings, Nunito for body, Caveat for hand-drawn accents.</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+        <div>
+          <h1 style="margin: 0;">Heading 1 (Fredoka Bold)</h1>
+          <code style="font-size: var(--text-xs); color: var(--color-text-muted);">font-family: var(--font-heading); font-size: var(--text-4xl);</code>
+        </div>
+        <div>
+          <h2 style="margin: 0;">Heading 2 (Fredoka SemiBold)</h2>
+          <code style="font-size: var(--text-xs); color: var(--color-text-muted);">font-family: var(--font-heading); font-size: var(--text-3xl);</code>
+        </div>
+        <div>
+          <h3 style="margin: 0;">Heading 3 (Fredoka Medium)</h3>
+          <code style="font-size: var(--text-xs); color: var(--color-text-muted);">font-family: var(--font-heading); font-size: var(--text-2xl);</code>
+        </div>
+        <div>
+          <p style="margin: 0; font-size: var(--text-base); color: var(--color-text);">
+            Body Text (Nunito Regular): Bloomly is where little moments bloom. Every gentle interaction brings cozy peace to your daily digital space.
+          </p>
+          <code style="font-size: var(--text-xs); color: var(--color-text-muted);">font-family: var(--font-body); font-size: var(--text-base);</code>
+        </div>
+        <div>
+          <p style="margin: 0; font-family: var(--font-accent); font-size: var(--text-2xl); color: var(--color-primary-strong);">
+            Handwritten Accent (Caveat): "Take time to watch the petals open"
+          </p>
+          <code style="font-size: var(--text-xs); color: var(--color-text-muted);">font-family: var(--font-accent);</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. BUTTONS -->
+    <section class="sg-section">
+      <div class="sg-header">
+        <h2 class="sg-title">3. Buttons &amp; Interactive Controls</h2>
+        <p class="sg-subtitle">Primary, secondary, ghost, icon buttons, sizes, and states.</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+        <div>
+          <h4 style="margin-bottom: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted);">Variants</h4>
+          <div class="sg-flex-wrap">
+            <button type="button" class="btn btn-primary">Primary Action</button>
+            <button type="button" class="btn btn-secondary">Secondary Action</button>
+            <button type="button" class="btn btn-ghost">Ghost Action</button>
+            <button type="button" class="btn btn-primary" disabled>Disabled State</button>
+            <button type="button" class="btn btn-primary btn-loading">Loading</button>
+          </div>
+        </div>
+
+        <div>
+          <h4 style="margin-bottom: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted);">Sizes</h4>
+          <div class="sg-flex-wrap">
+            <button type="button" class="btn btn-primary btn-sm">Small (sm)</button>
+            <button type="button" class="btn btn-primary">Regular (md)</button>
+            <button type="button" class="btn btn-primary btn-lg">Large (lg)</button>
+          </div>
+        </div>
+
+        <div>
+          <h4 style="margin-bottom: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted);">Badges &amp; Chips</h4>
+          <div class="sg-flex-wrap">
+            <span class="badge">Primary Badge</span>
+            <span class="badge badge-mint">Mint Badge</span>
+            <span class="badge badge-butter">Butter Badge</span>
+            <button type="button" class="chip active">All Moments</button>
+            <button type="button" class="chip">Photos</button>
+            <button type="button" class="chip">Garden</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. AVATARS -->
+    <section class="sg-section">
+      <div class="sg-header">
+        <h2 class="sg-title">4. Avatars &amp; Mood Badges</h2>
+        <p class="sg-subtitle">Scalable avatar tokens with mood sticker attachments.</p>
+      </div>
+
+      <div class="sg-flex-wrap" style="gap: var(--space-6);">
+        <div style="text-align: center;">
+          <div class="avatar avatar-xs">XS</div>
+          <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;">26px</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="avatar avatar-sm">SM</div>
+          <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;">34px</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="avatar avatar-md">MD</div>
+          <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;">44px</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="avatar avatar-lg">LG</div>
+          <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;">64px</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="avatar avatar-xl">XL</div>
+          <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;">96px</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. STICKER LIBRARY -->
+    <section class="sg-section">
+      <div class="sg-header">
+        <h2 class="sg-title">5. Original 12 SVG Mood Stickers</h2>
+        <p class="sg-subtitle">Hand-drawn vectors designed specifically for Bloomly mood expression.</p>
+      </div>
+
+      <div class="sg-sticker-grid" id="sticker-grid"></div>
+    </section>
+
+    <!-- 6. TOASTS & MODALS -->
+    <section class="sg-section">
+      <div class="sg-header">
+        <h2 class="sg-title">6. Feedback &amp; Overlays</h2>
+        <p class="sg-subtitle">Interactive toast notifications and dialog controller.</p>
+      </div>
+
+      <div class="sg-flex-wrap" style="margin-bottom: var(--space-8);">
+        <button type="button" class="btn btn-secondary" id="btn-toast-info">Trigger Info Toast</button>
+        <button type="button" class="btn btn-secondary" id="btn-toast-success">Trigger Success Toast</button>
+        <button type="button" class="btn btn-secondary" id="btn-toast-error">Trigger Error Toast</button>
+        <button type="button" class="btn btn-primary" id="btn-modal-demo">Open Modal Demo</button>
+      </div>
+
+      <h4 style="margin-bottom: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted);">Skeleton Shimmer State</h4>
+      <div id="skeleton-mount" style="max-width: 500px;"></div>
+    </section>
+
+    <!-- 7. REAL COMPONENT MOUNTS -->
+    <section class="sg-section">
+      <div class="sg-header">
+        <h2 class="sg-title">7. Reusable Component Cards</h2>
+        <p class="sg-subtitle">Rendered using the escape-safe DOM builder functions from ui.js.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-6); max-width: 580px;">
+        <div>
+          <h4 style="margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted);">Post Card Component</h4>
+          <div id="mock-post-mount"></div>
+        </div>
+
+        <div>
+          <h4 style="margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted);">User Row Component</h4>
+          <div id="mock-user-mount"></div>
+        </div>
+
+        <div>
+          <h4 style="margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted);">Comment Item Component</h4>
+          <div id="mock-comment-mount" style="background: var(--color-surface); padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg);"></div>
+        </div>
+
+        <div>
+          <h4 style="margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted);">Notification Item Component</h4>
+          <div id="mock-notif-mount"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-bottom" style="border: none;">
+      <span>&copy; 2026 Bloomly Design System. All styles tokenized.</span>
+      <a href="/" class="footer-link">Back to Home</a>
+    </div>
+  </footer>
+
+</body>
+</html>
+

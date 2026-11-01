@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <filter id="plant-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#FF6F91" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+  <g filter="url(#plant-shadow)">
+    <!-- White Sticker Border Background -->
+    <path d="M28 50 L34 84 C35 88 40 90 50 90 C60 90 65 88 66 84 L72 50 Z"
+          fill="#FFFFFF" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round"/>
+    <!-- Plant Leaves -->
+    <path d="M50 50 C44 32 30 26 34 16 C46 18 48 38 50 50 Z" fill="#CDEFE2" stroke="#4A2C4F" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M50 50 C56 32 70 26 66 16 C54 18 52 38 50 50 Z" fill="#CDEFE2" stroke="#4A2C4F" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M50 50 C46 36 50 20 50 14 C54 20 54 36 50 50 Z" fill="#FFCDB2" stroke="#4A2C4F" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Pot Rim -->
+    <rect x="24" y="48" width="52" height="10" rx="5" fill="#FFCDB2" stroke="#4A2C4F" stroke-width="3"/>
+    <!-- Pot Body -->
+    <path d="M28 58 L34 82 C35 85 40 88 50 88 C60 88 65 85 66 82 L72 58 Z" fill="#FFB3C7" stroke="#4A2C4F" stroke-width="3" stroke-linejoin="round"/>
+    <!-- Happy Pot Face -->
+    <circle cx="43" cy="70" r="2.5" fill="#4A2C4F"/>
+    <circle cx="57" cy="70" r="2.5" fill="#4A2C4F"/>
+    <circle cx="39" cy="74" r="2.5" fill="#FF6F91"/>
+    <circle cx="61" cy="74" r="2.5" fill="#FF6F91"/>
+    <path d="M48 74 Q50 77 52 74" fill="none" stroke="#4A2C4F" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>
+

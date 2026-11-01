@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloomly — Where little moments bloom</title>
+  <meta name="description" content="A cozy social media web app where little moments bloom. Calm, chronological, and friendly.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <!-- Google Fonts: Fredoka, Nunito, Caveat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Core & Component Stylesheets -->
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+
+  <!-- GSAP & ScrollTrigger from CDN -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <!-- Page Logic -->
+  <script type="module" src="/js/landing.js"></script>
+</head>
+<body>
+
+  <!-- Sticky Pill Navbar -->
+  <div class="navbar-wrapper">
+    <nav class="navbar" aria-label="Main Navigation">
+      <a href="/" class="nav-brand" aria-label="Bloomly Home">
+        <span style="width: 34px; height: 34px; display: inline-flex;" data-sticker="logo"></span>
+        <span class="nav-brand-text">Bloomly</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#how-it-works" class="nav-link">How it works</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="/explore.html" class="nav-link">Explore</a>
+        <a href="/styleguide.html" class="nav-link">Styleguide</a>
+      </div>
+
+      <div class="nav-actions" id="nav-actions">
+        <a href="/auth.html?mode=login" class="btn btn-ghost btn-sm">Sign in</a>
+        <a href="/auth.html?mode=register" class="btn btn-primary btn-sm">Get Started</a>
+      </div>
+    </nav>
+  </div>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-glow"></div>
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span style="width: 18px; height: 18px; display: inline-flex;" data-sticker="sparkle"></span>
+            <span>A cozy corner of the internet</span>
+          </div>
+
+          <h1 class="hero-title">
+            Where little moments <span class="hero-title-highlight">bloom</span>
+          </h1>
+
+          <p class="hero-subtitle">
+            A calm, chronological social space without algorithms, doomscrolling, or streak pressure. Share tea breaks, sunny windows, and small joys through hand-drawn mood stickers.
+          </p>
+
+          <div class="hero-actions">
+            <a href="/auth.html?mode=register" class="btn btn-primary btn-lg">
+              <span>Join Bloomly</span>
+              <span style="width: 20px; height: 20px; display: inline-flex;" data-sticker="heart"></span>
+            </a>
+            <a href="/explore.html" class="btn btn-secondary btn-lg">Explore Moments</a>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="hero-flower-stage">
+            <!-- Animated Hero Flower -->
+            <svg id="hero-flower" class="hero-flower-svg" viewBox="0 0 160 160" aria-label="Blooming Flower">
+              <!-- Petals -->
+              <circle class="petal" cx="80" cy="38" r="26" fill="#FFB3C7" stroke="#4A2C4F" stroke-width="4"/>
+              <circle class="petal" cx="122" cy="62" r="26" fill="#FFB3C7" stroke="#4A2C4F" stroke-width="4"/>
+              <circle class="petal" cx="122" cy="110" r="26" fill="#FFB3C7" stroke="#4A2C4F" stroke-width="4"/>
+              <circle class="petal" cx="80" cy="132" r="26" fill="#FFB3C7" stroke="#4A2C4F" stroke-width="4"/>
+              <circle class="petal" cx="38" cy="110" r="26" fill="#FFB3C7" stroke="#4A2C4F" stroke-width="4"/>
+              <circle class="petal" cx="38" cy="62" r="26" fill="#FFB3C7" stroke="#4A2C4F" stroke-width="4"/>
+              <!-- Center -->
+              <circle class="flower-center" cx="80" cy="80" r="34" fill="#FFF0B3" stroke="#4A2C4F" stroke-width="4.5"/>
+              <circle cx="70" cy="76" r="4" fill="#4A2C4F"/>
+              <circle cx="90" cy="76" r="4" fill="#4A2C4F"/>
+              <circle cx="64" cy="84" r="5" fill="#FFCDB2"/>
+              <circle cx="96" cy="84" r="5" fill="#FFCDB2"/>
+              <path d="M74 84 Q80 90 86 84" fill="none" stroke="#4A2C4F" stroke-width="3.5" stroke-linecap="round"/>
+            </svg>
+
+            <!-- Floating Stickers -->
+            <div class="hero-sticker-float hero-sticker-1" data-sticker="star"></div>
+            <div class="hero-sticker-float hero-sticker-2" data-sticker="butterfly"></div>
+            <div class="hero-sticker-float hero-sticker-3" data-sticker="cherry"></div>
+            <div class="hero-sticker-float hero-sticker-4" data-sticker="sprout"></div>
+            <div class="hero-sticker-float hero-sticker-5" data-sticker="cloud"></div>
+          </div>
+
+          <!-- Floating Cozy Preview Card -->
+          <article class="hero-preview-card" aria-label="Sample post preview">
+            <div class="post-header" style="margin-bottom: var(--space-3);">
+              <div class="avatar-wrapper avatar-wrapper--sm" style="position: relative;">
+                <div class="avatar avatar-sm">D</div>
+                <div style="position: absolute; bottom: -4px; right: -4px; width: 16px; height: 16px;" data-sticker="flower"></div>
+              </div>
+              <div class="post-meta">
+                <span class="post-author-name" style="font-size: var(--text-sm);">Daisy <span class="badge badge-mint" style="font-size: 10px; padding: 2px 6px;">gardener</span></span>
+                <span class="post-author-handle">@daisy_bloom</span>
+              </div>
+            </div>
+            <p class="post-text" style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+              Morning tea by the garden window with sweet peas in bloom 🌱☕️
+            </p>
+            <div class="post-actions" style="padding-top: var(--space-2); margin-top: 0;">
+              <button type="button" class="action-btn active" id="mock-like-btn" aria-label="Liked post">
+                <span style="width: 18px; height: 18px; display: inline-flex;" data-sticker="heart"></span>
+                <span id="mock-like-count">14</span>
+              </button>
+              <span class="action-btn" aria-label="Comments">
+                <span style="width: 16px; height: 16px; display: inline-flex;" data-sticker="sparkle"></span>
+                <span>3</span>
+              </span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cozy Marquee Ticker -->
+    <div class="marquee-container" aria-hidden="true">
+      <div class="marquee-track">
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="flower"></span> Share little joys</span>
+        <span class="marquee-dot">•</span>
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="sparkle"></span> Be gentle with yourself</span>
+        <span class="marquee-dot">•</span>
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="cherry"></span> Cozy thoughts only</span>
+        <span class="marquee-dot">•</span>
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="cloud"></span> Take a deep breath</span>
+        <span class="marquee-dot">•</span>
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="butterfly"></span> Moments that matter</span>
+        <span class="marquee-dot">•</span>
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="sprout"></span> Slow down and bloom</span>
+        <span class="marquee-dot">•</span>
+        <!-- Duplicate for continuous scroll -->
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="flower"></span> Share little joys</span>
+        <span class="marquee-dot">•</span>
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="sparkle"></span> Be gentle with yourself</span>
+        <span class="marquee-dot">•</span>
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="cherry"></span> Cozy thoughts only</span>
+        <span class="marquee-dot">•</span>
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="cloud"></span> Take a deep breath</span>
+        <span class="marquee-dot">•</span>
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="butterfly"></span> Moments that matter</span>
+        <span class="marquee-dot">•</span>
+        <span class="marquee-item"><span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="sprout"></span> Slow down and bloom</span>
+      </div>
+    </div>
+
+    <!-- How Bloomly Works -->
+    <section class="steps-section" id="how-it-works" data-reveal>
+      <div class="section-header">
+        <span class="section-badge">How It Works</span>
+        <h2 class="section-title">Three steps to cozy connection</h2>
+        <p class="section-desc">No complicated feeds, no algorithmic sorting. Just simple, honest sharing.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-sticker" data-sticker="sprout"></div>
+          <h3 class="step-card-title">Plant a seed</h3>
+          <p class="step-card-desc">Share peaceful thoughts, photos of your day, or warm reflections in up to 500 characters.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-sticker" data-sticker="smiley_blob"></div>
+          <h3 class="step-card-title">Pick your mood</h3>
+          <p class="step-card-desc">Choose from 12 hand-drawn SVG mood stickers that show how you feel, from calm clouds to joyful cherry blooms.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-sticker" data-sticker="flower"></div>
+          <h3 class="step-card-title">Bloom together</h3>
+          <p class="step-card-desc">Connect with friends in a purely chronological feed where every voice is heard without engagement bait.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="features-section" id="features" data-reveal>
+      <div class="section-header" style="text-align: center;">
+        <span class="section-badge">Crafted for Peace</span>
+        <h2 class="section-title">Designed to feel like a warm hug</h2>
+        <p class="section-desc">Every detail is made to encourage mindful connection rather than endless scrolling.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon-wrapper" data-sticker="star" data-sticker-size="52"></div>
+          <div class="feature-content">
+            <h3 class="feature-title">Chronological Always</h3>
+            <p class="feature-desc">See posts in the order they were shared. No secret ranking algorithms or rage-inducing recommendations.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrapper" data-sticker="heart" data-sticker-size="52"></div>
+          <div class="feature-content">
+            <h3 class="feature-title">Stickers over Stress</h3>
+            <p class="feature-desc">Express yourself with 12 adorable mood stickers. Celebrate little moments without the anxiety of streak counts.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrapper" data-sticker="moon" data-sticker-size="52"></div>
+          <div class="feature-content">
+            <h3 class="feature-title">Cozy & Private</h3>
+            <p class="feature-desc">Safe boundaries with httpOnly cookie authentication, strict rate limiting, and respectful privacy defaults.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrapper" data-sticker="cloud" data-sticker-size="52"></div>
+          <div class="feature-content">
+            <h3 class="feature-title">Zero Doomscrolling</h3>
+            <p class="feature-desc">Soft pastel palette, generous whitespace, and friendly typography designed for you to enjoy and then close.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cozy Community Stats -->
+    <section class="stats-section" data-reveal>
+      <div class="stats-card">
+        <div class="stat-item">
+          <div class="stat-value" data-counter="12480">0</div>
+          <div class="stat-label">Moments Bloomed</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value"><span data-counter="100">0</span>%</div>
+          <div class="stat-label">Chronological Feed</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" data-counter="12">0</div>
+          <div class="stat-label">Original Stickers</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">0</div>
+          <div class="stat-label">Ad Algorithms</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Banner -->
+    <section class="cta-section" data-reveal>
+      <div class="cta-banner">
+        <h2 class="cta-title">Ready to slow down and bloom?</h2>
+        <p class="cta-desc">
+          Join our cozy community today. It only takes a minute to plant your first bloom and connect with gentle souls.
+        </p>
+        <div class="cta-actions">
+          <a href="/auth.html?mode=register" class="btn btn-primary btn-lg">
+            <span>Create your free account</span>
+            <span style="width: 20px; height: 20px; display: inline-flex;" data-sticker="heart"></span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Cozy Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <a href="/" class="nav-brand">
+          <span style="width: 28px; height: 28px; display: inline-flex;" data-sticker="logo"></span>
+          <span class="nav-brand-text">Bloomly</span>
+        </a>
+        <p class="footer-tagline">
+          A cozy, calm social space for gentle thoughts, quiet moments, and honest connection.
+        </p>
+        <span class="footer-handwritten">Crafted with warmth &amp; tea 🍵</span>
+      </div>
+
+      <div>
+        <h4 class="footer-col-title">Pages</h4>
+        <ul class="footer-links">
+          <li><a href="/feed.html" class="footer-link">Feed</a></li>
+          <li><a href="/explore.html" class="footer-link">Explore</a></li>
+          <li><a href="/styleguide.html" class="footer-link">Design Styleguide</a></li>
+          <li><a href="/auth.html" class="footer-link">Sign In / Register</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="footer-col-title">Community</h4>
+        <ul class="footer-links">
+          <li><a href="#how-it-works" class="footer-link">How it works</a></li>
+          <li><a href="#features" class="footer-link">Features</a></li>
+          <li><a href="/auth.html?mode=register" class="footer-link">Join Bloomly</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>&copy; 2026 Bloomly. All moments reserved.</span>
+      <span>No algorithms were harmed in the making of this social space.</span>
+    </div>
+  </footer>
+
+</body>
+</html>

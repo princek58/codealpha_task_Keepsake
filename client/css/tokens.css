@@ -1,0 +1,91 @@
+:root {
+  /* Brand Palette */
+  --color-bg: #FFF8F3;
+  --color-surface: #FFFFFF;
+  --color-surface-translucent: rgba(255, 255, 255, 0.85);
+  --color-primary: #FFB3C7;
+  --color-primary-strong: #FF6F91;
+  --color-primary-hover: #F2587E;
+  --color-primary-light: #FFEBF0;
+  --color-secondary: #D9C8FF;
+  --color-secondary-light: #F4EFFF;
+  --color-accent-peach: #FFCDB2;
+  --color-accent-peach-light: #FFF2EB;
+  --color-accent-mint: #CDEFE2;
+  --color-accent-mint-light: #EDFAF4;
+  --color-accent-butter: #FFF0B3;
+  --color-accent-butter-light: #FFFBEB;
+
+  /* Text & Border */
+  --color-text: #4A2C4F;
+  --color-text-muted: #8E7391;
+  --color-text-light: #B49FB7;
+  --color-border: #F3D8E2;
+  --color-border-strong: #E5BCCB;
+  --color-border-focus: #FF6F91;
+  --color-danger: #FF5A79;
+  --color-danger-light: #FFE8EC;
+
+  /* Typography */
+  --font-heading: 'Fredoka', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-accent: 'Caveat', 'Comic Sans MS', cursive;
+
+  /* Font Sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Radii (20-28px on cards, pill buttons) */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+
+  /* Soft Pink-Tinted Shadows */
+  --shadow-xs: 0 2px 6px rgba(255, 111, 145, 0.06);
+  --shadow-sm: 0 4px 14px rgba(255, 111, 145, 0.08);
+  --shadow-md: 0 8px 24px rgba(255, 111, 145, 0.12);
+  --shadow-lg: 0 14px 36px rgba(255, 111, 145, 0.15);
+  --shadow-float: 0 18px 42px rgba(74, 44, 79, 0.09);
+
+  /* Transitions & Easing */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Z-Index Scale */
+  --z-base: 1;
+  --z-card: 10;
+  --z-nav: 100;
+  --z-toast: 500;
+  --z-modal: 1000;
+  --z-preloader: 2000;
+}
+

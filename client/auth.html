@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In / Join — Bloomly</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+
+  <script type="module">
+    import { getStickerSvg } from '/js/stickers.js';
+    import { toast } from '/js/ui.js';
+    import { api } from '/js/api.js';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-sticker]').forEach((el) => {
+        el.innerHTML = getStickerSvg(el.getAttribute('data-sticker'));
+      });
+
+      const params = new URLSearchParams(window.location.search);
+      const isRegister = params.get('mode') === 'register';
+
+      const tabLogin = document.getElementById('tab-login');
+      const tabRegister = document.getElementById('tab-register');
+      const usernameGroup = document.getElementById('group-username');
+      const submitBtn = document.getElementById('auth-submit');
+      const authTitle = document.getElementById('auth-title');
+
+      function setMode(registerMode) {
+        if (registerMode) {
+          tabRegister.classList.add('active');
+          tabLogin.classList.remove('active');
+          usernameGroup.style.display = 'flex';
+          authTitle.textContent = 'Join the Bloomly garden';
+          submitBtn.textContent = 'Create your account';
+        } else {
+          tabLogin.classList.add('active');
+          tabRegister.classList.remove('active');
+          usernameGroup.style.display = 'none';
+          authTitle.textContent = 'Welcome back home';
+          submitBtn.textContent = 'Sign in';
+        }
+      }
+
+      setMode(isRegister);
+
+      tabLogin.addEventListener('click', () => setMode(false));
+      tabRegister.addEventListener('click', () => setMode(true));
+
+      const form = document.getElementById('auth-form');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('input-email').value.trim();
+        const password = document.getElementById('input-password').value;
+        const username = document.getElementById('input-username').value.trim();
+        const registerMode = tabRegister.classList.contains('active');
+
+        submitBtn.classList.add('btn-loading');
+
+        try {
+          if (registerMode) {
+            await api.register({ email, password, username, displayName: username });
+            toast('Welcome to Bloomly! Redirecting to feed...', 'success');
+          } else {
+            await api.login({ email, password });
+            toast('Welcome back! Redirecting to feed...', 'success');
+          }
+          setTimeout(() => {
+            window.location.href = '/feed.html';
+          }, 800);
+        } catch (err) {
+          toast(err.message || 'Authentication failed', 'error');
+        } finally {
+          submitBtn.classList.remove('btn-loading');
+        }
+      });
+    });
+  </script>
+</head>
+<body style="min-height: 100vh; display: flex; flex-direction: column;">
+
+  <div class="navbar-wrapper">
+    <nav class="navbar">
+      <a href="/" class="nav-brand">
+        <span style="width: 32px; height: 32px; display: inline-flex;" data-sticker="logo"></span>
+        <span class="nav-brand-text">Bloomly</span>
+      </a>
+      <div class="nav-actions">
+        <a href="/" class="btn btn-ghost btn-sm">Back Home</a>
+      </div>
+    </nav>
+  </div>
+
+  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-8) var(--space-4);">
+    <div class="card" style="max-width: 440px; width: 100%; text-align: center;">
+      <div style="width: 64px; height: 64px; margin: 0 auto var(--space-3);" data-sticker="flower"></div>
+      <h2 id="auth-title" style="font-family: var(--font-heading); margin-bottom: var(--space-4);">Welcome back home</h2>
+
+      <div class="tabs-nav" style="margin-bottom: var(--space-6);">
+        <button type="button" class="tab-btn active" id="tab-login">Sign In</button>
+        <button type="button" class="tab-btn" id="tab-register">Register</button>
+      </div>
+
+      <form id="auth-form">
+        <div class="form-group" id="group-username" style="display: none;">
+          <label class="form-label" for="input-username">Username</label>
+          <input type="text" class="form-input" id="input-username" placeholder="e.g. sunny_petal" autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-email">Email</label>
+          <input type="email" class="form-input" id="input-email" required placeholder="you@example.com" autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-password">Password</label>
+          <input type="password" class="form-input" id="input-password" required minlength="8" placeholder="••••••••" autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" id="auth-submit" style="width: 100%; margin-top: var(--space-4);">
+          Sign in
+        </button>
+      </form>
+    </div>
+  </main>
+
+</body>
+</html>
+

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feed — Bloomly</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+
+  <script type="module">
+    import { getStickerSvg } from '/js/stickers.js';
+    import { buildEmptyState } from '/js/ui.js';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-sticker]').forEach((el) => {
+        el.innerHTML = getStickerSvg(el.getAttribute('data-sticker'));
+      });
+
+      const container = document.getElementById('feed-container');
+      const emptyState = buildEmptyState({
+        title: 'Your feed is resting quietly',
+        subtitle: 'The full interactive feed, composer, and timeline bloom in Phase 4. Explore other moments or check out the design styleguide below.',
+        stickerName: 'sprout',
+        actionText: 'Explore Moments',
+        actionHref: '/explore.html'
+      });
+      container.appendChild(emptyState);
+    });
+  </script>
+</head>
+<body style="min-height: 100vh; display: flex; flex-direction: column;">
+
+  <!-- Sticky Pill Navbar -->
+  <div class="navbar-wrapper">
+    <nav class="navbar" aria-label="Main Navigation">
+      <a href="/" class="nav-brand">
+        <span style="width: 32px; height: 32px; display: inline-flex;" data-sticker="logo"></span>
+        <span class="nav-brand-text">Bloomly</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/feed.html" class="nav-link active">Feed</a>
+        <a href="/explore.html" class="nav-link">Explore</a>
+        <a href="/styleguide.html" class="nav-link">Styleguide</a>
+      </div>
+
+      <div class="nav-actions">
+        <a href="/explore.html" class="btn btn-secondary btn-sm">Explore</a>
+        <a href="/auth.html" class="btn btn-primary btn-sm">Sign in</a>
+      </div>
+    </nav>
+  </div>
+
+  <main style="flex: 1; max-width: 680px; width: 100%; margin: 0 auto; padding: var(--space-8) var(--space-4);">
+    <div id="feed-container"></div>
+  </main>
+
+  <!-- Mobile Tab Bar -->
+  <nav class="tabbar-mobile" aria-label="Mobile Navigation">
+    <a href="/feed.html" class="tabbar-item active">
+      <span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="sprout"></span>
+      <span>Feed</span>
+    </a>
+    <a href="/explore.html" class="tabbar-item">
+      <span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="sparkle"></span>
+      <span>Explore</span>
+    </a>
+    <a href="/profile.html" class="tabbar-item">
+      <span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="flower"></span>
+      <span>Profile</span>
+    </a>
+  </nav>
+
+</body>
+</html>
+
