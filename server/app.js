@@ -15,14 +15,28 @@ const usersRoutes = require('./routes/users');
 const postsRoutes = require('./routes/posts');
 const commentsRoutes = require('./routes/comments');
 const notificationsRoutes = require('./routes/notifications');
+const statsRoutes = require('./routes/stats');
+const csrfCheck = require('./middleware/csrfCheck');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
 app.use(
   helmet({
-    contentSecurityPolicy: false,
-    crossOriginResourcePolicy: { policy: 'cross-origin' }
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+        styleSrc: ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        connectSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"]
+      }
+    },
+    crossOriginResourcePolicy: { policy: 'same-origin' }
   })
 );
 
@@ -55,6 +69,7 @@ const generalLimiter = rateLimit({
   message: { message: 'Too many requests, please try again later' }
 });
 
+app.use('/api', csrfCheck);
 app.use('/api', generalLimiter);
 
 app.get('/api/health', (req, res) => {
@@ -66,12 +81,20 @@ app.use('/api/users', usersRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/stats', statsRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, '../client')));
 
 app.all('/api/*', (req, res) => {
   res.status(404).json({ message: 'API route not found' });
+});
+
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.accepts('html')) {
+    return res.status(404).sendFile(path.join(__dirname, '../client/404.html'));
+  }
+  next();
 });
 
 app.use(errorHandler);

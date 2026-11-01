@@ -299,6 +299,35 @@ export function buildEmptyState({
   return box;
 }
 
+export function openLightbox(src) {
+  if (!src) return;
+  const backdrop = document.createElement('div');
+  backdrop.className = 'lightbox-backdrop';
+  backdrop.setAttribute('role', 'dialog');
+  backdrop.setAttribute('aria-label', 'Image preview');
+
+  const img = document.createElement('img');
+  img.src = src;
+  img.className = 'lightbox-img';
+  img.alt = 'Full size moment';
+
+  backdrop.appendChild(img);
+  document.body.appendChild(backdrop);
+  document.body.style.overflow = 'hidden';
+
+  const close = () => {
+    backdrop.remove();
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', keyHandler);
+  };
+
+  backdrop.addEventListener('click', close);
+  const keyHandler = (e) => {
+    if (e.key === 'Escape') close();
+  };
+  document.addEventListener('keydown', keyHandler);
+}
+
 export function buildPostCard(post, handlers = {}) {
   const card = document.createElement('article');
   card.className = 'post-card';
@@ -339,6 +368,50 @@ export function buildPostCard(post, handlers = {}) {
   header.appendChild(avatarWrapper);
   header.appendChild(meta);
   header.appendChild(timeEl);
+
+  // Author Delete action menu
+  const currentUser = window.currentUser;
+  const isAuthor = currentUser && (
+    author.id === currentUser.id ||
+    author.id === currentUser._id ||
+    author.username === currentUser.username
+  );
+
+  if (isAuthor && handlers.onDelete) {
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'btn-ghost btn-sm';
+    deleteBtn.style.padding = '2px 8px';
+    deleteBtn.style.color = 'var(--color-text-light)';
+    deleteBtn.title = 'Delete bloom';
+    deleteBtn.innerHTML = '•••';
+    deleteBtn.addEventListener('click', () => {
+      openModal({
+        title: 'Prune this Bloom?',
+        content: `
+          <p style="color: var(--color-text-muted); margin-bottom: var(--space-4);">
+            Are you sure you want to remove this moment from the garden? This action cannot be undone.
+          </p>
+          <div style="display: flex; justify-content: flex-end; gap: var(--space-2);">
+            <button class="btn btn-secondary" id="confirm-cancel-btn">Cancel</button>
+            <button class="btn btn-primary" id="confirm-delete-btn" style="background-color: var(--color-danger);">Prune Bloom</button>
+          </div>
+        `
+      });
+
+      const confirmBtn = document.getElementById('confirm-delete-btn');
+      const cancelBtn = document.getElementById('confirm-cancel-btn');
+      if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => {
+          closeModal();
+          handlers.onDelete(post, card);
+        });
+      }
+    });
+    header.appendChild(deleteBtn);
+  }
+
   card.appendChild(header);
 
   // 2. Text body
@@ -349,15 +422,18 @@ export function buildPostCard(post, handlers = {}) {
     card.appendChild(textEl);
   }
 
-  // 3. Image
+  // 3. Image with click-to-zoom
   if (post.image) {
     const imgContainer = document.createElement('div');
     imgContainer.className = 'post-image-container';
+    imgContainer.style.cursor = 'zoom-in';
 
     const img = document.createElement('img');
     img.src = post.image;
     img.alt = 'Bloom moment';
     img.loading = 'lazy';
+    img.addEventListener('click', () => openLightbox(post.image));
+
     imgContainer.appendChild(img);
     card.appendChild(imgContainer);
   }
@@ -390,8 +466,12 @@ export function buildPostCard(post, handlers = {}) {
   }
 
   // Comment button
-  const commentBtn = document.createElement('a');
-  commentBtn.href = `/post.html?id=${post.id}`;
+  const commentBtn = document.createElement(handlers.onComment ? 'button' : 'a');
+  if (!handlers.onComment) {
+    commentBtn.href = `/post.html?id=${post.id}`;
+  } else {
+    commentBtn.type = 'button';
+  }
   commentBtn.className = 'action-btn';
   commentBtn.setAttribute('aria-label', 'View comments');
 
@@ -407,8 +487,42 @@ export function buildPostCard(post, handlers = {}) {
   commentBtn.appendChild(commentIcon);
   commentBtn.appendChild(commentCount);
 
+  if (handlers.onComment) {
+    commentBtn.addEventListener('click', () => handlers.onComment(post));
+  }
+
+  // Share button
+  const shareBtn = document.createElement('button');
+  shareBtn.type = 'button';
+  shareBtn.className = 'action-btn';
+  shareBtn.setAttribute('aria-label', 'Share bloom link');
+
+  const shareIcon = document.createElement('span');
+  shareIcon.style.width = '18px';
+  shareIcon.style.height = '18px';
+  shareIcon.style.display = 'inline-flex';
+  shareIcon.innerHTML = getStickerSvg('sprout', { size: 18 });
+
+  shareBtn.appendChild(shareIcon);
+  shareBtn.appendChild(document.createTextNode('Share'));
+
+  shareBtn.addEventListener('click', async () => {
+    const postUrl = `${window.location.origin}/post.html?id=${post.id}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(postUrl);
+        toast('Bloom link copied to clipboard!', 'info');
+      } catch {
+        toast(postUrl, 'info');
+      }
+    } else {
+      toast(postUrl, 'info');
+    }
+  });
+
   actions.appendChild(likeBtn);
   actions.appendChild(commentBtn);
+  actions.appendChild(shareBtn);
   card.appendChild(actions);
 
   return card;
@@ -448,7 +562,10 @@ export function buildUserRow(user, handlers = {}) {
     const followBtn = document.createElement('button');
     followBtn.type = 'button';
     followBtn.className = `btn btn-sm ${user.isFollowing ? 'btn-secondary' : 'btn-primary'}`;
-    followBtn.textContent = user.isFollowing ? 'Following' : 'Follow';
+    followBtn.innerHTML = `
+      <span class="btn-icon-slot" style="width: 14px; height: 14px; display: inline-flex;">${getStickerSvg(user.isFollowing ? 'flower' : 'sprout', { size: 14 })}</span>
+      <span class="follow-text">${user.isFollowing ? 'Planted' : 'Plant'}</span>
+    `;
 
     if (handlers.onFollow) {
       followBtn.addEventListener('click', (e) => handlers.onFollow(user, followBtn, e));

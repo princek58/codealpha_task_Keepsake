@@ -11,6 +11,12 @@ class ApiError extends Error {
 
 const API_BASE = '/api';
 
+let onUnauthorizedHandler = null;
+
+export function setUnauthorizedHandler(handler) {
+  onUnauthorizedHandler = handler;
+}
+
 async function request(endpoint, options = {}) {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
   const headers = options.headers ? { ...options.headers } : {};
@@ -40,6 +46,10 @@ async function request(endpoint, options = {}) {
     data = await response.text().catch(() => '');
   }
 
+  if (response.status === 401 && onUnauthorizedHandler && endpoint !== '/auth/me') {
+    onUnauthorizedHandler();
+  }
+
   if (!response.ok) {
     const message = (data && data.message) || response.statusText || 'Request failed';
     const errors = (data && data.errors) || {};
@@ -49,9 +59,13 @@ async function request(endpoint, options = {}) {
   return data;
 }
 
-// 1. Health
+// 1. Health & Stats
 export function getHealth() {
   return request('/health');
+}
+
+export function getStats() {
+  return request('/stats');
 }
 
 // 2. Authentication
@@ -199,6 +213,7 @@ export function markNotificationAsRead(notificationId) {
 export const api = {
   request,
   getHealth,
+  getStats,
   register,
   login,
   logout,

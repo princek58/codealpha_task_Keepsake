@@ -105,13 +105,24 @@ Comprehensive reference for all backend endpoints in Bloomly.
 
 ---
 
-## 1. Health
+## 1. Health & Statistics
 ### `GET /api/health`
 Check server health.
 - **Auth:** None
 - **Response (200):**
   ```json
   { "status": "ok" }
+  ```
+
+### `GET /api/stats`
+Get public community counts (cached for 60 seconds, no sensitive data).
+- **Auth:** None
+- **Response (200):**
+  ```json
+  {
+    "users": 8,
+    "posts": 25
+  }
   ```
 
 ---

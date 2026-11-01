@@ -3,135 +3,389 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In / Join — Bloomly</title>
+  <title>Welcome to Bloomly — Sign In or Join</title>
+  <meta name="description" content="Sign in or join Bloomly, the cozy social media garden where little moments bloom.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- Core CSS -->
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/pages.css">
 
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: var(--space-8) var(--space-4);
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-bg-glow {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--color-primary-light) 0%, var(--color-secondary-light) 40%, transparent 70%);
+      filter: blur(60px);
+      z-index: -1;
+      opacity: 0.6;
+    }
+    .auth-card {
+      max-width: 460px;
+      width: 100%;
+      background-color: var(--color-surface);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-8);
+      box-shadow: var(--shadow-md);
+      position: relative;
+      z-index: 1;
+    }
+    .auth-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: var(--space-6);
+      text-align: center;
+    }
+    .auth-logo {
+      width: 56px;
+      height: 56px;
+      margin-bottom: var(--space-2);
+      filter: drop-shadow(0 4px 8px rgba(74, 44, 79, 0.1));
+    }
+    .auth-title {
+      font-family: var(--font-heading);
+      font-size: var(--text-2xl);
+      color: var(--color-text);
+      margin: 0 0 var(--space-1);
+    }
+    .auth-subtitle {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+    .password-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .password-toggle-btn {
+      position: absolute;
+      right: var(--space-3);
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      padding: var(--space-1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-family: var(--font-heading);
+    }
+    .password-toggle-btn:hover {
+      color: var(--color-primary-strong);
+    }
+    .strength-meter {
+      height: 4px;
+      background-color: var(--color-border);
+      border-radius: var(--radius-full);
+      margin-top: var(--space-2);
+      overflow: hidden;
+      display: none;
+    }
+    .strength-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: var(--radius-full);
+      transition: all var(--duration-fast) var(--ease-smooth);
+    }
+    .strength-label {
+      font-size: var(--text-xs);
+      margin-top: 4px;
+      display: none;
+    }
+    .auth-sticker-float {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      z-index: 0;
+      filter: drop-shadow(0 4px 10px rgba(74, 44, 79, 0.12));
+    }
+  </style>
+
   <script type="module">
+    import { api } from '/js/api.js';
     import { getStickerSvg } from '/js/stickers.js';
     import { toast } from '/js/ui.js';
-    import { api } from '/js/api.js';
+    import { createHeartBurst, floatingLoop } from '/js/animations.js';
+    import { validateUsername, validateEmail, validatePassword, getPasswordStrength, validateDisplayName } from '/js/validators.js';
+    import { initApp } from '/js/app.js';
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Initialize Auth Guard
+      await initApp({ isAuthPage: true });
+
+      // 2. Populate Sticker SVGs
       document.querySelectorAll('[data-sticker]').forEach((el) => {
         el.innerHTML = getStickerSvg(el.getAttribute('data-sticker'));
       });
 
-      const params = new URLSearchParams(window.location.search);
-      const isRegister = params.get('mode') === 'register';
+      // 3. Floating stickers animation
+      const floaters = document.querySelectorAll('.auth-sticker-float');
+      if (floaters.length) {
+        floatingLoop(floaters, { yOffset: 8, rotateOffset: 4 });
+      }
 
+      // 4. Tab Switching logic
       const tabLogin = document.getElementById('tab-login');
       const tabRegister = document.getElementById('tab-register');
-      const usernameGroup = document.getElementById('group-username');
+      const regFields = document.querySelectorAll('.reg-only');
       const submitBtn = document.getElementById('auth-submit');
       const authTitle = document.getElementById('auth-title');
+      const authSubtitle = document.getElementById('auth-subtitle');
+      const strengthMeter = document.getElementById('strength-meter');
+      const strengthLabel = document.getElementById('strength-label');
 
-      function setMode(registerMode) {
-        if (registerMode) {
+      const params = new URLSearchParams(window.location.search);
+      let isRegister = params.get('mode') === 'register';
+
+      function updateMode(registerMode) {
+        isRegister = registerMode;
+        clearErrors();
+
+        if (isRegister) {
           tabRegister.classList.add('active');
           tabLogin.classList.remove('active');
-          usernameGroup.style.display = 'flex';
+          regFields.forEach(el => el.style.display = 'flex');
           authTitle.textContent = 'Join the Bloomly garden';
-          submitBtn.textContent = 'Create your account';
+          authSubtitle.textContent = 'Create your quiet place to share moments';
+          submitBtn.querySelector('.btn-text').textContent = 'Create Garden Account';
+          strengthMeter.style.display = 'block';
+          strengthLabel.style.display = 'block';
+          document.getElementById('input-username').focus();
         } else {
           tabLogin.classList.add('active');
           tabRegister.classList.remove('active');
-          usernameGroup.style.display = 'none';
+          regFields.forEach(el => el.style.display = 'none');
           authTitle.textContent = 'Welcome back home';
-          submitBtn.textContent = 'Sign in';
+          authSubtitle.textContent = 'Step into your cozy corner of moments';
+          submitBtn.querySelector('.btn-text').textContent = 'Sign in';
+          strengthMeter.style.display = 'none';
+          strengthLabel.style.display = 'none';
+          document.getElementById('input-email').focus();
         }
       }
 
-      setMode(isRegister);
+      updateMode(isRegister);
 
-      tabLogin.addEventListener('click', () => setMode(false));
-      tabRegister.addEventListener('click', () => setMode(true));
+      tabLogin.addEventListener('click', () => updateMode(false));
+      tabRegister.addEventListener('click', () => updateMode(true));
 
+      // 5. Password Show/Hide Toggle
+      const passInput = document.getElementById('input-password');
+      const passToggle = document.getElementById('password-toggle');
+      passToggle.addEventListener('click', () => {
+        const isPass = passInput.type === 'password';
+        passInput.type = isPass ? 'text' : 'password';
+        passToggle.textContent = isPass ? 'Hide' : 'Show';
+      });
+
+      // 6. Live Password Strength Meter
+      const strengthBar = document.getElementById('strength-bar');
+      passInput.addEventListener('input', () => {
+        if (!isRegister) return;
+        const info = getPasswordStrength(passInput.value);
+        strengthBar.style.width = info.score === 1 ? '33%' : info.score === 2 ? '66%' : info.score === 3 ? '100%' : '0%';
+        strengthBar.style.backgroundColor = info.color;
+        strengthLabel.textContent = `Strength: ${info.label}`;
+        strengthLabel.style.color = info.color;
+      });
+
+      // 7. Field error helpers
+      function setFieldError(fieldId, errorMsg) {
+        const input = document.getElementById(`input-${fieldId}`);
+        const errEl = document.getElementById(`error-${fieldId}`);
+        if (input) input.style.borderColor = 'var(--color-danger)';
+        if (errEl) errEl.textContent = errorMsg;
+      }
+
+      function clearErrors() {
+        document.querySelectorAll('.form-input').forEach(i => i.style.borderColor = '');
+        document.querySelectorAll('.form-error').forEach(e => e.textContent = '');
+      }
+
+      // 8. Form Submission
       const form = document.getElementById('auth-form');
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('input-email').value.trim();
-        const password = document.getElementById('input-password').value;
-        const username = document.getElementById('input-username').value.trim();
-        const registerMode = tabRegister.classList.contains('active');
+        clearErrors();
 
+        const email = document.getElementById('input-email').value.trim();
+        const password = passInput.value;
+        const username = document.getElementById('input-username').value.trim();
+        const displayName = document.getElementById('input-display-name').value.trim();
+
+        // Client validation
+        let hasValidationError = false;
+
+        const emailErr = validateEmail(email);
+        if (emailErr) {
+          setFieldError('email', emailErr);
+          hasValidationError = true;
+        }
+
+        const passErr = validatePassword(password);
+        if (passErr) {
+          setFieldError('password', passErr);
+          hasValidationError = true;
+        }
+
+        if (isRegister) {
+          const userErr = validateUsername(username);
+          if (userErr) {
+            setFieldError('username', userErr);
+            hasValidationError = true;
+          }
+
+          const dispErr = validateDisplayName(displayName);
+          if (dispErr) {
+            setFieldError('display-name', dispErr);
+            hasValidationError = true;
+          }
+        }
+
+        if (hasValidationError) return;
+
+        // Disable form to prevent double-submit
         submitBtn.classList.add('btn-loading');
+        submitBtn.disabled = true;
 
         try {
-          if (registerMode) {
-            await api.register({ email, password, username, displayName: username });
-            toast('Welcome to Bloomly! Redirecting to feed...', 'success');
+          if (isRegister) {
+            await api.register({
+              username,
+              displayName: displayName || username,
+              email,
+              password,
+              moodSticker: 'flower'
+            });
+            toast('Welcome to Bloomly! Your garden is ready.', 'success');
           } else {
             await api.login({ email, password });
-            toast('Welcome back! Redirecting to feed...', 'success');
+            toast('Welcome back to your cozy space!', 'success');
           }
+
+          createHeartBurst(window.innerWidth / 2, window.innerHeight / 2, 14);
+
+          // Safe redirect
+          const next = params.get('next');
+          const redirectPath = (next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\'))
+            ? next
+            : '/feed.html';
+
           setTimeout(() => {
-            window.location.href = '/feed.html';
-          }, 800);
+            window.location.href = redirectPath;
+          }, 600);
         } catch (err) {
-          toast(err.message || 'Authentication failed', 'error');
+          if (err.errors && Object.keys(err.errors).length > 0) {
+            Object.entries(err.errors).forEach(([field, msg]) => {
+              setFieldError(field, msg);
+            });
+          }
+          toast(err.message || 'Authentication failed. Please check your details.', 'error');
         } finally {
           submitBtn.classList.remove('btn-loading');
+          submitBtn.disabled = false;
         }
       });
     });
   </script>
 </head>
-<body style="min-height: 100vh; display: flex; flex-direction: column;">
+<body>
 
-  <div class="navbar-wrapper">
-    <nav class="navbar">
-      <a href="/" class="nav-brand">
-        <span style="width: 32px; height: 32px; display: inline-flex;" data-sticker="logo"></span>
-        <span class="nav-brand-text">Bloomly</span>
-      </a>
-      <div class="nav-actions">
-        <a href="/" class="btn btn-ghost btn-sm">Back Home</a>
-      </div>
-    </nav>
-  </div>
+  <main class="auth-page">
+    <div class="auth-bg-glow"></div>
 
-  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-8) var(--space-4);">
-    <div class="card" style="max-width: 440px; width: 100%; text-align: center;">
-      <div style="width: 64px; height: 64px; margin: 0 auto var(--space-3);" data-sticker="flower"></div>
-      <h2 id="auth-title" style="font-family: var(--font-heading); margin-bottom: var(--space-4);">Welcome back home</h2>
+    <!-- Floating Mood Stickers -->
+    <div class="auth-sticker-float" style="top: 15%; left: 8%;" data-sticker="sparkle"></div>
+    <div class="auth-sticker-float" style="top: 25%; right: 10%;" data-sticker="butterfly"></div>
+    <div class="auth-sticker-float" style="bottom: 18%; left: 12%;" data-sticker="cherry"></div>
+    <div class="auth-sticker-float" style="bottom: 15%; right: 8%;" data-sticker="sprout"></div>
 
-      <div class="tabs-nav" style="margin-bottom: var(--space-6);">
-        <button type="button" class="tab-btn active" id="tab-login">Sign In</button>
-        <button type="button" class="tab-btn" id="tab-register">Register</button>
+    <div class="auth-card">
+      <div class="auth-brand">
+        <a href="/" style="display: inline-flex;" aria-label="Bloomly Home">
+          <div class="auth-logo" data-sticker="logo"></div>
+        </a>
+        <h1 class="auth-title" id="auth-title">Welcome back home</h1>
+        <p class="auth-subtitle" id="auth-subtitle">Step into your cozy corner of moments</p>
       </div>
 
-      <form id="auth-form">
-        <div class="form-group" id="group-username" style="display: none;">
-          <label class="form-label" for="input-username">Username</label>
-          <input type="text" class="form-input" id="input-username" placeholder="e.g. sunny_petal" autocomplete="username">
+      <!-- Tab Switcher -->
+      <div class="tabs-nav" style="width: 100%; display: flex; margin-bottom: var(--space-6);">
+        <button type="button" class="tab-btn active" id="tab-login" style="flex: 1;">Sign In</button>
+        <button type="button" class="tab-btn" id="tab-register" style="flex: 1;">Create Account</button>
+      </div>
+
+      <form id="auth-form" novalidate>
+        <!-- Register Only: Username -->
+        <div class="form-group reg-only" style="display: none;">
+          <label class="form-label" for="input-username">Username <span style="color: var(--color-primary-strong);">*</span></label>
+          <input type="text" class="form-input" id="input-username" placeholder="e.g. daisy_petal" autocomplete="username" maxlength="20">
+          <span class="form-error" id="error-username"></span>
         </div>
 
+        <!-- Register Only: Display Name -->
+        <div class="form-group reg-only" style="display: none;">
+          <label class="form-label" for="input-display-name">Display Name (Optional)</label>
+          <input type="text" class="form-input" id="input-display-name" placeholder="e.g. Daisy" maxlength="30">
+          <span class="form-error" id="error-display-name"></span>
+        </div>
+
+        <!-- Email -->
         <div class="form-group">
-          <label class="form-label" for="input-email">Email</label>
+          <label class="form-label" for="input-email">Email Address <span style="color: var(--color-primary-strong);">*</span></label>
           <input type="email" class="form-input" id="input-email" required placeholder="you@example.com" autocomplete="email">
+          <span class="form-error" id="error-email"></span>
         </div>
 
+        <!-- Password -->
         <div class="form-group">
-          <label class="form-label" for="input-password">Password</label>
-          <input type="password" class="form-input" id="input-password" required minlength="8" placeholder="••••••••" autocomplete="current-password">
+          <label class="form-label" for="input-password">Password <span style="color: var(--color-primary-strong);">*</span></label>
+          <div class="password-wrap">
+            <input type="password" class="form-input" id="input-password" required minlength="8" placeholder="At least 8 characters" autocomplete="current-password" style="padding-right: 3.5rem;">
+            <button type="button" class="password-toggle-btn" id="password-toggle" aria-label="Toggle password visibility">Show</button>
+          </div>
+          <div class="strength-meter" id="strength-meter">
+            <div class="strength-bar" id="strength-bar"></div>
+          </div>
+          <div class="strength-label" id="strength-label"></div>
+          <span class="form-error" id="error-password"></span>
         </div>
 
         <button type="submit" class="btn btn-primary btn-lg" id="auth-submit" style="width: 100%; margin-top: var(--space-4);">
-          Sign in
+          <span class="btn-text">Sign in</span>
         </button>
       </form>
+
+      <div style="text-align: center; margin-top: var(--space-6);">
+        <a href="/" class="nav-link" style="font-size: var(--text-xs); color: var(--color-text-light);">
+          &larr; Return to Bloomly landing page
+        </a>
+      </div>
     </div>
   </main>
 
 </body>
 </html>
-

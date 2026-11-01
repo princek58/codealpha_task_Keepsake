@@ -100,29 +100,17 @@ async function checkAuthNavbar() {
   }
 }
 
-function initCounters() {
-  const counterElements = document.querySelectorAll('[data-counter]');
-  if (!counterElements.length) return;
+async function initCounters() {
+  const postsEl = document.getElementById('stats-real-posts');
+  const usersEl = document.getElementById('stats-real-users');
 
-  if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const targetVal = entry.target.getAttribute('data-counter');
-            animateCounter(entry.target, targetVal);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-
-    counterElements.forEach((el) => observer.observe(el));
-  } else {
-    counterElements.forEach((el) => {
-      animateCounter(el, el.getAttribute('data-counter'));
-    });
+  try {
+    const stats = await api.getStats();
+    if (postsEl) animateCounter(postsEl, stats.posts || 0);
+    if (usersEl) animateCounter(usersEl, stats.users || 0);
+  } catch {
+    if (postsEl) postsEl.textContent = '0';
+    if (usersEl) usersEl.textContent = '0';
   }
 }
 

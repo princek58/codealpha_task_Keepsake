@@ -1,1 +1,3 @@
-console.log('e2e runner placeholder initialized');
+// Executes full headless Chrome E2E suite
+require('./e2e.js');
+

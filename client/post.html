@@ -3,82 +3,460 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bloom Details — Bloomly</title>
+  <title>Bloom Moment — Bloomly</title>
+  <meta name="description" content="View moment and comments on Bloomly.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- Core CSS -->
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/pages.css">
 
+  <style>
+    .post-detail-layout {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-4) var(--space-20);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+    .back-btn-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .comments-section {
+      background-color: var(--color-surface);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .comment-compose-card {
+      display: flex;
+      gap: var(--space-3);
+      padding-bottom: var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .comment-textarea {
+      width: 100%;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-3);
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+      resize: vertical;
+      min-height: 60px;
+    }
+    .comment-textarea:focus {
+      outline: none;
+      border-color: var(--color-primary-strong);
+      box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+    .bloom-bounce {
+      animation: commentDropIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes commentDropIn {
+      0% { opacity: 0; transform: translateY(-16px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
   <script type="module">
+    import { api } from '/js/api.js';
+    import { initApp } from '/js/app.js';
     import { getStickerSvg } from '/js/stickers.js';
-    import { buildEmptyState } from '/js/ui.js';
+    import { toast, openModal, closeModal, createAvatar, buildPostCard, createSkeletonPost, buildEmptyState, formatTimeAgo } from '/js/ui.js';
+    import { createHeartBurst } from '/js/animations.js';
 
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('[data-sticker]').forEach((el) => {
-        el.innerHTML = getStickerSvg(el.getAttribute('data-sticker'));
-      });
+    let postId = '';
+    let currentPost = null;
+    let commentsPage = 1;
+    let hasMoreComments = true;
+    let isLoadingComments = false;
 
-      const container = document.getElementById('post-detail-container');
-      const emptyState = buildEmptyState({
-        title: 'Single bloom view',
-        subtitle: 'The full post view with comments thread, instant replies, and author actions will bloom in Phase 4.',
-        stickerName: 'heart',
-        actionText: 'Back to Feed',
-        actionHref: '/feed.html'
+    document.addEventListener('DOMContentLoaded', async () => {
+      const params = new URLSearchParams(window.location.search);
+      postId = params.get('id');
+
+      await initApp({
+        activeTab: '',
+        protectedPage: false,
+        onReady: () => {
+          if (!postId) {
+            showNotFound();
+            return;
+          }
+          loadPostDetails();
+        }
       });
-      container.appendChild(emptyState);
     });
+
+    async function loadPostDetails() {
+      const loadingEl = document.getElementById('post-loading');
+      const contentEl = document.getElementById('post-content');
+      const notFoundEl = document.getElementById('post-not-found');
+
+      try {
+        const res = await api.getPostById(postId);
+        currentPost = res.post;
+
+        document.title = `${currentPost.author.displayName || currentPost.author.username}'s Bloom — Bloomly`;
+        renderPostCard();
+        setupCommentComposer();
+        loadComments(1, true);
+
+        loadingEl.style.display = 'none';
+        contentEl.style.display = 'flex';
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('scroll') === 'comments') {
+          setTimeout(() => {
+            document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' });
+          }, 300);
+        }
+      } catch (err) {
+        loadingEl.style.display = 'none';
+        notFoundEl.style.display = 'block';
+      }
+    }
+
+    function renderPostCard() {
+      const mount = document.getElementById('post-card-mount');
+      mount.innerHTML = '';
+
+      const card = buildPostCard(currentPost, {
+        onLike: async (p, btn) => {
+          const countEl = btn.querySelector('.like-count');
+          const isLiked = btn.classList.toggle('active');
+          const cur = parseInt(countEl.textContent, 10) || 0;
+          countEl.textContent = String(isLiked ? cur + 1 : Math.max(0, cur - 1));
+
+          if (isLiked) {
+            const rect = btn.getBoundingClientRect();
+            createHeartBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 8);
+          }
+
+          try {
+            const r = await api.toggleLike(p.id);
+            countEl.textContent = String(r.likesCount);
+            btn.classList.toggle('active', r.liked);
+          } catch (err) {
+            btn.classList.toggle('active', !isLiked);
+            countEl.textContent = String(cur);
+            toast(err.message || 'Could not update heart', 'error');
+          }
+        },
+        onDelete: async (p) => {
+          try {
+            await api.deletePost(p.id);
+            toast('Bloom pruned successfully', 'info');
+            setTimeout(() => {
+              window.location.href = '/feed.html';
+            }, 600);
+          } catch (err) {
+            toast(err.message || 'Could not delete bloom', 'error');
+          }
+        }
+      });
+
+      mount.appendChild(card);
+    }
+
+    function setupCommentComposer() {
+      const avSlot = document.getElementById('comment-avatar-slot');
+      if (avSlot && window.currentUser) {
+        avSlot.appendChild(
+          createAvatar({
+            avatar: window.currentUser.avatar,
+            displayName: window.currentUser.displayName || window.currentUser.username,
+            moodSticker: window.currentUser.moodSticker,
+            size: 'sm'
+          })
+        );
+      }
+
+      const textarea = document.getElementById('comment-input');
+      const counter = document.getElementById('comment-counter');
+      const submitBtn = document.getElementById('comment-submit-btn');
+
+      textarea.addEventListener('input', () => {
+        const len = textarea.value.length;
+        counter.textContent = `${len} / 300`;
+        counter.classList.toggle('warning', len >= 280);
+      });
+
+      // Enter to send, Shift+Enter for newline
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          submitComment();
+        }
+      });
+
+      submitBtn.addEventListener('click', submitComment);
+
+      async function submitComment() {
+        if (!window.currentUser) {
+          window.location.href = `/auth.html?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+          return;
+        }
+
+        const text = textarea.value.trim();
+        if (!text) return;
+
+        submitBtn.classList.add('btn-loading');
+        submitBtn.disabled = true;
+
+        try {
+          const res = await api.createComment(postId, text);
+          textarea.value = '';
+          counter.textContent = '0 / 300';
+
+          const emptyEl = document.getElementById('comments-empty-state');
+          if (emptyEl) emptyEl.remove();
+
+          const commentEl = createCommentElement(res.comment);
+          commentEl.classList.add('bloom-bounce');
+          document.getElementById('comments-list').appendChild(commentEl);
+
+          // Update comment count on post card
+          updatePostCommentCount(1);
+          toast('Comment planted!', 'success');
+        } catch (err) {
+          toast(err.message || 'Could not add comment', 'error');
+        } finally {
+          submitBtn.classList.remove('btn-loading');
+          submitBtn.disabled = false;
+        }
+      }
+    }
+
+    async function loadComments(page = 1, isInitial = false) {
+      if (isLoadingComments) return;
+      isLoadingComments = true;
+
+      const list = document.getElementById('comments-list');
+      const loadMoreBtn = document.getElementById('comments-load-more-btn');
+
+      if (isInitial) {
+        list.innerHTML = `<div style="padding: var(--space-4); text-align: center; color: var(--color-text-light); font-size: var(--text-sm);">Loading comments...</div>`;
+      }
+
+      try {
+        const res = await api.getComments(postId, page, 15);
+        const comments = res.items || [];
+        hasMoreComments = res.hasMore;
+        commentsPage = page;
+
+        if (isInitial) list.innerHTML = '';
+
+        if (isInitial && !comments.length) {
+          list.innerHTML = `
+            <div id="comments-empty-state" style="text-align: center; padding: var(--space-6); color: var(--color-text-muted); font-size: var(--text-sm);">
+              <div style="width: 44px; height: 44px; margin: 0 auto var(--space-2);">${getStickerSvg('sparkle', { size: 44 })}</div>
+              <div>No comments yet. Plant the first sweet thought!</div>
+            </div>
+          `;
+          return;
+        }
+
+        comments.forEach((c) => {
+          list.appendChild(createCommentElement(c));
+        });
+
+        if (hasMoreComments && loadMoreBtn) {
+          loadMoreBtn.style.display = 'inline-flex';
+          loadMoreBtn.onclick = () => loadComments(commentsPage + 1, false);
+        } else if (loadMoreBtn) {
+          loadMoreBtn.style.display = 'none';
+        }
+      } catch {
+        if (isInitial) list.innerHTML = `<div style="text-align: center; color: var(--color-danger); padding: var(--space-4);">Could not load comments</div>`;
+      } finally {
+        isLoadingComments = false;
+      }
+    }
+
+    function createCommentElement(comment) {
+      const item = document.createElement('div');
+      item.className = 'comment-item';
+      item.setAttribute('data-id', comment.id);
+
+      const author = comment.author || {};
+      const av = createAvatar({
+        avatar: author.avatar,
+        displayName: author.displayName || author.username,
+        moodSticker: author.moodSticker,
+        size: 'sm'
+      });
+
+      const content = document.createElement('div');
+      content.className = 'comment-content';
+
+      const header = document.createElement('div');
+      header.className = 'comment-header';
+
+      const authorLink = document.createElement('a');
+      authorLink.href = `/profile.html?u=${encodeURIComponent(author.username || '')}`;
+      authorLink.className = 'comment-author';
+      authorLink.textContent = author.displayName || author.username || 'Gardener';
+
+      const timeEl = document.createElement('time');
+      timeEl.className = 'comment-time';
+      timeEl.textContent = formatTimeAgo(comment.createdAt);
+
+      header.appendChild(authorLink);
+      header.appendChild(timeEl);
+
+      // Check if current user can delete: comment author OR post author
+      const currentUser = window.currentUser;
+      const canDelete = currentUser && (
+        author.id === currentUser.id ||
+        author.id === currentUser._id ||
+        (currentPost && currentPost.author && (currentPost.author.id === currentUser.id || currentPost.author.username === currentUser.username))
+      );
+
+      if (canDelete) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'btn-ghost';
+        deleteBtn.style.marginLeft = 'auto';
+        deleteBtn.style.padding = '0 6px';
+        deleteBtn.style.color = 'var(--color-text-light)';
+        deleteBtn.style.fontSize = 'var(--text-xs)';
+        deleteBtn.textContent = '×';
+        deleteBtn.title = 'Delete comment';
+
+        deleteBtn.addEventListener('click', () => {
+          openModal({
+            title: 'Delete Comment?',
+            content: `
+              <p style="color: var(--color-text-muted); margin-bottom: var(--space-4);">
+                Are you sure you want to remove this comment?
+              </p>
+              <div style="display: flex; justify-content: flex-end; gap: var(--space-2);">
+                <button class="btn btn-secondary" id="cancel-comment-del">Cancel</button>
+                <button class="btn btn-primary" id="confirm-comment-del" style="background: var(--color-danger);">Delete</button>
+              </div>
+            `
+          });
+
+          document.getElementById('cancel-comment-del')?.addEventListener('click', closeModal);
+          document.getElementById('confirm-comment-del')?.addEventListener('click', async () => {
+            closeModal();
+            try {
+              await api.deleteComment(comment.id);
+              item.style.transition = 'all 0.25s ease';
+              item.style.opacity = '0';
+              setTimeout(() => item.remove(), 250);
+              updatePostCommentCount(-1);
+              toast('Comment removed', 'info');
+            } catch (err) {
+              toast(err.message || 'Could not delete comment', 'error');
+            }
+          });
+        });
+
+        header.appendChild(deleteBtn);
+      }
+
+      const text = document.createElement('p');
+      text.className = 'comment-text';
+      text.textContent = comment.text;
+
+      content.appendChild(header);
+      content.appendChild(text);
+
+      item.appendChild(av);
+      item.appendChild(content);
+
+      return item;
+    }
+
+    function updatePostCommentCount(delta) {
+      if (!currentPost) return;
+      currentPost.commentsCount = Math.max(0, (currentPost.commentsCount || 0) + delta);
+      const counterEl = document.querySelector('.post-card [aria-label="View comments"] span:last-child');
+      if (counterEl) counterEl.textContent = String(currentPost.commentsCount);
+    }
+
+    function showNotFound() {
+      document.getElementById('post-loading').style.display = 'none';
+      document.getElementById('post-not-found').style.display = 'block';
+    }
   </script>
 </head>
-<body style="min-height: 100vh; display: flex; flex-direction: column;">
+<body>
 
-  <!-- Sticky Pill Navbar -->
-  <div class="navbar-wrapper">
-    <nav class="navbar" aria-label="Main Navigation">
-      <a href="/" class="nav-brand">
-        <span style="width: 32px; height: 32px; display: inline-flex;" data-sticker="logo"></span>
-        <span class="nav-brand-text">Bloomly</span>
+  <main id="main-content" class="post-detail-layout">
+    <div class="back-btn-row">
+      <a href="/feed.html" class="btn btn-ghost btn-sm" style="color: var(--color-text-muted);">
+        &larr; Back to Garden Feed
       </a>
+    </div>
 
-      <div class="nav-links">
-        <a href="/feed.html" class="nav-link">Feed</a>
-        <a href="/explore.html" class="nav-link">Explore</a>
-        <a href="/styleguide.html" class="nav-link">Styleguide</a>
+    <!-- Loading skeleton -->
+    <div id="post-loading" style="display: flex; flex-direction: column; gap: var(--space-6);">
+      <div class="skeleton" style="height: 240px; border-radius: var(--radius-xl);"></div>
+    </div>
+
+    <!-- Not found state -->
+    <div id="post-not-found" style="display: none;">
+      <div class="empty-state">
+        <div style="width: 72px; height: 72px; margin-bottom: var(--space-3);" data-sticker="cloud"></div>
+        <h2 class="empty-state-title">Bloom Not Found</h2>
+        <p class="empty-state-desc">This moment may have been pruned or does not exist.</p>
+        <a href="/feed.html" class="btn btn-primary">Return to Feed</a>
       </div>
+    </div>
 
-      <div class="nav-actions">
-        <a href="/feed.html" class="btn btn-secondary btn-sm">Feed</a>
-        <a href="/auth.html" class="btn btn-primary btn-sm">Sign in</a>
-      </div>
-    </nav>
-  </div>
+    <!-- Post Detail Content -->
+    <div id="post-content" style="display: none; flex-direction: column; gap: var(--space-6);">
+      <!-- Full Post Card Mount -->
+      <div id="post-card-mount"></div>
 
-  <main style="flex: 1; max-width: 680px; width: 100%; margin: 0 auto; padding: var(--space-8) var(--space-4);">
-    <div id="post-detail-container"></div>
+      <!-- Comments Thread Section -->
+      <section class="comments-section" id="comments-section" aria-label="Comments">
+        <h3 style="font-family: var(--font-heading); font-size: var(--text-lg); color: var(--color-text); margin: 0;">
+          Comments
+        </h3>
+
+        <!-- Add Comment Form -->
+        <div class="comment-compose-card">
+          <div id="comment-avatar-slot"></div>
+          <div style="flex: 1;">
+            <textarea class="comment-textarea" id="comment-input" placeholder="Plant a gentle comment... (Enter to send, Shift+Enter for newline)" maxlength="300"></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-2);">
+              <span style="font-size: var(--text-xs); color: var(--color-text-light);" id="comment-counter">0 / 300</span>
+              <button type="button" class="btn btn-primary btn-sm" id="comment-submit-btn">Send Comment</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" style="display: flex; flex-direction: column;"></div>
+
+        <!-- Load more button -->
+        <div style="text-align: center; margin-top: var(--space-2);">
+          <button type="button" class="btn btn-secondary btn-sm" id="comments-load-more-btn" style="display: none;">
+            Load older comments
+          </button>
+        </div>
+      </section>
+    </div>
   </main>
-
-  <!-- Mobile Tab Bar -->
-  <nav class="tabbar-mobile" aria-label="Mobile Navigation">
-    <a href="/feed.html" class="tabbar-item">
-      <span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="sprout"></span>
-      <span>Feed</span>
-    </a>
-    <a href="/explore.html" class="tabbar-item">
-      <span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="sparkle"></span>
-      <span>Explore</span>
-    </a>
-    <a href="/profile.html" class="tabbar-item">
-      <span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="flower"></span>
-      <span>Profile</span>
-    </a>
-  </nav>
 
 </body>
 </html>
-

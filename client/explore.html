@@ -3,82 +3,429 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Explore Moments — Bloomly</title>
+  <title>Explore — Bloomly</title>
+  <meta name="description" content="Discover fresh moments and gardeners across Bloomly.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- Core CSS -->
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/pages.css">
 
+  <style>
+    .explore-layout {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-4) var(--space-20);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+    .explore-header {
+      text-align: center;
+      margin-bottom: var(--space-2);
+    }
+    .search-input-wrap {
+      position: relative;
+      margin-bottom: var(--space-4);
+    }
+    .search-input-wrap input {
+      padding-left: 2.8rem;
+    }
+    .search-icon-badge {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      color: var(--color-text-light);
+      pointer-events: none;
+    }
+  </style>
+
   <script type="module">
+    import { api } from '/js/api.js';
+    import { initApp } from '/js/app.js';
     import { getStickerSvg } from '/js/stickers.js';
-    import { buildEmptyState } from '/js/ui.js';
+    import { toast, createAvatar, buildPostCard, buildUserRow, createSkeletonPost, createSkeletonUser, buildEmptyState } from '/js/ui.js';
+    import { createHeartBurst } from '/js/animations.js';
 
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('[data-sticker]').forEach((el) => {
-        el.innerHTML = getStickerSvg(el.getAttribute('data-sticker'));
-      });
+    let activeTab = 'blooms';
+    let explorePage = 1;
+    let hasMoreBlooms = true;
+    let isBloomsLoading = false;
+    let bloomsObserver = null;
 
-      const container = document.getElementById('explore-container');
-      const emptyState = buildEmptyState({
-        title: 'Discover new blooms',
-        subtitle: 'The full explore grid, search bar, and discover feeds bloom in Phase 4. Check back soon or visit our design styleguide.',
-        stickerName: 'sparkle',
-        actionText: 'View Styleguide',
-        actionHref: '/styleguide.html'
+    let searchAbortController = null;
+    let searchDebounceTimer = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initApp({
+        activeTab: 'explore',
+        protectedPage: false,
+        onReady: () => {
+          initExplore();
+        }
       });
-      container.appendChild(emptyState);
     });
+
+    function initExplore() {
+      const tabBlooms = document.getElementById('tab-explore-blooms');
+      const tabGardeners = document.getElementById('tab-explore-gardeners');
+      const sectionBlooms = document.getElementById('section-blooms');
+      const sectionGardeners = document.getElementById('section-gardeners');
+
+      function switchTab(target) {
+        activeTab = target;
+        if (activeTab === 'blooms') {
+          tabBlooms.classList.add('active');
+          tabGardeners.classList.remove('active');
+          sectionBlooms.style.display = 'flex';
+          sectionGardeners.style.display = 'none';
+        } else {
+          tabGardeners.classList.add('active');
+          tabBlooms.classList.remove('active');
+          sectionGardeners.style.display = 'flex';
+          sectionBlooms.style.display = 'none';
+          document.getElementById('explore-search-input')?.focus();
+        }
+      }
+
+      tabBlooms.addEventListener('click', () => switchTab('blooms'));
+      tabGardeners.addEventListener('click', () => switchTab('gardeners'));
+
+      // Check URL for ?q=
+      const params = new URLSearchParams(window.location.search);
+      const queryParam = params.get('q');
+      if (queryParam) {
+        switchTab('gardeners');
+        const input = document.getElementById('explore-search-input');
+        if (input) {
+          input.value = queryParam;
+          performGardenersSearch(queryParam);
+        }
+      } else {
+        loadFreshBlooms(1, true);
+        loadDefaultGardenersSuggestions();
+      }
+
+      setupSearchInput();
+    }
+
+    // 1. Fresh Blooms tab
+    async function loadFreshBlooms(page = 1, isInitial = false) {
+      if (isBloomsLoading) return;
+      isBloomsLoading = true;
+
+      const skeletonBox = document.getElementById('blooms-skeletons');
+      const container = document.getElementById('blooms-list');
+      const loadMoreBtn = document.getElementById('blooms-load-more-btn');
+
+      if (isInitial) {
+        skeletonBox.style.display = 'flex';
+        skeletonBox.innerHTML = '';
+        skeletonBox.appendChild(createSkeletonPost());
+        skeletonBox.appendChild(createSkeletonPost());
+      }
+
+      try {
+        const res = await api.getExplore(page, 10);
+        const posts = res.items || [];
+        hasMoreBlooms = res.hasMore;
+        explorePage = page;
+
+        skeletonBox.style.display = 'none';
+
+        if (isInitial && posts.length === 0) {
+          container.innerHTML = '';
+          const empty = buildEmptyState({
+            title: 'No fresh blooms yet',
+            subtitle: 'Be the first gardener to plant a moment in the global greenhouse!',
+            stickerName: 'sprout',
+            actionText: 'Plant a Bloom',
+            actionHref: '/feed.html'
+          });
+          container.appendChild(empty);
+          return;
+        }
+
+        posts.forEach((post) => {
+          if (!container.querySelector(`[data-id="${post.id}"]`)) {
+            const card = buildPostCard(post, {
+              onLike: async (p, btn) => {
+                const countEl = btn.querySelector('.like-count');
+                const isLiked = btn.classList.toggle('active');
+                const currentCount = parseInt(countEl.textContent, 10) || 0;
+                const nextCount = isLiked ? currentCount + 1 : Math.max(0, currentCount - 1);
+                countEl.textContent = String(nextCount);
+
+                if (isLiked) {
+                  const rect = btn.getBoundingClientRect();
+                  createHeartBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 8);
+                }
+
+                try {
+                  const r = await api.toggleLike(p.id);
+                  countEl.textContent = String(r.likesCount);
+                  btn.classList.toggle('active', r.liked);
+                } catch (err) {
+                  btn.classList.toggle('active', !isLiked);
+                  countEl.textContent = String(currentCount);
+                  toast(err.message || 'Could not update heart', 'error');
+                }
+              },
+              onDelete: async (p, cardEl) => {
+                try {
+                  await api.deletePost(p.id);
+                  cardEl.style.transition = 'all 0.3s ease';
+                  cardEl.style.opacity = '0';
+                  setTimeout(() => cardEl.remove(), 300);
+                  toast('Bloom pruned safely', 'info');
+                } catch (err) {
+                  toast(err.message || 'Could not delete bloom', 'error');
+                }
+              }
+            });
+            container.appendChild(card);
+          }
+        });
+
+        if (hasMoreBlooms) {
+          setupBloomsInfiniteScroll();
+          if (loadMoreBtn) loadMoreBtn.style.display = 'inline-flex';
+        } else {
+          if (bloomsObserver) bloomsObserver.disconnect();
+          if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+        }
+      } catch (err) {
+        skeletonBox.style.display = 'none';
+        toast('Could not load fresh blooms', 'error');
+      } finally {
+        isBloomsLoading = false;
+      }
+    }
+
+    function setupBloomsInfiniteScroll() {
+      if (bloomsObserver) bloomsObserver.disconnect();
+      const sentinel = document.getElementById('blooms-sentinel');
+      if (!sentinel) return;
+
+      bloomsObserver = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasMoreBlooms && !isBloomsLoading) {
+            loadFreshBlooms(explorePage + 1, false);
+          }
+        },
+        { rootMargin: '200px' }
+      );
+      bloomsObserver.observe(sentinel);
+
+      const loadMoreBtn = document.getElementById('blooms-load-more-btn');
+      if (loadMoreBtn) {
+        loadMoreBtn.onclick = () => {
+          if (hasMoreBlooms && !isBloomsLoading) loadFreshBlooms(explorePage + 1, false);
+        };
+      }
+    }
+
+    // 2. Gardeners search tab
+    function setupSearchInput() {
+      const input = document.getElementById('explore-search-input');
+      if (!input) return;
+
+      input.addEventListener('input', () => {
+        const q = input.value.trim();
+        clearTimeout(searchDebounceTimer);
+
+        if (!q) {
+          loadDefaultGardenersSuggestions();
+          return;
+        }
+
+        if (q.length < 2) {
+          const container = document.getElementById('gardeners-list');
+          container.innerHTML = `<div style="text-align: center; padding: var(--space-8); color: var(--color-text-muted); font-size: var(--text-sm);">Please enter at least 2 characters to search gardeners</div>`;
+          return;
+        }
+
+        searchDebounceTimer = setTimeout(() => {
+          performGardenersSearch(q);
+        }, 300);
+      });
+    }
+
+    async function performGardenersSearch(query) {
+      if (searchAbortController) searchAbortController.abort();
+      searchAbortController = new AbortController();
+
+      const container = document.getElementById('gardeners-list');
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+          ${createSkeletonUser().outerHTML}
+          ${createSkeletonUser().outerHTML}
+        </div>
+      `;
+
+      try {
+        const res = await api.searchUsers(query);
+        const users = res.items || [];
+        container.innerHTML = '';
+
+        if (!users.length) {
+          const empty = buildEmptyState({
+            title: 'No gardeners found',
+            subtitle: `We couldn't find any gardeners matching "${escapeText(query)}". Try another name or handle!`,
+            stickerName: 'cloud'
+          });
+          container.appendChild(empty);
+          return;
+        }
+
+        users.forEach((user) => {
+          const row = buildUserRow(user, {
+            onFollow: handleUserFollowClick
+          });
+          container.appendChild(row);
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          container.innerHTML = `
+            <div class="empty-state" style="border-color: var(--color-danger);">
+              <h4 style="color: var(--color-danger); margin: 0 0 var(--space-2);">Search error</h4>
+              <p style="font-size: var(--text-sm); color: var(--color-text-muted);">${err.message || 'Could not complete search'}</p>
+            </div>
+          `;
+        }
+      }
+    }
+
+    async function loadDefaultGardenersSuggestions() {
+      const container = document.getElementById('gardeners-list');
+      if (!container) return;
+
+      container.innerHTML = `
+        <div style="font-family: var(--font-heading); font-size: var(--text-sm); font-weight: 600; color: var(--color-text-muted); margin-bottom: var(--space-3);">
+          Featured Gardeners
+        </div>
+      `;
+
+      try {
+        const res = await api.getSuggestions();
+        const users = res.items || [];
+
+        if (!users.length) {
+          container.innerHTML = `<div style="text-align: center; padding: var(--space-8); color: var(--color-text-muted);">Type a name above to find gardeners</div>`;
+          return;
+        }
+
+        users.forEach((user) => {
+          const row = buildUserRow(user, {
+            onFollow: handleUserFollowClick
+          });
+          container.appendChild(row);
+        });
+      } catch {
+        container.innerHTML = `<div style="text-align: center; padding: var(--space-8); color: var(--color-text-muted);">Search for gardeners by handle or display name above</div>`;
+      }
+    }
+
+    async function handleUserFollowClick(user, btn) {
+      if (!window.currentUser) {
+        window.location.href = `/auth.html?next=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+
+      const textSpan = btn.querySelector('.follow-text');
+      const iconSlot = btn.querySelector('.btn-icon-slot');
+      const isPlanted = textSpan.textContent === 'Planted';
+
+      // Optimistic
+      textSpan.textContent = isPlanted ? 'Plant' : 'Planted';
+      btn.className = `btn btn-sm ${isPlanted ? 'btn-primary' : 'btn-secondary'}`;
+      iconSlot.innerHTML = getStickerSvg(isPlanted ? 'sprout' : 'flower', { size: 14 });
+
+      if (!isPlanted) {
+        const rect = btn.getBoundingClientRect();
+        createHeartBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 8);
+      }
+
+      try {
+        const res = await api.toggleFollow(user.id);
+        textSpan.textContent = res.following ? 'Planted' : 'Plant';
+        btn.className = `btn btn-sm ${res.following ? 'btn-secondary' : 'btn-primary'}`;
+        iconSlot.innerHTML = getStickerSvg(res.following ? 'flower' : 'sprout', { size: 14 });
+      } catch (err) {
+        // Rollback
+        textSpan.textContent = isPlanted ? 'Planted' : 'Plant';
+        btn.className = `btn btn-sm ${isPlanted ? 'btn-secondary' : 'btn-primary'}`;
+        iconSlot.innerHTML = getStickerSvg(isPlanted ? 'flower' : 'sprout', { size: 14 });
+        toast(err.message || 'Could not update connection', 'error');
+      }
+    }
+
+    function escapeText(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
   </script>
 </head>
-<body style="min-height: 100vh; display: flex; flex-direction: column;">
+<body>
 
-  <!-- Sticky Pill Navbar -->
-  <div class="navbar-wrapper">
-    <nav class="navbar" aria-label="Main Navigation">
-      <a href="/" class="nav-brand">
-        <span style="width: 32px; height: 32px; display: inline-flex;" data-sticker="logo"></span>
-        <span class="nav-brand-text">Bloomly</span>
-      </a>
+  <main id="main-content" class="explore-layout">
+    <div class="explore-header">
+      <h1 style="font-family: var(--font-heading); font-size: var(--text-2xl); color: var(--color-text); margin: 0 0 var(--space-2);">
+        Greenhouse Explore
+      </h1>
+      <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin: 0;">
+        Discover new moments and friendly gardeners across Bloomly
+      </p>
+    </div>
 
-      <div class="nav-links">
-        <a href="/feed.html" class="nav-link">Feed</a>
-        <a href="/explore.html" class="nav-link active">Explore</a>
-        <a href="/styleguide.html" class="nav-link">Styleguide</a>
+    <!-- Rounded Tabs -->
+    <div class="tabs-nav" style="width: 100%; display: flex;">
+      <button type="button" class="tab-btn active" id="tab-explore-blooms" style="flex: 1;">Fresh Blooms</button>
+      <button type="button" class="tab-btn" id="tab-explore-gardeners" style="flex: 1;">Gardeners</button>
+    </div>
+
+    <!-- Fresh Blooms Section -->
+    <div id="section-blooms" style="display: flex; flex-direction: column; gap: var(--space-6);">
+      <div id="blooms-skeletons" style="display: flex; flex-direction: column; gap: var(--space-6);"></div>
+      <div id="blooms-list" style="display: flex; flex-direction: column; gap: var(--space-6);"></div>
+      <div id="blooms-sentinel" class="load-more-sentinel">
+        <button type="button" class="btn btn-secondary btn-sm" id="blooms-load-more-btn" style="display: none;">
+          Load more blooms
+        </button>
+      </div>
+    </div>
+
+    <!-- Gardeners Search Section -->
+    <div id="section-gardeners" style="display: none; flex-direction: column; gap: var(--space-4);">
+      <div class="search-input-wrap">
+        <span class="search-icon-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
+        <input type="search" class="form-input" id="explore-search-input" placeholder="Search gardeners by name or handle..." autocomplete="off">
       </div>
 
-      <div class="nav-actions">
-        <a href="/feed.html" class="btn btn-secondary btn-sm">Feed</a>
-        <a href="/auth.html" class="btn btn-primary btn-sm">Sign in</a>
-      </div>
-    </nav>
-  </div>
-
-  <main style="flex: 1; max-width: 680px; width: 100%; margin: 0 auto; padding: var(--space-8) var(--space-4);">
-    <div id="explore-container"></div>
+      <div id="gardeners-list" style="display: flex; flex-direction: column; gap: var(--space-3);"></div>
+    </div>
   </main>
-
-  <!-- Mobile Tab Bar -->
-  <nav class="tabbar-mobile" aria-label="Mobile Navigation">
-    <a href="/feed.html" class="tabbar-item">
-      <span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="sprout"></span>
-      <span>Feed</span>
-    </a>
-    <a href="/explore.html" class="tabbar-item active">
-      <span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="sparkle"></span>
-      <span>Explore</span>
-    </a>
-    <a href="/profile.html" class="tabbar-item">
-      <span style="width: 22px; height: 22px; display: inline-flex;" data-sticker="flower"></span>
-      <span>Profile</span>
-    </a>
-  </nav>
 
 </body>
 </html>
-
