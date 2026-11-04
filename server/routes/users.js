@@ -12,9 +12,7 @@ const {
 const protect = require('../middleware/auth');
 const { optionalAuth } = require('../middleware/auth');
 const validate = require('../middleware/validate');
-const upload = require('../middleware/upload');
 const { actionLimiter } = require('../middleware/rateLimiters');
-const { STICKER_ENUM } = require('../models/User');
 
 const router = express.Router();
 
@@ -28,11 +26,7 @@ const updateMeValidation = [
     .optional()
     .trim()
     .isLength({ max: 160 })
-    .withMessage('Bio cannot exceed 160 characters'),
-  body('moodSticker')
-    .optional()
-    .isIn(STICKER_ENUM)
-    .withMessage('Invalid mood sticker')
+    .withMessage('Bio cannot exceed 160 characters')
 ];
 
 router.get(
@@ -53,7 +47,6 @@ router.get('/suggestions', protect, getSuggestions);
 router.put(
   '/me',
   protect,
-  upload.single('avatar'),
   updateMeValidation,
   validate,
   updateMe

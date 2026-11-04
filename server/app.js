@@ -12,7 +12,6 @@ const rateLimit = require('express-rate-limit');
 
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
-const postsRoutes = require('./routes/posts');
 const commentsRoutes = require('./routes/comments');
 const notificationsRoutes = require('./routes/notifications');
 const statsRoutes = require('./routes/stats');
@@ -30,6 +29,7 @@ app.use(
         styleSrc: ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:"],
+        mediaSrc: ["'self'", "blob:"],
         connectSrc: ["'self'"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
@@ -78,12 +78,10 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
-app.use('/api/posts', postsRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/stats', statsRoutes);
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, '../client')));
 
 app.all('/api/*', (req, res) => {
@@ -100,4 +98,3 @@ app.use((req, res, next) => {
 app.use(errorHandler);
 
 module.exports = app;
-

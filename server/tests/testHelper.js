@@ -16,8 +16,7 @@ const createTestUser = async (overrides = {}) => {
       email,
       password,
       displayName: overrides.displayName || username,
-      bio: overrides.bio || '',
-      moodSticker: overrides.moodSticker || 'flower'
+      bio: overrides.bio || ''
     });
 
   if (res.status !== 201) {

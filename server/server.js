@@ -11,7 +11,7 @@ const startServer = async () => {
     console.log('MongoDB connected successfully');
 
     app.listen(PORT, () => {
-      console.log(`Bloomly server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+      console.log(`Keepsake server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
     });
   } catch (err) {
     console.error('Failed to start server:', err.message);
@@ -24,4 +24,3 @@ if (require.main === module) {
 }
 
 module.exports = { startServer };
-

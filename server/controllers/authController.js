@@ -20,7 +20,7 @@ const generateTokenAndSetCookie = (res, userId) => {
 
 const register = async (req, res, next) => {
   try {
-    const { username, email, password, displayName, bio, avatar, moodSticker } = req.body;
+    const { username, email, password, displayName, bio } = req.body;
 
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
@@ -47,8 +47,8 @@ const register = async (req, res, next) => {
       passwordHash,
       displayName: displayName || username,
       bio: bio || '',
-      avatar: avatar || '',
-      moodSticker: moodSticker || 'flower'
+      avatarPath: null,
+      storageUsedBytes: 0
     });
 
     generateTokenAndSetCookie(res, user._id);
@@ -64,9 +64,20 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const identifier = req.body.identifier || req.body.email || req.body.username;
+    const { password } = req.body;
 
-    const user = await User.findOne({ email }).select('+passwordHash');
+    if (!identifier || !password) {
+      return res.status(400).json({ message: 'Identifier and password are required' });
+    }
+
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { username: identifier.toLowerCase() }
+      ]
+    }).select('+passwordHash');
+
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -107,4 +118,3 @@ module.exports = {
   logout,
   getMe
 };
-

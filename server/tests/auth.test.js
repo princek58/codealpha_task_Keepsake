@@ -54,8 +54,7 @@ describe('POST /api/auth/register', () => {
     email: 'daisy@example.com',
     password: 'Password123',
     displayName: 'Daisy',
-    bio: 'Gardening little blooms every day',
-    moodSticker: 'flower'
+    bio: 'Gardening little blooms every day'
   };
 
   test('Registers a new user successfully and sets httpOnly cookie', async () => {
@@ -68,7 +67,6 @@ describe('POST /api/auth/register', () => {
     expect(res.body.user.email).toBe(validUser.email);
     expect(res.body.user.displayName).toBe(validUser.displayName);
     expect(res.body.user.bio).toBe(validUser.bio);
-    expect(res.body.user.moodSticker).toBe(validUser.moodSticker);
     expect(res.body.user.passwordHash).toBeUndefined();
 
     const cookies = res.headers['set-cookie'];

@@ -1,24 +1,5 @@
 const mongoose = require('mongoose');
 
-const STICKER_ENUM = [
-  'heart',
-  'star',
-  'sparkle',
-  'flower',
-  'cloud',
-  'moon',
-  'smiley_blob',
-  'smiley blob',
-  'smiley-blob',
-  'butterfly',
-  'bow',
-  'cherry',
-  'plant',
-  'sprout',
-  'tiny house plant',
-  'tiny-house-plant'
-];
-
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -57,17 +38,13 @@ const userSchema = new mongoose.Schema({
     maxlength: [160, 'Bio cannot exceed 160 characters'],
     default: ''
   },
-  avatar: {
+  avatarPath: {
     type: String,
-    default: ''
+    default: null
   },
-  moodSticker: {
-    type: String,
-    enum: {
-      values: STICKER_ENUM,
-      message: 'Invalid mood sticker'
-    },
-    default: 'flower'
+  storageUsedBytes: {
+    type: Number,
+    default: 0
   },
   followers: [
     {
@@ -86,14 +63,6 @@ const userSchema = new mongoose.Schema({
     default: Date.now
   }
 });
-
-userSchema.virtual('mood')
-  .get(function () {
-    return this.moodSticker;
-  })
-  .set(function (val) {
-    this.moodSticker = val;
-  });
 
 userSchema.set('toJSON', {
   virtuals: true,
@@ -114,4 +83,3 @@ userSchema.set('toObject', {
 });
 
 module.exports = mongoose.model('User', userSchema);
-module.exports.STICKER_ENUM = STICKER_ENUM;

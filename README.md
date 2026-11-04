@@ -1,4 +1,4 @@
-# Bloomly 🌸
+# Keepsake
 
 > **"Where little moments bloom."**  
 > A calm, chronological, sticker-based social web app crafted with love, pastel aesthetics, and mindful interaction design.

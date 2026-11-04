@@ -4,7 +4,6 @@ const rateLimit = require('express-rate-limit');
 const { register, login, logout, getMe } = require('../controllers/authController');
 const protect = require('../middleware/auth');
 const validate = require('../middleware/validate');
-const { STICKER_ENUM } = require('../models/User');
 
 const router = express.Router();
 
@@ -50,29 +49,34 @@ const registerValidation = [
     .optional()
     .trim()
     .isLength({ max: 160 })
-    .withMessage('Bio cannot exceed 160 characters'),
-  body('moodSticker')
-    .optional()
-    .isIn(STICKER_ENUM)
-    .withMessage('Invalid mood sticker')
+    .withMessage('Bio cannot exceed 160 characters')
 ];
 
 const loginValidation = [
+  body('identifier')
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage('Identifier cannot be empty if provided'),
   body('email')
+    .optional()
     .trim()
     .isEmail()
-    .withMessage('Please provide a valid email')
-    .normalizeEmail(),
+    .withMessage('Please provide a valid email'),
   body('password')
     .notEmpty()
-    .withMessage('Password is required')
+    .withMessage('Password is required'),
+  body().custom((value, { req }) => {
+    if (!req.body.identifier && !req.body.email && !req.body.username) {
+      throw new Error('Please provide an email or username');
+    }
+    return true;
+  })
 ];
 
 router.post('/register', registerLimiter, registerValidation, validate, register);
 router.post('/login', loginLimiter, loginValidation, validate, login);
-router.post('/logout', logout);
+router.post('/logout', protect, logout);
 router.get('/me', protect, getMe);
 
 module.exports = router;
-module.exports.loginLimiter = loginLimiter;
-module.exports.registerLimiter = registerLimiter;

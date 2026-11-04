@@ -1,7 +1,7 @@
 {
-  "name": "bloomly",
+  "name": "keepsake",
   "version": "1.0.0",
-  "description": "A cozy social media web app where little moments bloom",
+  "description": "A memory-keeping social web app",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
