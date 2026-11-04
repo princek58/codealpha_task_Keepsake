@@ -2,7 +2,7 @@ const request = require('supertest');
 const app = require('../app');
 const Notification = require('../models/Notification');
 const { connectTestDB, clearTestDB, closeTestDB } = require('./setup');
-const { createTestUser } = require('./testHelper');
+const { createTestUser, createTestMedia, createTestMoment } = require('./testHelper');
 
 beforeAll(async () => {
   process.env.NODE_ENV = 'test';
@@ -38,12 +38,14 @@ describe('Notifications API', () => {
     const receiver = await createTestUser({ username: 'receiver_user' });
     const sender = await createTestUser({ username: 'sender_user' });
 
-    // Create a post and like it
-    const postRes = await request(app)
-      .post('/api/posts')
-      .set('Cookie', receiver.cookie)
-      .send({ text: 'Notification receiver bloom' });
-    const postId = postRes.body.post.id;
+    // Create a public moment
+    const media = await createTestMedia(receiver.user.id);
+    const moment = await createTestMoment(receiver.user.id, [media._id], {
+      title: 'Notification receiver moment',
+      caption: 'Notification receiver moment',
+      visibility: 'public'
+    });
+    const momentId = moment._id.toString();
 
     // Follow and Like from sender
     await request(app)
@@ -51,7 +53,7 @@ describe('Notifications API', () => {
       .set('Cookie', sender.cookie);
 
     await request(app)
-      .post(`/api/posts/${postId}/like`)
+      .post(`/api/moments/${momentId}/like`)
       .set('Cookie', sender.cookie);
 
     // Check unread count
@@ -69,7 +71,7 @@ describe('Notifications API', () => {
     expect(listRes.body.items).toHaveLength(2);
     expect(listRes.body.items[0].type).toBe('like');
     expect(listRes.body.items[0].from.username).toBe('sender_user');
-    expect(listRes.body.items[0].postPreview).toBe('Notification receiver bloom');
+    expect(listRes.body.items[0].momentPreview).toBe('Notification receiver moment');
     expect(listRes.body.items[0].read).toBe(false);
 
     // Mark single notification read
@@ -115,4 +117,3 @@ describe('Notifications API', () => {
     expect(res.status).toBe(404);
   });
 });
-

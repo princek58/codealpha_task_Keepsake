@@ -1,11 +1,11 @@
 const request = require('supertest');
-const path = require('path');
-const fs = require('fs');
+const sharp = require('sharp');
 const app = require('../app');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const storage = require('../services/storage');
 const { connectTestDB, clearTestDB, closeTestDB } = require('./setup');
-const { createTestUser } = require('./testHelper');
+const { createTestUser, createTestMedia, createTestMoment } = require('./testHelper');
 
 beforeAll(async () => {
   process.env.NODE_ENV = 'test';
@@ -96,8 +96,7 @@ describe('Users API', () => {
       const target = await createTestUser({
         username: 'target_bloomer',
         displayName: 'Target Bloomer',
-        bio: 'Little cozy garden',
-        moodSticker: 'heart'
+        bio: 'Little cozy garden'
       });
 
       // viewer follows target
@@ -114,7 +113,6 @@ describe('Users API', () => {
       expect(res.body.user.username).toBe('target_bloomer');
       expect(res.body.user.displayName).toBe('Target Bloomer');
       expect(res.body.user.bio).toBe('Little cozy garden');
-      expect(res.body.user.moodSticker).toBe('heart');
       expect(res.body.user.followersCount).toBe(1);
       expect(res.body.user.followingCount).toBe(0);
       expect(res.body.user.isFollowing).toBe(true);
@@ -152,43 +150,54 @@ describe('Users API', () => {
     });
   });
 
-  describe('PUT /api/users/me', () => {
-    test('Updates displayName, bio, moodSticker and cleans up replaced avatar', async () => {
+  describe('PUT /api/users/me and Avatar serving', () => {
+    test('Updates profile, processes avatar to webp, replaces old avatar, and serves avatar', async () => {
       const me = await createTestUser({ username: 'editor_me' });
 
-      // First upload an avatar
-      const fakeImage1 = Buffer.from('fake-avatar-1');
+      const fakeImage1 = await sharp({
+        create: { width: 300, height: 300, channels: 3, background: { r: 255, g: 0, b: 0 } }
+      })
+        .jpeg()
+        .toBuffer();
+
       const res1 = await request(app)
         .put('/api/users/me')
         .set('Cookie', me.cookie)
         .field('displayName', 'Updated Daisy')
         .field('bio', 'Blooming blossoms')
-        .field('moodSticker', 'star')
-        .attach('avatar', fakeImage1, 'avatar1.png');
+        .attach('avatar', fakeImage1, 'avatar1.jpg');
 
       expect(res1.status).toBe(200);
       expect(res1.body.user.displayName).toBe('Updated Daisy');
       expect(res1.body.user.bio).toBe('Blooming blossoms');
-      expect(res1.body.user.moodSticker).toBe('star');
-      expect(res1.body.user.avatar).toMatch(/^\/uploads\/[a-f0-9]+\.png$/);
+      expect(res1.body.user.avatarUrl).toBe('/api/users/editor_me/avatar');
 
-      const firstAvatarPath = path.join(
-        __dirname,
-        '../uploads',
-        path.basename(res1.body.user.avatar)
-      );
-      expect(fs.existsSync(firstAvatarPath)).toBe(true);
+      // Fetch avatar
+      const avatarRes = await request(app)
+        .get('/api/users/editor_me/avatar')
+        .set('Cookie', me.cookie);
+      expect(avatarRes.status).toBe(200);
+      expect(avatarRes.headers['content-type']).toBe('image/webp');
+      expect(avatarRes.headers['cache-control']).toContain('private');
 
-      // Second upload should replace and delete first avatar file from disk
-      const fakeImage2 = Buffer.from('fake-avatar-2');
+      const userDoc = await User.findById(me.user.id);
+      const firstAvatarRelPath = userDoc.avatarPath;
+      expect(await storage.exists(firstAvatarRelPath)).toBe(true);
+
+      // Second upload should replace and delete first avatar file from storage
+      const fakeImage2 = await sharp({
+        create: { width: 200, height: 200, channels: 3, background: { r: 0, g: 255, b: 0 } }
+      })
+        .png()
+        .toBuffer();
+
       const res2 = await request(app)
         .put('/api/users/me')
         .set('Cookie', me.cookie)
-        .attach('avatar', fakeImage2, 'avatar2.jpg');
+        .attach('avatar', fakeImage2, 'avatar2.png');
 
       expect(res2.status).toBe(200);
-      expect(res2.body.user.avatar).toMatch(/^\/uploads\/[a-f0-9]+\.jpg$/);
-      expect(fs.existsSync(firstAvatarPath)).toBe(false);
+      expect(await storage.exists(firstAvatarRelPath)).toBe(false);
 
       // Now remove avatar via removeAvatar=true
       const res3 = await request(app)
@@ -197,23 +206,21 @@ describe('Users API', () => {
         .field('removeAvatar', 'true');
 
       expect(res3.status).toBe(200);
-      expect(res3.body.user.avatar).toBe('');
+      expect(res3.body.user.avatarUrl).toBeNull();
     });
 
-    test('Rejects invalid mood sticker and oversized display name', async () => {
+    test('Rejects oversized display name', async () => {
       const me = await createTestUser({ username: 'validator_user' });
 
       const res = await request(app)
         .put('/api/users/me')
         .set('Cookie', me.cookie)
         .send({
-          displayName: 'A'.repeat(35),
-          moodSticker: 'not_a_valid_sticker_name'
+          displayName: 'A'.repeat(35)
         });
 
       expect(res.status).toBe(400);
       expect(res.body.errors).toHaveProperty('displayName');
-      expect(res.body.errors).toHaveProperty('moodSticker');
     });
   });
 
@@ -280,4 +287,3 @@ describe('Users API', () => {
     });
   });
 });
-

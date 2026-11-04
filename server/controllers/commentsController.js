@@ -1,19 +1,25 @@
 const mongoose = require('mongoose');
 const Comment = require('../models/Comment');
-const Post = require('../models/Post');
+const Moment = require('../models/Moment');
 const { formatComment, getPagination } = require('../utils/formatters');
 const { createNotification, removeNotification } = require('../utils/notificationHelper');
+const { canViewMoment } = require('../services/visibility');
 
 const createComment = async (req, res, next) => {
   try {
-    const postId = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(postId)) {
-      return res.status(404).json({ message: 'Post not found' });
+    const momentId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(momentId)) {
+      return res.status(404).json({ message: 'Moment not found' });
     }
 
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+    const moment = await Moment.findById(momentId);
+    if (!moment) {
+      return res.status(404).json({ message: 'Moment not found' });
+    }
+
+    const allowed = await canViewMoment(req.user, moment);
+    if (!allowed) {
+      return res.status(404).json({ message: 'Moment not found' });
     }
 
     const text = req.body.text ? req.body.text.trim() : '';
@@ -22,20 +28,22 @@ const createComment = async (req, res, next) => {
     }
 
     const comment = await Comment.create({
-      post: post._id,
+      moment: moment._id,
       author: req.user._id,
       text
     });
 
-    await Post.findByIdAndUpdate(post._id, { $inc: { commentsCount: 1 } });
-    await createNotification({
-      to: post.author,
-      from: req.user._id,
-      type: 'comment',
-      post: post._id
-    });
+    await Moment.findByIdAndUpdate(moment._id, { $inc: { commentsCount: 1 } });
+    if (moment.owner.toString() !== req.user._id.toString()) {
+      await createNotification({
+        to: moment.owner,
+        from: req.user._id,
+        type: 'comment',
+        moment: moment._id
+      });
+    }
 
-    await comment.populate('author', 'username displayName avatar moodSticker');
+    await comment.populate('author', 'username displayName avatarPath');
 
     res.status(201).json({
       comment: formatComment(comment)
@@ -47,30 +55,37 @@ const createComment = async (req, res, next) => {
 
 const getComments = async (req, res, next) => {
   try {
-    const postId = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(postId)) {
-      return res.status(404).json({ message: 'Post not found' });
+    const momentId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(momentId)) {
+      return res.status(404).json({ message: 'Moment not found' });
     }
 
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+    const moment = await Moment.findById(momentId);
+    if (!moment) {
+      return res.status(404).json({ message: 'Moment not found' });
+    }
+
+    const allowed = await canViewMoment(req.user, moment);
+    if (!allowed) {
+      return res.status(404).json({ message: 'Moment not found' });
     }
 
     const { page, limit, skip } = getPagination(req);
 
-    const comments = await Comment.find({ post: post._id })
-      .sort({ createdAt: 1 })
-      .skip(skip)
-      .limit(limit + 1)
-      .populate('author', 'username displayName avatar moodSticker');
+    const [comments, total] = await Promise.all([
+      Comment.find({ moment: moment._id })
+        .sort({ createdAt: 1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('author', 'username displayName avatarPath'),
+      Comment.countDocuments({ moment: moment._id })
+    ]);
 
-    const hasMore = comments.length > limit;
-    const pageComments = hasMore ? comments.slice(0, limit) : comments;
-
-    const items = pageComments.map(formatComment);
-
-    res.status(200).json({ items, page, hasMore });
+    res.status(200).json({
+      items: comments.map(formatComment),
+      page,
+      hasMore: skip + comments.length < total
+    });
   } catch (err) {
     next(err);
   }
@@ -88,28 +103,30 @@ const deleteComment = async (req, res, next) => {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
-    const post = await Post.findById(comment.post);
+    const moment = await Moment.findById(comment.moment);
 
     const isCommentAuthor = comment.author.toString() === req.user._id.toString();
-    const isPostAuthor = post && post.author.toString() === req.user._id.toString();
+    const isMomentOwner = moment && moment.owner.toString() === req.user._id.toString();
 
-    if (!isCommentAuthor && !isPostAuthor) {
+    if (!isCommentAuthor && !isMomentOwner) {
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }
 
-    await Post.findByIdAndUpdate(comment.post, {
-      $inc: { commentsCount: -1 }
-    });
+    if (moment) {
+      await Moment.findByIdAndUpdate(comment.moment, {
+        $inc: { commentsCount: -1 }
+      });
+    }
 
     await removeNotification({
       from: comment.author,
       type: 'comment',
-      post: comment.post
+      moment: comment.moment
     });
 
     await comment.deleteOne();
 
-    res.status(200).json({ message: 'Comment deleted successfully' });
+    res.status(200).json({ success: true, message: 'Comment deleted successfully' });
   } catch (err) {
     next(err);
   }
@@ -120,4 +137,3 @@ module.exports = {
   getComments,
   deleteComment
 };
-

@@ -40,8 +40,8 @@ describe('System and Scaffolding Endpoints', () => {
   });
 
   test('Protected routes reject unauthenticated requests with 401', async () => {
-    const postsRes = await request(app).get('/api/posts/feed');
-    expect(postsRes.status).toBe(401);
+    const momentsRes = await request(app).get('/api/moments/feed');
+    expect(momentsRes.status).toBe(401);
 
     const notificationsRes = await request(app).get('/api/notifications');
     expect(notificationsRes.status).toBe(401);

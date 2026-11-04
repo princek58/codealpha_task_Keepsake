@@ -30,3 +30,4 @@ This document records the components and legacy code retired as part of Stage 0 
 - **Deleted `scripts/verify_phase3.js`:** Bloomly Phase 3 static verifier.
 - **Deleted `scripts/walkthrough.js`:** Old HTTP walkthrough script (to be replaced with new multi-user Keepsake walkthrough in Stage 10).
 - `client/` folder is left untouched as required.
+

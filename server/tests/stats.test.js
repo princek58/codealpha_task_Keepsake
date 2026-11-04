@@ -1,9 +1,7 @@
 const request = require('supertest');
 const app = require('../app');
-const User = require('../models/User');
-const Post = require('../models/Post');
 const statsRouter = require('../routes/stats');
-const { createTestUser } = require('./testHelper');
+const { createTestUser, createTestMedia, createTestMoment } = require('./testHelper');
 const { connectTestDB, clearTestDB, closeTestDB } = require('./setup');
 
 beforeAll(async () => {
@@ -24,21 +22,32 @@ afterAll(async () => {
 });
 
 describe('GET /api/stats', () => {
-  it('should return 200 with real user and post counts', async () => {
+  it('should return 200 with real user and moment counts', async () => {
     const res = await request(app).get('/api/stats');
     expect(res.status).toBe(200);
     expect(typeof res.body.users).toBe('number');
-    expect(typeof res.body.posts).toBe('number');
+    expect(typeof res.body.moments).toBe('number');
   });
 
-  it('should reflect user and post documents created', async () => {
+  it('should reflect user and public moment documents created', async () => {
     const { user } = await createTestUser();
-    await Post.create({ author: user.id, text: 'Stats test post' });
+    const media = await createTestMedia(user.id);
+    await createTestMoment(user.id, [media._id], { visibility: 'public' });
 
     const res = await request(app).get('/api/stats');
     expect(res.status).toBe(200);
     expect(res.body.users).toBeGreaterThanOrEqual(1);
-    expect(res.body.posts).toBeGreaterThanOrEqual(1);
+    expect(res.body.moments).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should not count private moments in public stats', async () => {
+    const { user } = await createTestUser();
+    const media = await createTestMedia(user.id);
+    await createTestMoment(user.id, [media._id], { visibility: 'private' });
+
+    const res = await request(app).get('/api/stats');
+    expect(res.status).toBe(200);
+    expect(res.body.moments).toBe(0);
   });
 
   it('should return cached response on subsequent call', async () => {

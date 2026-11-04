@@ -12,6 +12,9 @@ const rateLimit = require('express-rate-limit');
 
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
+const mediaRoutes = require('./routes/media');
+const momentsRoutes = require('./routes/moments');
+const albumsRoutes = require('./routes/albums');
 const commentsRoutes = require('./routes/comments');
 const notificationsRoutes = require('./routes/notifications');
 const statsRoutes = require('./routes/stats');
@@ -78,6 +81,9 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/media', mediaRoutes);
+app.use('/api/moments', momentsRoutes);
+app.use('/api/albums', albumsRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/stats', statsRoutes);

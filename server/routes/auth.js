@@ -76,7 +76,10 @@ const loginValidation = [
 
 router.post('/register', registerLimiter, registerValidation, validate, register);
 router.post('/login', loginLimiter, loginValidation, validate, login);
-router.post('/logout', protect, logout);
+router.post('/logout', logout);
 router.get('/me', protect, getMe);
+
+router.loginLimiter = loginLimiter;
+router.registerLimiter = registerLimiter;
 
 module.exports = router;

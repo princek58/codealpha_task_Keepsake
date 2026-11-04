@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
 const commentSchema = new mongoose.Schema({
-  post: {
+  moment: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post',
-    required: [true, 'Post is required']
+    ref: 'Moment',
+    required: [true, 'Moment is required']
   },
   author: {
     type: mongoose.Schema.Types.ObjectId,
@@ -23,8 +23,8 @@ const commentSchema = new mongoose.Schema({
   }
 });
 
-commentSchema.index({ post: 1, createdAt: -1 });
-commentSchema.index({ post: 1, createdAt: 1 });
+commentSchema.index({ moment: 1, createdAt: -1 });
+commentSchema.index({ moment: 1, createdAt: 1 });
 
 commentSchema.set('toJSON', {
   transform: (doc, ret) => {
@@ -34,4 +34,3 @@ commentSchema.set('toJSON', {
 });
 
 module.exports = mongoose.model('Comment', commentSchema);
-

@@ -19,9 +19,9 @@ const notificationSchema = new mongoose.Schema({
       message: 'Type must be like, comment, or follow'
     }
   },
-  post: {
+  moment: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post',
+    ref: 'Moment',
     default: null
   },
   read: {
@@ -45,4 +45,3 @@ notificationSchema.set('toJSON', {
 });
 
 module.exports = mongoose.model('Notification', notificationSchema);
-

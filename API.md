@@ -1,12 +1,13 @@
-# Bloomly API Documentation
+# Keepsake API Documentation
 
-Comprehensive reference for all backend endpoints in Bloomly.
+Comprehensive reference for all backend endpoints in Keepsake, a memory-keeping social web app.
 
 ## Overview
 - **Base URL:** `http://localhost:5000/api`
 - **Data Format:** All requests and responses use JSON (except file uploads which use `multipart/form-data`).
-- **Authentication:** JWT token stored in an `httpOnly`, `SameSite=Lax` cookie named `token`. Alternatively, a `Bearer <token>` in the `Authorization` header is supported for clients unable to use cookies.
-- **Error Format:**
+- **Authentication:** JWT token stored in an `httpOnly`, `SameSite=Lax` cookie named `token`. Alternatively, a `Bearer <token>` in the `Authorization` header is supported.
+- **CSRF Protection:** State-changing requests (`POST`, `PUT`, `PATCH`, `DELETE`) require matching `Origin` or `Referer` headers matching `CLIENT_ORIGIN`.
+- **Standard Error Response:**
   ```json
   {
     "message": "Human readable error description",
@@ -15,368 +16,485 @@ Comprehensive reference for all backend endpoints in Bloomly.
     }
   }
   ```
-  Status codes: `400` (Validation), `401` (Unauthenticated), `403` (Forbidden / Unauthorized), `404` (Not Found), `409` (Conflict / Duplicate), `429` (Rate Limited), `500` (Server Error).
+  Status codes: `400` (Validation / Bad Request), `401` (Unauthenticated), `403` (Forbidden / Unauthorized), `404` (Not Found), `409` (Conflict / Duplicate), `416` (Range Not Satisfiable), `429` (Rate Limited), `500` (Server Error).
 
 ---
 
-## Response Shapes
+## Core Entities & Response Shapes
 
-### Public User Shape
+### 1. Public User
 ```json
 {
-  "id": "65b...",
-  "username": "daisy_bloom",
+  "id": "6728e8...",
+  "username": "daisy",
   "displayName": "Daisy",
-  "bio": "Gardening little moments",
-  "avatar": "/uploads/random_hex.png",
-  "moodSticker": "flower",
-  "followersCount": 12,
-  "followingCount": 5,
-  "postsCount": 8,
+  "bio": "Keeper of little cozy moments",
+  "avatarUrl": "/api/users/daisy/avatar",
+  "followersCount": 14,
+  "followingCount": 8,
+  "momentsCount": 12,
+  "albumsCount": 3,
   "isFollowing": false,
   "isMe": false,
-  "createdAt": "2026-11-01T20:00:00.000Z"
+  "createdAt": "2026-11-04T10:00:00.000Z"
 }
 ```
 
-### Post Shape
+### 2. Media
 ```json
 {
-  "id": "65c...",
-  "text": "Morning bloom in my garden!",
-  "image": "/uploads/random_hex.jpg",
+  "id": "6728f1...",
+  "type": "image",
+  "status": "ready",
+  "failureReason": null,
+  "width": 1200,
+  "height": 800,
+  "durationSec": null,
+  "takenAt": "2026-10-15T14:30:00.000Z",
+  "caption": "Sunset by the lake",
+  "place": "Lake Tahoe",
+  "blurDataUrl": "data:image/webp;base64,UklGR...",
+  "urls": {
+    "thumb": "/api/media/6728f1.../file?variant=thumb",
+    "display": "/api/media/6728f1.../file?variant=display",
+    "video": null,
+    "poster": null,
+    "original": "/api/media/6728f1.../file?variant=original"
+  },
+  "sizeBytes": 142050
+}
+```
+*Note: `urls.original` and `sizeBytes` are present only for the media owner.*
+*Note: For token-accessed media (e.g. via shared album link), `&token=<shareToken>` is appended to all URLs.*
+
+### 3. Moment
+```json
+{
+  "id": "672902...",
+  "title": "Autumn Afternoon",
+  "caption": "Walking under golden trees with cozy tea",
+  "media": [
+    {
+      "id": "6728f1...",
+      "type": "image",
+      "status": "ready",
+      "width": 1200,
+      "height": 800,
+      "blurDataUrl": "data:image/webp;base64,...",
+      "urls": {
+        "thumb": "/api/media/6728f1.../file?variant=thumb",
+        "display": "/api/media/6728f1.../file?variant=display",
+        "video": null,
+        "poster": null
+      }
+    }
+  ],
+  "layout": {
+    "type": "collage",
+    "template": "collage-1-2",
+    "gap": 8,
+    "background": "#ffffff"
+  },
+  "takenOn": "2026-10-15T14:30:00.000Z",
+  "place": "Kyoto, Japan",
+  "tags": ["autumn", "travel", "tea"],
   "author": {
-    "id": "65b...",
-    "username": "daisy_bloom",
+    "id": "6728e8...",
+    "username": "daisy",
     "displayName": "Daisy",
-    "avatar": "/uploads/avatar.png",
-    "moodSticker": "flower"
+    "avatarUrl": "/api/users/daisy/avatar"
   },
-  "likesCount": 4,
+  "likesCount": 5,
   "commentsCount": 2,
-  "likedByMe": true,
-  "createdAt": "2026-11-01T20:10:00.000Z"
+  "likedByMe": false,
+  "visibility": "followers",
+  "createdAt": "2026-11-04T12:00:00.000Z"
 }
 ```
+*Note: `visibility` is only included for the author.*
 
-### Comment Shape
+### 4. Album
 ```json
 {
-  "id": "65d...",
-  "postId": "65c...",
-  "text": "This flower is so pretty!",
-  "author": {
-    "id": "65e...",
-    "username": "rose_petal",
-    "displayName": "Rose",
-    "avatar": "",
-    "moodSticker": "heart"
+  "id": "672910...",
+  "title": "Kyoto Trip 2026",
+  "description": "Photographs and clips from our Kyoto travels",
+  "cover": {
+    "id": "6728f1...",
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "thumb": "/api/media/6728f1.../file?variant=thumb",
+      "display": "/api/media/6728f1.../file?variant=display"
+    }
   },
-  "createdAt": "2026-11-01T20:15:00.000Z"
+  "mediaCount": 24,
+  "author": {
+    "id": "6728e8...",
+    "username": "daisy",
+    "displayName": "Daisy",
+    "avatarUrl": "/api/users/daisy/avatar"
+  },
+  "visibility": "private",
+  "shared": true,
+  "shareToken": "9f8a7c2b...",
+  "createdAt": "2026-11-04T11:00:00.000Z",
+  "updatedAt": "2026-11-04T12:30:00.000Z"
+}
+```
+*Note: `visibility`, `shared`, and `shareToken` are only included for the album owner.*
+
+### 5. Comment
+```json
+{
+  "id": "672915...",
+  "momentId": "672902...",
+  "text": "Such a peaceful atmosphere!",
+  "author": {
+    "id": "6728e9...",
+    "username": "willow",
+    "displayName": "Willow",
+    "avatarUrl": null
+  },
+  "createdAt": "2026-11-04T12:15:00.000Z"
 }
 ```
 
-### Notification Shape
+### 6. Notification
 ```json
 {
-  "id": "65f...",
+  "id": "672920...",
   "type": "like",
   "from": {
-    "id": "65e...",
-    "username": "rose_petal",
-    "displayName": "Rose",
-    "avatar": ""
+    "id": "6728e9...",
+    "username": "willow",
+    "displayName": "Willow",
+    "avatarUrl": null
   },
-  "postId": "65c...",
-  "postPreview": "Morning bloom in my garden!",
+  "momentId": "672902...",
+  "momentPreview": "Autumn Afternoon",
   "read": false,
-  "createdAt": "2026-11-01T20:20:00.000Z"
-}
-```
-
-### Paginated List Shape
-```json
-{
-  "items": [],
-  "page": 1,
-  "hasMore": false
+  "createdAt": "2026-11-04T12:16:00.000Z"
 }
 ```
 
 ---
 
-## 1. Health & Statistics
-### `GET /api/health`
-Check server health.
+## Authentication Endpoints
+
+### POST `/api/auth/register`
 - **Auth:** None
-- **Response (200):**
-  ```json
-  { "status": "ok" }
-  ```
+- **Body:**
+  - `username` (string, 3-20 chars, alphanumeric + underscores, required)
+  - `email` (string, valid email, required)
+  - `password` (string, min 8 chars with 1 letter & 1 number, required)
+  - `displayName` (string, max 30 chars, optional)
+  - `bio` (string, max 160 chars, optional)
+- **Response:** `201 Created` with `{ user }` and `Set-Cookie: token=...`
 
-### `GET /api/stats`
-Get public community counts (cached for 60 seconds, no sensitive data).
+### POST `/api/auth/login`
 - **Auth:** None
-- **Response (200):**
-  ```json
-  {
-    "users": 8,
-    "posts": 25
-  }
-  ```
+- **Body:**
+  - `email` or `username` or `identifier` (required)
+  - `password` (required)
+- **Response:** `200 OK` with `{ user }` and `Set-Cookie: token=...`
 
----
-
-## 2. Authentication
-
-### `POST /api/auth/register`
-Create a new user account.
-- **Auth:** None (Strict rate limit: 10 per 15 min)
-- **Request Body (JSON):**
-  ```json
-  {
-    "username": "daisy_bloom",
-    "email": "daisy@example.com",
-    "password": "Password123",
-    "displayName": "Daisy",
-    "bio": "Growing blossoms",
-    "moodSticker": "flower"
-  }
-  ```
-- **Response (201):** Sets `token` cookie.
-  ```json
-  {
-    "message": "Registration successful",
-    "user": { ... }
-  }
-  ```
-- **Errors:** `400` (Validation), `409` (Username or email already in use), `429` (Rate limit).
-
-### `POST /api/auth/login`
-Log into an existing account.
-- **Auth:** None (Strict rate limit: 10 per 15 min)
-- **Request Body (JSON):**
-  ```json
-  {
-    "email": "daisy@example.com",
-    "password": "Password123"
-  }
-  ```
-- **Response (200):** Sets `token` cookie.
-  ```json
-  {
-    "message": "Login successful",
-    "user": { ... }
-  }
-  ```
-- **Errors:** `401` (`"Invalid email or password"`), `429` (Rate limit).
-
-### `POST /api/auth/logout`
-Clear the authentication cookie.
+### POST `/api/auth/logout`
 - **Auth:** None
-- **Response (200):** Clears `token` cookie.
-  ```json
-  { "message": "Logged out successfully" }
-  ```
+- **Response:** `200 OK` with `{ message: "Logged out successfully" }` (clears cookie)
 
-### `GET /api/auth/me`
-Retrieve the authenticated user's own profile.
-- **Auth:** Required
-- **Response (200):**
-  ```json
-  {
-    "user": { ... }
-  }
-  ```
-- **Errors:** `401` (Authentication required).
+### GET `/api/auth/me`
+- **Auth:** Protected
+- **Response:** `200 OK` with `{ user }`
 
 ---
 
-## 3. Users
+## Users & Storage Endpoints
 
-### `GET /api/users/search?q=:query&page=:page&limit=:limit`
-Search users by username or display name.
-- **Auth:** Optional
-- **Query Params:**
-  - `q` (required, string min 2 chars)
-  - `page` (optional, default 1)
-  - `limit` (optional, default 10, max 30)
-- **Response (200):** `{ items: [PublicUser], page: 1, hasMore: false }`
-- **Errors:** `400` (Search query too short).
-
-### `GET /api/users/suggestions`
-Get up to 6 user recommendations for the current user (excluding self and already followed users, prioritizing second-degree connections then newest users).
-- **Auth:** Required
-- **Response (200):**
+### GET `/api/users/me/storage`
+- **Auth:** Protected
+- **Response:** `200 OK`
   ```json
   {
-    "items": [PublicUser]
+    "usedBytes": 10485760,
+    "quotaBytes": 524288000,
+    "percent": 2,
+    "counts": {
+      "images": 15,
+      "videos": 2
+    }
   }
   ```
 
-### `GET /api/users/:username`
-Get public profile of a user with counts (`followersCount`, `followingCount`, `postsCount`, `isFollowing`, `isMe`).
+### PUT `/api/users/me`
+- **Auth:** Protected
+- **Content-Type:** `multipart/form-data`
+- **Form Fields:**
+  - `displayName` (string, 1-30 chars, optional)
+  - `bio` (string, max 160 chars, optional)
+  - `avatar` (image file, optional, processed to 256x256 webp)
+  - `removeAvatar` (boolean string `"true"`, optional)
+- **Response:** `200 OK` with `{ user }`
+
+### GET `/api/users/:username/avatar`
+- **Auth:** Protected
+- **Response:** `200 OK` with `Content-Type: image/webp` and cache headers (`ETag`, `Cache-Control: private, max-age=86400`). Returns `404` if user has no avatar.
+
+### GET `/api/users/search?q=:query`
 - **Auth:** Optional
-- **Response (200):**
-  ```json
-  {
-    "user": { ...PublicUser }
-  }
-  ```
-- **Errors:** `404` (User not found).
+- **Query:** `q` (min 2 chars), `page` (default 1), `limit` (default 30)
+- **Response:** `200 OK` with `{ items: [User], page, hasMore }`
 
-### `GET /api/users/:username/followers`
-List followers of a user.
+### GET `/api/users/suggestions`
+- **Auth:** Protected
+- **Response:** `200 OK` with `{ items: [User] }` (prioritizes 2nd degree follows)
+
+### GET `/api/users/:username`
 - **Auth:** Optional
-- **Query Params:** `?page=1&limit=10`
-- **Response (200):** `{ items: [PublicUser], page: 1, hasMore: false }`
-- **Errors:** `404` (User not found).
+- **Response:** `200 OK` with `{ user }` (counts reflect what viewer is allowed to see)
 
-### `GET /api/users/:username/following`
-List users followed by a user.
+### POST `/api/users/:id/follow`
+- **Auth:** Protected
+- **Response:** `200 OK` with `{ following: boolean, followersCount: number }`
+
+### GET `/api/users/:username/followers`
 - **Auth:** Optional
-- **Query Params:** `?page=1&limit=10`
-- **Response (200):** `{ items: [PublicUser], page: 1, hasMore: false }`
-- **Errors:** `404` (User not found).
+- **Query:** `page`, `limit`
+- **Response:** `200 OK` with `{ items: [User], page, hasMore }`
 
-### `PUT /api/users/me`
-Update current user profile.
-- **Auth:** Required
-- **Content-Type:** `multipart/form-data` or `application/json`
-- **Fields:**
-  - `displayName` (optional, string 1-30 chars)
-  - `bio` (optional, string max 160 chars)
-  - `moodSticker` (optional, enum value)
-  - `avatar` (optional, image file: jpg/png/webp/gif <= 2MB)
-  - `removeAvatar` (optional boolean, `"true"` to remove current avatar)
-- **Response (200):** `{ user: { ...PublicUser } }`
-- **Errors:** `400` (Validation failure).
-
-### `POST /api/users/:id/follow`
-Toggle follow/unfollow for a user.
-- **Auth:** Required (Action rate limited)
-- **Response (200):**
-  ```json
-  {
-    "following": true,
-    "followersCount": 5
-  }
-  ```
-- **Errors:** `400` (Cannot follow yourself, invalid ID), `404` (User not found).
+### GET `/api/users/:username/following`
+- **Auth:** Optional
+- **Query:** `page`, `limit`
+- **Response:** `200 OK` with `{ items: [User], page, hasMore }`
 
 ---
 
-## 4. Posts
+## Media Endpoints
 
-### `POST /api/posts`
-Create a new bloom.
-- **Auth:** Required (Action rate limited)
-- **Content-Type:** `multipart/form-data` or `application/json`
-- **Fields:**
-  - `text` (optional, string max 500 chars)
-  - `image` (optional, image file <= 2MB)
-  - *At least one of `text` or `image` is required.*
-- **Response (201):** `{ post: { ...Post } }`
-- **Errors:** `400` (Text or image is required, text too long).
+### POST `/api/media`
+- **Auth:** Protected
+- **Content-Type:** `multipart/form-data`
+- **Form Fields:**
+  - `files` (array of up to 10 files: JPG, PNG, WebP, GIF, MP4, MOV, WebM)
+- **Per-File Error Handling:** Returns `{ items: [Media], errors: [{ originalName, code, message }] }`.
+- **Response:** `200 OK`
 
-### `GET /api/posts/feed`
-Feed of posts from users the current user follows plus their own posts, newest first.
-- **Auth:** Required
-- **Query Params:** `?page=1&limit=10`
-- **Response (200):** `{ items: [Post], page: 1, hasMore: false }`
+### GET `/api/media`
+- **Auth:** Protected (returns authenticated user's library)
+- **Query:**
+  - `type`: `image` or `video` (optional)
+  - `from`, `to`: ISO date strings (optional)
+  - `sort`: `taken` (default uploaded newest first)
+  - `page`, `limit` (default 30, max 60)
+- **Response:** `200 OK` with `{ items: [Media], page, hasMore }`
 
-### `GET /api/posts/explore`
-All posts across the platform, newest first.
+### GET `/api/media/status?ids=a,b,c`
+- **Auth:** Protected
+- **Query:** `ids` (comma-separated, max 30)
+- **Response:** `200 OK` with `{ items: [Media] }`
+
+### GET `/api/media/:id`
 - **Auth:** Optional
-- **Query Params:** `?page=1&limit=10`
-- **Response (200):** `{ items: [Post], page: 1, hasMore: false }`
+- **Query:** `token` (optional share token)
+- **Response:** `200 OK` with `{ media: Media }` if permitted; `404 Not Found` if private or unviewable.
 
-### `GET /api/posts/user/:username`
-Posts authored by a specific user (supports username or user ID).
+### PATCH `/api/media/:id`
+- **Auth:** Protected (owner only)
+- **Body:** `caption` (max 300), `place` (max 80), `takenAt` (date or null)
+- **Response:** `200 OK` with `{ media: Media }`
+
+### DELETE `/api/media/:id`
+- **Auth:** Protected (owner only)
+- **Response:** `200 OK` with `{ success: true, deletedCount: 1 }`
+
+### POST `/api/media/bulk-delete`
+- **Auth:** Protected (owner only)
+- **Body:** `{ ids: ["id1", "id2"] }` (max 100)
+- **Response:** `200 OK` with `{ success: true, deletedCount }`
+
+### GET `/api/media/:id/file`
 - **Auth:** Optional
-- **Query Params:** `?page=1&limit=10`
-- **Response (200):** `{ items: [Post], page: 1, hasMore: false }`
-- **Errors:** `404` (User not found).
-
-### `GET /api/posts/:id`
-Get a single post by ID.
-- **Auth:** Optional
-- **Response (200):** `{ post: { ...Post } }`
-- **Errors:** `404` (Post not found).
-
-### `DELETE /api/posts/:id`
-Delete a post (only allowed for the author). Cascades deletion of associated comments, notifications, and uploaded image.
-- **Auth:** Required
-- **Response (200):** `{ "message": "Post deleted successfully" }`
-- **Errors:** `403` (Not authorized to delete this post), `404` (Post not found).
-
-### `POST /api/posts/:id/like`
-Toggle like/unlike on a post.
-- **Auth:** Required (Action rate limited)
-- **Response (200):**
-  ```json
-  {
-    "liked": true,
-    "likesCount": 3
-  }
-  ```
-- **Errors:** `404` (Post not found).
+- **Query:**
+  - `variant`: `thumb` | `display` | `video` | `poster` | `original` (default `display`)
+  - `token`: Album share token if accessing via shared link
+- **Notes:**
+  - `variant=original` is strictly owner-only (strangers get 404).
+  - Video supports HTTP `Range` requests (`206 Partial Content`) for seeking.
+  - Returns `404` for missing files or unauthorized access.
 
 ---
 
-## 5. Comments
+## Moments Endpoints
 
-### `POST /api/posts/:id/comments`
-Add a comment to a post.
-- **Auth:** Required (Action rate limited)
-- **Request Body (JSON):**
-  ```json
-  {
-    "text": "Such a cozy post!"
-  }
-  ```
-- **Response (201):** `{ comment: { ...Comment } }`
-- **Errors:** `400` (Text required, max 300 chars), `404` (Post not found).
+### POST `/api/moments`
+- **Auth:** Protected
+- **Body:**
+  - `media`: array of ObjectIds (1 to 20, must belong to creator, ready or processing status, no duplicates)
+  - `title`: string (max 80, optional)
+  - `caption`: string (max 1000, optional)
+  - `layout`: object `{ type: "collage"|"grid"|"carousel", template: string, gap: number (0-24), background: string (hex) }` (defaults to grid)
+  - `takenOn`: date string (optional, defaults to first media takenAt or now)
+  - `place`: string (max 80, optional)
+  - `tags`: array of up to 8 strings (1-24 chars, lowercase, trimmed)
+  - `visibility`: `public` | `followers` | `private` (default `followers`)
+- **Allowed Collage Templates:**
+  - `collage-1x2`: 2 items
+  - `collage-2x1`: 2 items
+  - `collage-1-2`: 3 items
+  - `collage-2-1`: 3 items
+  - `collage-3col`: 3 items
+  - `collage-2x2`: 4 items
+  - `collage-1-3`: 4 items
+  - `collage-2x3`: 6 items
+  - `collage-3x2`: 6 items
+  - `collage-1-4`: 5 items
+  - `collage-3x3`: 9 items
+  - `collage-mosaic`: 3 to 10 items
+- **Response:** `201 Created` with `{ moment: Moment }`
 
-### `GET /api/posts/:id/comments`
-List comments for a post, oldest first.
+### GET `/api/moments/feed`
+- **Auth:** Protected
+- **Query:** `page`, `limit`
+- **Response:** `200 OK` with `{ items: [Moment], page, hasMore }` (shows following's public/followers moments + own)
+
+### GET `/api/moments/explore`
 - **Auth:** Optional
-- **Query Params:** `?page=1&limit=10`
-- **Response (200):** `{ items: [Comment], page: 1, hasMore: false }`
-- **Errors:** `404` (Post not found).
+- **Query:** `page`, `limit`
+- **Response:** `200 OK` with `{ items: [Moment], page, hasMore }` (shows public moments only)
 
-### `DELETE /api/comments/:id`
-Delete a comment. Allowed for the comment author OR the post author.
-- **Auth:** Required
-- **Response (200):** `{ "message": "Comment deleted successfully" }`
-- **Errors:** `403` (Not authorized to delete this comment), `404` (Comment not found).
+### GET `/api/moments/user/:username`
+- **Auth:** Optional
+- **Query:** `page`, `limit`
+- **Response:** `200 OK` with `{ items: [Moment], page, hasMore }` (filtered by viewer relationship)
+
+### GET `/api/moments/on-this-day`
+- **Auth:** Protected
+- **Response:** `200 OK` with `{ groups: [{ year, moments: [Moment], media: [Media] }] }`
+
+### GET `/api/moments/:id`
+- **Auth:** Optional
+- **Response:** `200 OK` with `{ moment: Moment }` (404 if not allowed)
+
+### PATCH `/api/moments/:id`
+- **Auth:** Protected (owner only)
+- **Body:** `title`, `caption`, `media`, `layout`, `takenOn`, `place`, `tags`, `visibility`
+- **Response:** `200 OK` with `{ moment: Moment }`
+
+### DELETE `/api/moments/:id`
+- **Auth:** Protected (owner only)
+- **Response:** `200 OK` with `{ success: true, message: "Moment deleted successfully" }` (cascades comments and notifications; media stays in Library)
+
+### POST `/api/moments/:id/like`
+- **Auth:** Protected
+- **Response:** `200 OK` with `{ liked: boolean, likesCount: number }`
+
+### POST `/api/moments/:id/comments`
+- **Auth:** Protected
+- **Body:** `{ text: string }` (1-300 chars)
+- **Response:** `201 Created` with `{ comment: Comment }`
+
+### GET `/api/moments/:id/comments`
+- **Auth:** Optional
+- **Query:** `page`, `limit`
+- **Response:** `200 OK` with `{ items: [Comment], page, hasMore }` (oldest first)
+
+### DELETE `/api/comments/:id`
+- **Auth:** Protected (comment author or moment author)
+- **Response:** `200 OK` with `{ success: true, message: "Comment deleted successfully" }`
 
 ---
 
-## 6. Notifications
+## Albums Endpoints
 
-### `GET /api/notifications`
-Get notifications for the authenticated user, newest first.
-- **Auth:** Required
-- **Query Params:** `?page=1&limit=10`
-- **Response (200):** `{ items: [Notification], page: 1, hasMore: false }`
+### POST `/api/albums`
+- **Auth:** Protected
+- **Body:**
+  - `title`: string (1-80 chars, required)
+  - `description`: string (max 500 chars, optional)
+  - `visibility`: `public` | `followers` | `private` (default `private`)
+  - `media`: array of ObjectIds (optional, max 500)
+  - `cover`: ObjectId (optional)
+- **Response:** `201 Created` with `{ album: Album }`
 
-### `GET /api/notifications/unread-count`
-Get total unread notification count.
-- **Auth:** Required
-- **Response (200):**
-  ```json
-  { "count": 2 }
-  ```
+### GET `/api/albums`
+- **Auth:** Protected
+- **Query:** `page`, `limit`
+- **Response:** `200 OK` with `{ items: [Album], page, hasMore }` (newest updated first)
 
-### `PUT /api/notifications/read`
-Mark all notifications for the authenticated user as read.
-- **Auth:** Required
-- **Response (200):** `{ "message": "All notifications marked as read" }`
+### GET `/api/albums/user/:username`
+- **Auth:** Optional
+- **Query:** `page`, `limit`
+- **Response:** `200 OK` with `{ items: [Album], page, hasMore }` (filtered by viewer relationship)
 
-### `PUT /api/notifications/:id/read`
-Mark a single notification as read.
-- **Auth:** Required
-- **Response (200):** `{ "message": "Notification marked as read" }`
-- **Errors:** `404` (Notification not found).
+### GET `/api/albums/shared/:token`
+- **Auth:** None (anonymous allowed)
+- **Response:** `200 OK` with `{ album: Album, media: [Media] }` where media URLs carry the token; `404` if token is invalid or revoked.
 
+### GET `/api/albums/:id`
+- **Auth:** Optional
+- **Query:** `token` (optional), `page` (default 1), `limit` (default 40)
+- **Response:** `200 OK` with `{ album: Album, media: { items: [Media], page, hasMore } }` (404 if not allowed)
+
+### PATCH `/api/albums/:id`
+- **Auth:** Protected (owner only)
+- **Body:** `title`, `description`, `visibility`, `cover`
+- **Response:** `200 OK` with `{ album: Album }`
+
+### DELETE `/api/albums/:id`
+- **Auth:** Protected (owner only)
+- **Response:** `200 OK` with `{ success: true, message: "Album deleted successfully" }` (media stays in Library)
+
+### POST `/api/albums/:id/media`
+- **Auth:** Protected (owner only)
+- **Body:** `{ ids: ["mediaId1", "mediaId2"] }`
+- **Response:** `200 OK` with `{ album: Album }`
+
+### DELETE `/api/albums/:id/media/:mediaId`
+- **Auth:** Protected (owner only)
+- **Response:** `200 OK` with `{ album: Album }`
+
+### PUT `/api/albums/:id/order`
+- **Auth:** Protected (owner only)
+- **Body:** `{ ids: ["mediaId2", "mediaId1"] }` (must be a valid permutation of current items)
+- **Response:** `200 OK` with `{ album: Album }`
+
+### POST `/api/albums/:id/share`
+- **Auth:** Protected (owner only)
+- **Response:** `200 OK` with `{ shareToken: string, shareUrl: "/api/albums/shared/:token" }`
+
+### DELETE `/api/albums/:id/share`
+- **Auth:** Protected (owner only)
+- **Response:** `200 OK` with `{ success: true, message: "Share link revoked" }`
+
+---
+
+## Notifications Endpoints
+
+### GET `/api/notifications`
+- **Auth:** Protected
+- **Query:** `page`, `limit`
+- **Response:** `200 OK` with `{ items: [Notification], page, hasMore }`
+
+### GET `/api/notifications/unread-count`
+- **Auth:** Protected
+- **Response:** `200 OK` with `{ count: number }`
+
+### PUT `/api/notifications/read`
+- **Auth:** Protected
+- **Response:** `200 OK` with `{ message: "All notifications marked as read" }`
+
+### PUT `/api/notifications/:id/read`
+- **Auth:** Protected (recipient only)
+- **Response:** `200 OK` with `{ message: "Notification marked as read" }`
+
+---
+
+## System Endpoints
+
+### GET `/api/stats`
+- **Auth:** None
+- **Response:** `200 OK` with `{ users: number, moments: number }` (moments counts public only, cached 60 seconds)
+
+### GET `/api/health`
+- **Auth:** None
+- **Response:** `200 OK` with `{ status: "ok" }`

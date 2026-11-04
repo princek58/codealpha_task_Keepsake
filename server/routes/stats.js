@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const Post = require('../models/Post');
+const Moment = require('../models/Moment');
 
 let cachedStats = null;
 let cacheTimestamp = 0;
@@ -19,12 +19,12 @@ router.get('/', async (req, res, next) => {
       return res.status(200).json(cachedStats);
     }
 
-    const [users, posts] = await Promise.all([
+    const [users, moments] = await Promise.all([
       User.countDocuments(),
-      Post.countDocuments()
+      Moment.countDocuments({ visibility: 'public' })
     ]);
 
-    cachedStats = { users, posts };
+    cachedStats = { users, moments };
     cacheTimestamp = now;
 
     res.status(200).json(cachedStats);

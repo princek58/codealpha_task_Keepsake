@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../app');
-const { createTestUser } = require('./testHelper');
+const { createTestUser, createTestMedia } = require('./testHelper');
 const { connectTestDB, clearTestDB, closeTestDB } = require('./setup');
 
 beforeAll(async () => {
@@ -49,12 +49,13 @@ describe('Security & Robustness', () => {
   it('should reject invalid upload mime types', async () => {
     const { cookie } = await createTestUser();
     const res = await request(app)
-      .post('/api/posts')
+      .post('/api/media')
       .set('Cookie', cookie)
-      .attach('image', Buffer.from('malicious script code'), 'evil.exe');
+      .attach('files', Buffer.from('malicious script code'), 'evil.exe');
 
-    expect(res.status).toBe(500);
-    expect(res.body.message).toMatch(/image|type|format/i);
+    expect(res.status).toBe(200);
+    expect(res.body.errors.length).toBeGreaterThanOrEqual(1);
+    expect(res.body.errors[0].code).toBe('UNSUPPORTED_FILE_TYPE');
   });
 
   it('should store and return XSS payloads as plain text without sanitization loss or execution', async () => {
@@ -63,12 +64,13 @@ describe('Security & Robustness', () => {
 
     expect(user.bio).toBe(xssPayload);
 
-    const postRes = await request(app)
-      .post('/api/posts')
+    const media = await createTestMedia(user.id);
+    const momentRes = await request(app)
+      .post('/api/moments')
       .set('Cookie', cookie)
-      .send({ text: xssPayload });
+      .send({ media: [media._id.toString()], caption: xssPayload });
 
-    expect(postRes.status).toBe(201);
-    expect(postRes.body.post.text).toBe(xssPayload);
+    expect(momentRes.status).toBe(201);
+    expect(momentRes.body.moment.caption).toBe(xssPayload);
   });
 });

@@ -1,10 +1,10 @@
 const request = require('supertest');
 const app = require('../app');
-const Post = require('../models/Post');
+const Moment = require('../models/Moment');
 const Comment = require('../models/Comment');
 const Notification = require('../models/Notification');
 const { connectTestDB, clearTestDB, closeTestDB } = require('./setup');
-const { createTestUser } = require('./testHelper');
+const { createTestUser, createTestMedia, createTestMoment } = require('./testHelper');
 
 beforeAll(async () => {
   process.env.NODE_ENV = 'test';
@@ -22,68 +22,71 @@ afterAll(async () => {
 });
 
 describe('Comments API', () => {
-  test('Creates comment, increments commentsCount, and notifies post author', async () => {
-    const author = await createTestUser({ username: 'bloom_author' });
+  test('Creates comment, increments commentsCount, and notifies moment author', async () => {
+    const author = await createTestUser({ username: 'moment_author' });
     const commenter = await createTestUser({ username: 'kind_commenter' });
 
-    const postRes = await request(app)
-      .post('/api/posts')
-      .set('Cookie', author.cookie)
-      .send({ text: 'A lovely bloom today' });
-    const postId = postRes.body.post.id;
+    const media = await createTestMedia(author.user.id);
+    const moment = await createTestMoment(author.user.id, [media._id], {
+      caption: 'A lovely moment today',
+      visibility: 'public'
+    });
+    const momentId = moment._id.toString();
 
     const commentRes = await request(app)
-      .post(`/api/posts/${postId}/comments`)
+      .post(`/api/moments/${momentId}/comments`)
       .set('Cookie', commenter.cookie)
       .send({ text: 'So happy for you!' });
 
     expect(commentRes.status).toBe(201);
     expect(commentRes.body.comment).toBeDefined();
     expect(commentRes.body.comment.text).toBe('So happy for you!');
-    expect(commentRes.body.comment.postId).toBe(postId);
+    expect(commentRes.body.comment.momentId).toBe(momentId);
     expect(commentRes.body.comment.author.username).toBe('kind_commenter');
 
-    const updatedPost = await Post.findById(postId);
-    expect(updatedPost.commentsCount).toBe(1);
+    const updatedMoment = await Moment.findById(momentId);
+    expect(updatedMoment.commentsCount).toBe(1);
 
-    const notifs = await Notification.find({ post: postId, from: commenter.user.id, type: 'comment' });
+    const notifs = await Notification.find({ moment: momentId, from: commenter.user.id, type: 'comment' });
     expect(notifs).toHaveLength(1);
     expect(notifs[0].to.toString()).toBe(author.user.id);
   });
 
   test('Self-commenting does not generate a notification', async () => {
     const author = await createTestUser();
-    const postRes = await request(app)
-      .post('/api/posts')
-      .set('Cookie', author.cookie)
-      .send({ text: 'Self post' });
-    const postId = postRes.body.post.id;
+    const media = await createTestMedia(author.user.id);
+    const moment = await createTestMoment(author.user.id, [media._id], {
+      caption: 'Self moment',
+      visibility: 'public'
+    });
+    const momentId = moment._id.toString();
 
     await request(app)
-      .post(`/api/posts/${postId}/comments`)
+      .post(`/api/moments/${momentId}/comments`)
       .set('Cookie', author.cookie)
-      .send({ text: 'Adding details to my bloom' });
+      .send({ text: 'Adding details to my moment' });
 
-    const notifs = await Notification.find({ post: postId, to: author.user.id });
+    const notifs = await Notification.find({ moment: momentId, to: author.user.id });
     expect(notifs).toHaveLength(0);
   });
 
   test('Rejects empty or oversized comment text', async () => {
     const user = await createTestUser();
-    const postRes = await request(app)
-      .post('/api/posts')
-      .set('Cookie', user.cookie)
-      .send({ text: 'Validation test post' });
-    const postId = postRes.body.post.id;
+    const media = await createTestMedia(user.user.id);
+    const moment = await createTestMoment(user.user.id, [media._id], {
+      caption: 'Validation test moment',
+      visibility: 'public'
+    });
+    const momentId = moment._id.toString();
 
     const emptyRes = await request(app)
-      .post(`/api/posts/${postId}/comments`)
+      .post(`/api/moments/${momentId}/comments`)
       .set('Cookie', user.cookie)
       .send({ text: '   ' });
     expect(emptyRes.status).toBe(400);
 
     const longRes = await request(app)
-      .post(`/api/posts/${postId}/comments`)
+      .post(`/api/moments/${momentId}/comments`)
       .set('Cookie', user.cookie)
       .send({ text: 'B'.repeat(301) });
     expect(longRes.status).toBe(400);
@@ -91,42 +94,46 @@ describe('Comments API', () => {
 
   test('Lists comments oldest first with pagination', async () => {
     const user = await createTestUser();
-    const postRes = await request(app)
-      .post('/api/posts')
-      .set('Cookie', user.cookie)
-      .send({ text: 'Listing test post' });
-    const postId = postRes.body.post.id;
+    const media = await createTestMedia(user.user.id);
+    const moment = await createTestMoment(user.user.id, [media._id], {
+      caption: 'Listing test moment',
+      visibility: 'public'
+    });
+    const momentId = moment._id.toString();
 
     await request(app)
-      .post(`/api/posts/${postId}/comments`)
+      .post(`/api/moments/${momentId}/comments`)
       .set('Cookie', user.cookie)
       .send({ text: 'First comment' });
 
     await request(app)
-      .post(`/api/posts/${postId}/comments`)
+      .post(`/api/moments/${momentId}/comments`)
       .set('Cookie', user.cookie)
       .send({ text: 'Second comment' });
 
-    const listRes = await request(app).get(`/api/posts/${postId}/comments`);
+    const listRes = await request(app)
+      .get(`/api/moments/${momentId}/comments`)
+      .set('Cookie', user.cookie);
     expect(listRes.status).toBe(200);
     expect(listRes.body.items).toHaveLength(2);
     expect(listRes.body.items[0].text).toBe('First comment');
     expect(listRes.body.items[1].text).toBe('Second comment');
   });
 
-  test('Deletes comment by comment author or post author, decrements count, and removes notification', async () => {
-    const postAuthor = await createTestUser({ username: 'post_owner' });
+  test('Deletes comment by comment author or moment author, decrements count, and removes notification', async () => {
+    const momentAuthor = await createTestUser({ username: 'moment_owner' });
     const commentAuthor = await createTestUser({ username: 'comment_writer' });
     const stranger = await createTestUser({ username: 'stranger_user' });
 
-    const postRes = await request(app)
-      .post('/api/posts')
-      .set('Cookie', postAuthor.cookie)
-      .send({ text: 'Delete comment test post' });
-    const postId = postRes.body.post.id;
+    const media = await createTestMedia(momentAuthor.user.id);
+    const moment = await createTestMoment(momentAuthor.user.id, [media._id], {
+      caption: 'Delete comment test moment',
+      visibility: 'public'
+    });
+    const momentId = moment._id.toString();
 
     const commentRes = await request(app)
-      .post(`/api/posts/${postId}/comments`)
+      .post(`/api/moments/${momentId}/comments`)
       .set('Cookie', commentAuthor.cookie)
       .send({ text: 'A comment to be deleted' });
     const commentId = commentRes.body.comment.id;
@@ -143,23 +150,22 @@ describe('Comments API', () => {
       .set('Cookie', commentAuthor.cookie);
     expect(deleteRes.status).toBe(200);
 
-    const postAfterDelete = await Post.findById(postId);
-    expect(postAfterDelete.commentsCount).toBe(0);
+    const momentAfterDelete = await Moment.findById(momentId);
+    expect(momentAfterDelete.commentsCount).toBe(0);
 
-    const notifs = await Notification.find({ post: postId, from: commentAuthor.user.id });
+    const notifs = await Notification.find({ moment: momentId, from: commentAuthor.user.id });
     expect(notifs).toHaveLength(0);
 
-    // Test post author can also delete comments on their post
+    // Test moment author can also delete comments on their moment
     const commentRes2 = await request(app)
-      .post(`/api/posts/${postId}/comments`)
+      .post(`/api/moments/${momentId}/comments`)
       .set('Cookie', commentAuthor.cookie)
-      .send({ text: 'Second comment for post owner delete' });
+      .send({ text: 'Second comment for moment owner delete' });
     const commentId2 = commentRes2.body.comment.id;
 
-    const postOwnerDelete = await request(app)
+    const momentOwnerDelete = await request(app)
       .delete(`/api/comments/${commentId2}`)
-      .set('Cookie', postAuthor.cookie);
-    expect(postOwnerDelete.status).toBe(200);
+      .set('Cookie', momentAuthor.cookie);
+    expect(momentOwnerDelete.status).toBe(200);
   });
 });
-

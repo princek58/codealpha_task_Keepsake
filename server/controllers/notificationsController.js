@@ -10,8 +10,8 @@ const getNotifications = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit + 1)
-      .populate('from', 'username displayName avatar')
-      .populate('post', 'text image');
+      .populate('from', 'username displayName avatarPath')
+      .populate('moment', 'title caption');
 
     const hasMore = notifications.length > limit;
     const pageNotifs = hasMore ? notifications.slice(0, limit) : notifications;
@@ -81,4 +81,3 @@ module.exports = {
   markAllAsRead,
   markOneAsRead
 };
-

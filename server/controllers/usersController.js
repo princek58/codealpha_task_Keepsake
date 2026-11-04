@@ -1,12 +1,45 @@
+const fs = require('fs');
 const mongoose = require('mongoose');
+const sharp = require('sharp');
 const User = require('../models/User');
-const Post = require('../models/Post');
+const Moment = require('../models/Moment');
+const Album = require('../models/Album');
+const storage = require('../services/storage');
 const { formatPublicUser, getPagination } = require('../utils/formatters');
-const { deleteUploadFile } = require('../utils/fileHelper');
 const { createNotification, removeNotification } = require('../utils/notificationHelper');
 
 const escapeRegex = (string) => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+const getUserCounts = async (targetUserId, viewer) => {
+  const viewerId = viewer?._id ? viewer._id.toString() : viewer ? viewer.toString() : null;
+  const targetIdStr = targetUserId.toString();
+  const isMe = viewerId && viewerId === targetIdStr;
+
+  let visibilityFilter;
+  if (isMe) {
+    visibilityFilter = {};
+  } else if (viewer) {
+    const isFollowing = Array.isArray(viewer.following)
+      ? viewer.following.some((id) => id.toString() === targetIdStr)
+      : await User.exists({ _id: viewerId, following: targetUserId });
+
+    if (isFollowing) {
+      visibilityFilter = { visibility: { $in: ['public', 'followers'] } };
+    } else {
+      visibilityFilter = { visibility: 'public' };
+    }
+  } else {
+    visibilityFilter = { visibility: 'public' };
+  }
+
+  const [momentsCount, albumsCount] = await Promise.all([
+    Moment.countDocuments({ owner: targetUserId, ...visibilityFilter }),
+    Album.countDocuments({ owner: targetUserId, ...visibilityFilter })
+  ]);
+
+  return { momentsCount, albumsCount };
 };
 
 const searchUsers = async (req, res, next) => {
@@ -29,21 +62,18 @@ const searchUsers = async (req, res, next) => {
     const hasMore = users.length > limit;
     const pageUsers = hasMore ? users.slice(0, limit) : users;
 
-    const userIds = pageUsers.map((u) => u._id);
-    const postCounts = await Post.aggregate([
-      { $match: { author: { $in: userIds } } },
-      { $group: { _id: '$author', count: { $sum: 1 } } }
-    ]);
-    const postCountMap = new Map(postCounts.map((p) => [p._id.toString(), p.count]));
-
     const viewer = req.user;
-    const items = pageUsers.map((u) => {
-      const isMe = viewer ? viewer._id.toString() === u._id.toString() : false;
-      const isFollowing = viewer && Array.isArray(u.followers)
-        ? u.followers.some((f) => f.toString() === viewer._id.toString())
-        : false;
-      return formatPublicUser(u, postCountMap.get(u._id.toString()) || 0, isFollowing, isMe);
-    });
+    const items = await Promise.all(
+      pageUsers.map(async (u) => {
+        const isMe = viewer ? viewer._id.toString() === u._id.toString() : false;
+        const isFollowing =
+          viewer && Array.isArray(u.followers)
+            ? u.followers.some((f) => f.toString() === viewer._id.toString())
+            : false;
+        const { momentsCount, albumsCount } = await getUserCounts(u._id, viewer);
+        return formatPublicUser(u, momentsCount, albumsCount, isFollowing, isMe);
+      })
+    );
 
     res.status(200).json({ items, page, hasMore });
   } catch (err) {
@@ -98,19 +128,18 @@ const getSuggestions = async (req, res, next) => {
     }
 
     const combined = [...secondDegreeUsers, ...newestUsers];
-    const userIds = combined.map((u) => u._id);
-    const postCounts = await Post.aggregate([
-      { $match: { author: { $in: userIds } } },
-      { $group: { _id: '$author', count: { $sum: 1 } } }
-    ]);
-    const postCountMap = new Map(postCounts.map((p) => [p._id.toString(), p.count]));
+    const viewer = req.user;
 
-    const items = combined.map((u) => {
-      const isFollowing = Array.isArray(u.followers)
-        ? u.followers.some((f) => f.toString() === viewerId.toString())
-        : false;
-      return formatPublicUser(u, postCountMap.get(u._id.toString()) || 0, isFollowing, false);
-    });
+    const items = await Promise.all(
+      combined.map(async (u) => {
+        const isFollowing =
+          Array.isArray(u.followers)
+            ? u.followers.some((f) => f.toString() === viewerId.toString())
+            : false;
+        const { momentsCount, albumsCount } = await getUserCounts(u._id, viewer);
+        return formatPublicUser(u, momentsCount, albumsCount, isFollowing, false);
+      })
+    );
 
     res.status(200).json({ items });
   } catch (err) {
@@ -126,15 +155,17 @@ const getProfile = async (req, res, next) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const postsCount = await Post.countDocuments({ author: user._id });
     const viewer = req.user;
     const isMe = viewer ? viewer._id.toString() === user._id.toString() : false;
-    const isFollowing = viewer && Array.isArray(user.followers)
-      ? user.followers.some((f) => f.toString() === viewer._id.toString())
-      : false;
+    const isFollowing =
+      viewer && Array.isArray(user.followers)
+        ? user.followers.some((f) => f.toString() === viewer._id.toString())
+        : false;
+
+    const { momentsCount, albumsCount } = await getUserCounts(user._id, viewer);
 
     res.status(200).json({
-      user: formatPublicUser(user, postsCount, isFollowing, isMe)
+      user: formatPublicUser(user, momentsCount, albumsCount, isFollowing, isMe)
     });
   } catch (err) {
     next(err);
@@ -161,20 +192,18 @@ const getFollowers = async (req, res, next) => {
       .map((id) => userMap.get(id.toString()))
       .filter(Boolean);
 
-    const postCounts = await Post.aggregate([
-      { $match: { author: { $in: orderedFollowers.map((u) => u._id) } } },
-      { $group: { _id: '$author', count: { $sum: 1 } } }
-    ]);
-    const postCountMap = new Map(postCounts.map((p) => [p._id.toString(), p.count]));
-
     const viewer = req.user;
-    const items = orderedFollowers.map((u) => {
-      const isMe = viewer ? viewer._id.toString() === u._id.toString() : false;
-      const isFollowing = viewer && Array.isArray(u.followers)
-        ? u.followers.some((f) => f.toString() === viewer._id.toString())
-        : false;
-      return formatPublicUser(u, postCountMap.get(u._id.toString()) || 0, isFollowing, isMe);
-    });
+    const items = await Promise.all(
+      orderedFollowers.map(async (u) => {
+        const isMe = viewer ? viewer._id.toString() === u._id.toString() : false;
+        const isFollowing =
+          viewer && Array.isArray(u.followers)
+            ? u.followers.some((f) => f.toString() === viewer._id.toString())
+            : false;
+        const { momentsCount, albumsCount } = await getUserCounts(u._id, viewer);
+        return formatPublicUser(u, momentsCount, albumsCount, isFollowing, isMe);
+      })
+    );
 
     res.status(200).json({ items, page, hasMore });
   } catch (err) {
@@ -202,20 +231,18 @@ const getFollowing = async (req, res, next) => {
       .map((id) => userMap.get(id.toString()))
       .filter(Boolean);
 
-    const postCounts = await Post.aggregate([
-      { $match: { author: { $in: orderedFollowing.map((u) => u._id) } } },
-      { $group: { _id: '$author', count: { $sum: 1 } } }
-    ]);
-    const postCountMap = new Map(postCounts.map((p) => [p._id.toString(), p.count]));
-
     const viewer = req.user;
-    const items = orderedFollowing.map((u) => {
-      const isMe = viewer ? viewer._id.toString() === u._id.toString() : false;
-      const isFollowing = viewer && Array.isArray(u.followers)
-        ? u.followers.some((f) => f.toString() === viewer._id.toString())
-        : false;
-      return formatPublicUser(u, postCountMap.get(u._id.toString()) || 0, isFollowing, isMe);
-    });
+    const items = await Promise.all(
+      orderedFollowing.map(async (u) => {
+        const isMe = viewer ? viewer._id.toString() === u._id.toString() : false;
+        const isFollowing =
+          viewer && Array.isArray(u.followers)
+            ? u.followers.some((f) => f.toString() === viewer._id.toString())
+            : false;
+        const { momentsCount, albumsCount } = await getUserCounts(u._id, viewer);
+        return formatPublicUser(u, momentsCount, albumsCount, isFollowing, isMe);
+      })
+    );
 
     res.status(200).json({ items, page, hasMore });
   } catch (err) {
@@ -226,7 +253,7 @@ const getFollowing = async (req, res, next) => {
 const updateMe = async (req, res, next) => {
   try {
     const user = req.user;
-    const { displayName, bio, moodSticker, removeAvatar } = req.body;
+    const { displayName, bio, removeAvatar } = req.body;
 
     if (displayName !== undefined) {
       user.displayName = displayName.trim();
@@ -236,24 +263,79 @@ const updateMe = async (req, res, next) => {
       user.bio = bio.trim();
     }
 
-    if (moodSticker) {
-      user.moodSticker = moodSticker;
-    }
-
     if (req.file) {
-      deleteUploadFile(user.avatar);
-      user.avatar = `/uploads/${req.file.filename}`;
+      try {
+        const avatarBuf = await sharp(req.file.path, { failOn: 'error' })
+          .rotate()
+          .resize(256, 256, { fit: 'cover' })
+          .webp({ quality: 85 })
+          .toBuffer();
+
+        const avatarRelPath = `avatars/${user._id}_${Date.now()}.webp`;
+        await storage.writeBuffer(avatarRelPath, avatarBuf);
+
+        if (user.avatarPath) {
+          await storage.remove(user.avatarPath);
+        }
+        user.avatarPath = avatarRelPath;
+      } finally {
+        try {
+          await fs.promises.unlink(req.file.path);
+        } catch {}
+      }
     } else if (removeAvatar === 'true' || removeAvatar === true) {
-      deleteUploadFile(user.avatar);
-      user.avatar = '';
+      if (user.avatarPath) {
+        await storage.remove(user.avatarPath);
+        user.avatarPath = null;
+      }
     }
 
     await user.save();
-    const postsCount = await Post.countDocuments({ author: user._id });
+    const { momentsCount, albumsCount } = await getUserCounts(user._id, user);
 
     res.status(200).json({
-      user: formatPublicUser(user, postsCount, false, true)
+      user: formatPublicUser(user, momentsCount, albumsCount, false, true)
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getAvatar = async (req, res, next) => {
+  try {
+    const username = req.params.username.toLowerCase();
+    const user = await User.findOne({ username });
+    if (!user || !user.avatarPath) {
+      return res.status(404).json({ message: 'Avatar not found' });
+    }
+
+    let absPath;
+    try {
+      absPath = storage.resolveSafePath(user.avatarPath);
+    } catch {
+      return res.status(404).json({ message: 'Avatar not found' });
+    }
+
+    if (!fs.existsSync(absPath)) {
+      return res.status(404).json({ message: 'Avatar not found' });
+    }
+
+    const stat = await fs.promises.stat(absPath);
+    const etag = `"${stat.mtime.getTime()}-${stat.size}"`;
+
+    if (req.headers['if-none-match'] === etag) {
+      return res.status(304).end();
+    }
+
+    res.set({
+      'Content-Type': 'image/webp',
+      'Content-Length': stat.size,
+      'Cache-Control': 'private, max-age=86400',
+      ETag: etag,
+      'Last-Modified': stat.mtime.toUTCString()
+    });
+
+    storage.createReadStream(user.avatarPath).pipe(res);
   } catch (err) {
     next(err);
   }
@@ -318,6 +400,6 @@ module.exports = {
   getFollowers,
   getFollowing,
   updateMe,
+  getAvatar,
   toggleFollow
 };
-
