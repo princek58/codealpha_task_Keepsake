@@ -4,47 +4,249 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#F7F3EC">
-  <title>User Profile — Keepsake</title>
+  <title>Profile — Keepsake</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+  <style>
+    .profile-page-container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: var(--space-md) var(--space-sm) var(--space-3xl);
+    }
+    .profile-header-card {
+      background-color: var(--color-white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-sand);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-xl);
+      margin-bottom: var(--space-xl);
+    }
+    .profile-top-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+    .profile-stats-row {
+      display: flex;
+      gap: var(--space-xl);
+      margin-top: var(--space-lg);
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--color-sand);
+      flex-wrap: wrap;
+    }
+    .profile-stat-item {
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+    }
+    .profile-stat-num {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--color-ink);
+    }
+    .profile-stat-label {
+      font-size: var(--text-xs);
+      color: var(--color-stone);
+    }
+    .profile-tabs {
+      display: flex;
+      gap: var(--space-xs);
+      border-bottom: 1px solid var(--color-sand);
+      margin-bottom: var(--space-lg);
+      overflow-x: auto;
+    }
+    .profile-tab-btn {
+      padding: var(--space-xs) var(--space-md);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-stone);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .profile-tab-btn.active {
+      color: var(--color-ink);
+      border-bottom-color: var(--color-terracotta);
+    }
+    .user-list-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-md);
+      background-color: var(--color-white);
+      border: 1px solid var(--color-sand);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-xs);
+    }
+  </style>
 </head>
-<body class="paper-grain" style="display: flex; flex-direction: column; min-height: 100vh;">
-  <header class="navbar" role="banner">
-    <nav class="navbar-pill">
-      <a href="/" class="navbar-brand">
-        <img src="/assets/brand/mark.svg" width="28" height="28" alt="Keepsake">
-        <span>Keepsake</span>
-      </a>
-      <ul class="navbar-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/styleguide.html">Styleguide</a></li>
-      </ul>
-      <a href="/" class="btn btn-sand btn-sm">Back</a>
-    </nav>
-  </header>
+<body class="paper-grain" style="min-height: 100vh; display: flex; flex-direction: column;">
+  <div id="shell-mount"></div>
 
-  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-xl);">
-    <div class="empty-state" style="max-width: 520px;">
-      <img src="/assets/stickers/mountain.svg" width="72" height="72" alt="User Profile" style="margin-bottom: var(--space-md);">
-      <span class="badge badge-teal" style="margin-bottom: var(--space-sm);">Coming in Build 3</span>
-      <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-xs);">User Profile</h1>
-      <p class="text-muted" style="margin-bottom: var(--space-xl); font-size: var(--text-sm);">
-        User profile, public moments, avatar, and follower lists. This full interface will be built and wired in Build 3 (Real App Pages).
-      </p>
-      <div style="display: flex; gap: var(--space-sm);">
-        <a href="/" class="btn btn-primary">Return Home</a>
-        <a href="/styleguide.html" class="btn btn-sand">View Styleguide</a>
+  <main id="main-content" style="flex: 1;" class="page-container">
+    <div class="profile-page-container">
+      <!-- Skeleton loader -->
+      <div id="profile-skeleton" class="profile-header-card">
+        <div style="display: flex; gap: var(--space-md); align-items: center; margin-bottom: var(--space-md);">
+          <div class="skeleton" style="width: 80px; height: 80px; border-radius: var(--radius-full);"></div>
+          <div style="flex: 1;">
+            <div class="skeleton" style="width: 180px; height: 24px; margin-bottom: 8px; border-radius: 4px;"></div>
+            <div class="skeleton" style="width: 100px; height: 16px; border-radius: 4px;"></div>
+          </div>
+        </div>
+        <div class="skeleton" style="width: 100%; height: 40px; border-radius: 4px;"></div>
+      </div>
+
+      <!-- Error / 404 state -->
+      <div id="profile-error" class="empty-state" style="display: none; padding: var(--space-3xl) var(--space-lg); background-color: var(--color-white); border-radius: var(--radius-lg); border: 1px solid var(--color-sand);">
+        <img src="/assets/stickers/mountain.svg" width="64" height="64" alt="User not found" style="margin-bottom: var(--space-md);">
+        <h2 id="profile-error-title" style="margin-bottom: var(--space-xs);">User Not Found</h2>
+        <p id="profile-error-desc" class="text-muted" style="margin-bottom: var(--space-lg);">This profile does not exist or may have been deleted.</p>
+        <a href="/home.html" class="btn btn-primary">Return Home</a>
+      </div>
+
+      <!-- Profile Content -->
+      <div id="profile-content" style="display: none;">
+        <!-- Header Card -->
+        <header class="profile-header-card">
+          <div class="profile-top-row">
+            <div style="display: flex; gap: var(--space-md); align-items: center;">
+              <div id="profile-avatar-mount"></div>
+              <div>
+                <h1 id="profile-display-name" style="font-size: var(--text-2xl); font-weight: 600; line-height: 1.2;"></h1>
+                <div id="profile-username" style="font-size: var(--text-sm); color: var(--color-stone); margin-bottom: 4px;"></div>
+                <div id="profile-joined" style="font-size: 11px; color: var(--color-stone-light);"></div>
+              </div>
+            </div>
+
+            <div id="profile-action-mount"></div>
+          </div>
+
+          <!-- Bio -->
+          <div id="profile-bio" style="margin-top: var(--space-md); font-size: var(--text-sm); line-height: 1.6; color: var(--color-ink); white-space: pre-wrap; display: none;"></div>
+
+          <!-- Stats Row -->
+          <div class="profile-stats-row">
+            <div class="profile-stat-item" id="stat-moments-btn">
+              <span id="stat-moments-count" class="profile-stat-num">0</span>
+              <span class="profile-stat-label">Moments</span>
+            </div>
+            <div class="profile-stat-item" id="stat-albums-btn">
+              <span id="stat-albums-count" class="profile-stat-num">0</span>
+              <span class="profile-stat-label">Albums</span>
+            </div>
+            <div class="profile-stat-item" id="stat-followers-btn">
+              <span id="stat-followers-count" class="profile-stat-num">0</span>
+              <span class="profile-stat-label">Followers</span>
+            </div>
+            <div class="profile-stat-item" id="stat-following-btn">
+              <span id="stat-following-count" class="profile-stat-num">0</span>
+              <span class="profile-stat-label">Following</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="profile-tabs" role="tablist">
+          <button id="tab-btn-moments" class="profile-tab-btn active" role="tab" aria-selected="true">
+            <span>Moments</span>
+            <span id="tab-badge-moments" class="badge badge-sand" style="font-size: 10px;">0</span>
+          </button>
+          <button id="tab-btn-albums" class="profile-tab-btn" role="tab" aria-selected="false">
+            <span>Albums</span>
+            <span id="tab-badge-albums" class="badge badge-sand" style="font-size: 10px;">0</span>
+          </button>
+          <button id="tab-btn-followers" class="profile-tab-btn" role="tab" aria-selected="false">
+            <span>Followers</span>
+            <span id="tab-badge-followers" class="badge badge-sand" style="font-size: 10px;">0</span>
+          </button>
+          <button id="tab-btn-following" class="profile-tab-btn" role="tab" aria-selected="false">
+            <span>Following</span>
+            <span id="tab-badge-following" class="badge badge-sand" style="font-size: 10px;">0</span>
+          </button>
+        </div>
+
+        <!-- Tab Panels -->
+        <div id="panel-moments">
+          <div id="moments-grid" class="cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-md);"></div>
+          <div id="moments-empty" class="empty-state" style="display: none; padding: var(--space-xl); background-color: var(--color-white); border-radius: var(--radius-md); border: 1px solid var(--color-sand);">
+            <p class="text-muted">No moments shared yet.</p>
+          </div>
+        </div>
+
+        <div id="panel-albums" style="display: none;">
+          <div id="albums-grid" class="cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-md);"></div>
+          <div id="albums-empty" class="empty-state" style="display: none; padding: var(--space-xl); background-color: var(--color-white); border-radius: var(--radius-md); border: 1px solid var(--color-sand);">
+            <p class="text-muted">No albums created yet.</p>
+          </div>
+        </div>
+
+        <div id="panel-followers" style="display: none;">
+          <div id="followers-list"></div>
+          <div id="followers-empty" class="empty-state" style="display: none; padding: var(--space-xl); background-color: var(--color-white); border-radius: var(--radius-md); border: 1px solid var(--color-sand);">
+            <p class="text-muted">No followers yet.</p>
+          </div>
+        </div>
+
+        <div id="panel-following" style="display: none;">
+          <div id="following-list"></div>
+          <div id="following-empty" class="empty-state" style="display: none; padding: var(--space-xl); background-color: var(--color-white); border-radius: var(--radius-md); border: 1px solid var(--color-sand);">
+            <p class="text-muted">Not following anyone yet.</p>
+          </div>
+        </div>
       </div>
     </div>
   </main>
 
-  <footer class="footer">
-    <p>&copy; 2026 Keepsake. All rights reserved.</p>
-  </footer>
+  <!-- Edit Profile Modal -->
+  <div id="modal-edit-profile" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-labelledby="edit-profile-modal-title" aria-modal="true" style="padding: var(--space-xl); max-width: 480px;">
+      <h2 id="edit-profile-modal-title" style="font-size: var(--text-xl); font-weight: 600; margin-bottom: var(--space-md);">Edit Profile</h2>
+      <form id="form-edit-profile">
+        <!-- Avatar Uploader -->
+        <div style="display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-md);">
+          <div id="edit-avatar-preview-wrap"></div>
+          <div>
+            <label for="edit-avatar-file" class="btn btn-sand btn-sm" style="cursor: pointer; display: inline-block;">Change Photo</label>
+            <input type="file" id="edit-avatar-file" accept="image/*" style="display: none;">
+            <button type="button" id="btn-remove-avatar" class="btn btn-ghost btn-sm" style="color: var(--color-terracotta); display: none;">Remove</button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: var(--space-md);">
+          <label for="edit-display-name" class="label" style="font-size: var(--text-xs); font-weight: 600; display: block; margin-bottom: 4px;">Display Name</label>
+          <input type="text" id="edit-display-name" class="input" maxlength="30" style="width: 100%;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: var(--space-lg);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <label for="edit-bio" class="label" style="font-size: var(--text-xs); font-weight: 600;">Bio</label>
+            <span id="edit-bio-count" style="font-size: 11px; color: var(--color-stone);">0/160</span>
+          </div>
+          <textarea id="edit-bio" class="input" rows="3" maxlength="160" placeholder="A little about yourself..." style="width: 100%; resize: vertical;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: var(--space-sm);">
+          <button type="button" id="btn-cancel-profile-edit" class="btn btn-sand">Cancel</button>
+          <button type="submit" id="btn-save-profile-edit" class="btn btn-primary">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="/js/pages/profile.js"></script>
 </body>
 </html>

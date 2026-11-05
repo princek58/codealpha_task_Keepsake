@@ -6,45 +6,355 @@
   <meta name="theme-color" content="#F7F3EC">
   <title>Create Moment — Keepsake</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
-</head>
-<body class="paper-grain" style="display: flex; flex-direction: column; min-height: 100vh;">
-  <header class="navbar" role="banner">
-    <nav class="navbar-pill">
-      <a href="/" class="navbar-brand">
-        <img src="/assets/brand/mark.svg" width="28" height="28" alt="Keepsake">
-        <span>Keepsake</span>
-      </a>
-      <ul class="navbar-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/styleguide.html">Styleguide</a></li>
-      </ul>
-      <a href="/" class="btn btn-sand btn-sm">Back</a>
-    </nav>
-  </header>
+  <link rel="stylesheet" href="/css/pages.css">
 
-  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-xl);">
-    <div class="empty-state" style="max-width: 520px;">
-      <img src="/assets/stickers/camera.svg" width="72" height="72" alt="Create Moment" style="margin-bottom: var(--space-md);">
-      <span class="badge badge-teal" style="margin-bottom: var(--space-sm);">Coming in Build 3</span>
-      <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-xs);">Create Moment</h1>
-      <p class="text-muted" style="margin-bottom: var(--space-xl); font-size: var(--text-sm);">
-        Collage builder, grid selector, and moment publishing flow. This full interface will be built and wired in Build 3 (Real App Pages).
-      </p>
-      <div style="display: flex; gap: var(--space-sm);">
-        <a href="/" class="btn btn-primary">Return Home</a>
-        <a href="/styleguide.html" class="btn btn-sand">View Styleguide</a>
+  <style>
+    .moment-builder-layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: var(--space-xl) var(--space-md) var(--space-4xl);
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: var(--space-2xl);
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .moment-builder-layout {
+        grid-template-columns: 1fr;
+        padding-bottom: 90px;
+      }
+      .builder-preview-col {
+        order: -1;
+        margin-bottom: var(--space-lg);
+      }
+    }
+    .stepper-nav {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-xl);
+      border-bottom: 1px solid var(--color-sand);
+      padding-bottom: var(--space-sm);
+    }
+    .step-btn {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-stone);
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+    .step-btn.active {
+      color: var(--color-teal);
+      background-color: var(--color-teal-tint);
+    }
+    .step-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: var(--radius-pill);
+      background-color: var(--color-sand);
+      color: var(--color-ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+    .step-btn.active .step-badge {
+      background-color: var(--color-teal);
+      color: var(--color-white);
+    }
+    .preview-sticky-wrap {
+      position: sticky;
+      top: 84px;
+    }
+    .preview-card {
+      background-color: var(--color-white);
+      border: 1px solid var(--color-sand);
+      border-radius: var(--radius-xl);
+      padding: var(--space-md);
+      box-shadow: var(--shadow-lg);
+    }
+    .swatch-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-pill);
+      border: 2px solid var(--color-sand);
+      cursor: pointer;
+      transition: transform var(--duration-fast) var(--ease-out);
+    }
+    .swatch-btn:hover, .swatch-btn.active {
+      transform: scale(1.15);
+      border-color: var(--color-teal);
+    }
+    .reorder-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: 6px var(--space-sm);
+      background-color: var(--color-white);
+      border: 1px solid var(--color-sand);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-xs);
+      user-select: none;
+    }
+    .tag-chip-row {
+      display: flex;
+      gap: var(--space-xs);
+      flex-wrap: wrap;
+      margin-top: var(--space-xs);
+    }
+    .tmpl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+      gap: var(--space-xs);
+      margin-top: var(--space-xs);
+    }
+    .tmpl-tile {
+      border: 2px solid var(--color-sand);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      background-color: var(--color-paper-light);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+    .tmpl-tile:hover {
+      border-color: var(--color-teal);
+    }
+    .tmpl-tile.active {
+      border-color: var(--color-teal);
+      background-color: var(--color-teal-tint);
+    }
+  </style>
+</head>
+<body class="paper-grain">
+
+  <!-- Shell Mounts Header -->
+
+  <main id="main-content" class="moment-builder-layout">
+    <!-- Left Column: Step Forms -->
+    <div class="builder-forms-col">
+      <div style="margin-bottom: var(--space-md);">
+        <h1 id="builder-page-title" style="font-size: var(--text-2xl); margin: 0 0 2px;">Create Moment</h1>
+        <p class="text-muted" style="font-size: var(--text-sm);">Combine photos and stories into a timeless memory.</p>
+      </div>
+
+      <!-- Stepper Nav -->
+      <nav class="stepper-nav" aria-label="Creation Steps">
+        <button class="step-btn active" id="step-btn-1" type="button">
+          <span class="step-badge">1</span>
+          <span>Media</span>
+        </button>
+        <button class="step-btn" id="step-btn-2" type="button">
+          <span class="step-badge">2</span>
+          <span>Layout</span>
+        </button>
+        <button class="step-btn" id="step-btn-3" type="button">
+          <span class="step-badge">3</span>
+          <span>Details</span>
+        </button>
+      </nav>
+
+      <!-- STEP 1: CHOOSE MEDIA -->
+      <section id="step-panel-1" aria-labelledby="step-btn-1">
+        <div class="card" style="margin-bottom: var(--space-lg);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm);">
+            <h3 style="font-size: var(--text-md); margin: 0;">Upload new or pick from library</h3>
+            <span id="selected-media-count" class="badge badge-teal">0 / 20 selected</span>
+          </div>
+
+          <!-- Inline Drop Zone -->
+          <div id="builder-dropzone-mount" style="margin-bottom: var(--space-lg);"></div>
+
+          <h4 style="font-size: var(--text-sm); margin-bottom: var(--space-xs); font-weight: 600;">Your Library</h4>
+          <p class="text-muted" style="font-size: var(--text-xs); margin-bottom: var(--space-sm);">Click items to add or remove them from this moment (order reflects your selection):</p>
+          <div id="builder-library-picker" style="max-height: 380px; overflow-y: auto; padding: 4px;">
+            <div class="skeleton" style="height: 180px; border-radius: var(--radius-md);"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+          <button id="btn-next-step-1" class="btn btn-primary btn-md">
+            Continue to Layout &rarr;
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 2: LAYOUT & ARRANGEMENT -->
+      <section id="step-panel-2" style="display: none;" aria-labelledby="step-btn-2">
+        <div class="card" style="margin-bottom: var(--space-lg);">
+          <!-- Layout Type Segmented Control -->
+          <div style="margin-bottom: var(--space-lg);">
+            <label class="label">Display layout style</label>
+            <div class="segmented-control" role="group" aria-label="Layout Type">
+              <button class="segmented-item active" data-layout-type="collage">Collage</button>
+              <button class="segmented-item" data-layout-type="grid">Grid</button>
+              <button class="segmented-item" data-layout-type="carousel">Carousel</button>
+            </div>
+          </div>
+
+          <!-- Collage Options (Shown only when collage layout is selected) -->
+          <div id="collage-options-section" style="margin-bottom: var(--space-lg);">
+            <!-- Template Picker -->
+            <div style="margin-bottom: var(--space-md);">
+              <label class="label">Choose collage template</label>
+              <div id="builder-tmpl-list" class="tmpl-grid"></div>
+            </div>
+
+            <!-- Gap Slider -->
+            <div style="margin-bottom: var(--space-md);">
+              <div style="display: flex; justify-content: space-between;">
+                <label for="builder-gap-slider" class="label">Tile gap</label>
+                <span id="gap-value-display" style="font-size: var(--text-xs); color: var(--color-stone);">8px</span>
+              </div>
+              <input type="range" id="builder-gap-slider" min="0" max="24" value="8" step="2" style="width: 100%;">
+            </div>
+
+            <!-- Background Color Swatches -->
+            <div>
+              <label class="label">Collage background</label>
+              <div id="swatch-list" style="display: flex; gap: var(--space-xs); flex-wrap: wrap;"></div>
+            </div>
+          </div>
+
+          <!-- Reorder & Arrange Media Strip -->
+          <div style="border-top: 1px solid var(--color-sand); padding-top: var(--space-md); margin-top: var(--space-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xs);">
+              <label class="label" style="margin: 0;">Arrange order</label>
+              <span class="text-muted" style="font-size: var(--text-xs);">Drag or use arrow buttons</span>
+            </div>
+            <div id="reorder-list"></div>
+          </div>
+
+          <!-- PNG Export Action -->
+          <div style="margin-top: var(--space-lg); border-top: 1px solid var(--color-sand); padding-top: var(--space-md);">
+            <button id="btn-export-collage-png" class="btn btn-sand btn-sm" style="width: 100%;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              <span>Download collage as PNG</span>
+            </button>
+            <p id="export-disabled-hint" style="font-size: 11px; color: var(--color-stone); margin-top: 4px; display: none;">
+              Note: Canvas PNG export is only available for moments containing photos only.
+            </p>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between;">
+          <button id="btn-back-step-2" class="btn btn-sand btn-md">&larr; Back</button>
+          <button id="btn-next-step-2" class="btn btn-primary btn-md">Continue to Details &rarr;</button>
+        </div>
+      </section>
+
+      <!-- STEP 3: DETAILS & STORY -->
+      <section id="step-panel-3" style="display: none;" aria-labelledby="step-btn-3">
+        <div class="card" style="margin-bottom: var(--space-lg);">
+          <!-- Title -->
+          <div style="margin-bottom: var(--space-md);">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="moment-title" class="label">Moment title (optional)</label>
+              <span id="title-counter" style="font-size: 11px; color: var(--color-stone);">0 / 80</span>
+            </div>
+            <input type="text" id="moment-title" class="input" placeholder="e.g. Autumn walk in Kyoto" maxlength="80">
+            <span class="field-error" id="err-moment-title"></span>
+          </div>
+
+          <!-- Caption -->
+          <div style="margin-bottom: var(--space-md);">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="moment-caption" class="label">Memory story & thoughts</label>
+              <span id="caption-counter" style="font-size: 11px; color: var(--color-stone);">0 / 1000</span>
+            </div>
+            <textarea id="moment-caption" class="textarea" rows="4" placeholder="What made this moment special?..." maxlength="1000"></textarea>
+            <span class="field-error" id="err-moment-caption"></span>
+          </div>
+
+          <!-- Date & Place Row -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-md);">
+            <div>
+              <label for="moment-date" class="label">Date of memory</label>
+              <input type="date" id="moment-date" class="input">
+            </div>
+            <div>
+              <label for="moment-place" class="label">Place / Location</label>
+              <input type="text" id="moment-place" class="input" placeholder="e.g. Kyoto, Japan" maxlength="80">
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div style="margin-bottom: var(--space-md);">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="tag-input" class="label">Tags (up to 8)</label>
+              <span id="tags-count" style="font-size: 11px; color: var(--color-stone);">0 / 8</span>
+            </div>
+            <div style="display: flex; gap: var(--space-xs);">
+              <input type="text" id="tag-input" class="input" placeholder="Add tag and press Enter...">
+              <button type="button" id="btn-add-tag" class="btn btn-sand btn-sm">Add</button>
+            </div>
+            <div id="tag-chip-container" class="tag-chip-row"></div>
+            <span class="field-error" id="err-moment-tags"></span>
+          </div>
+
+          <!-- Visibility Selector -->
+          <div style="margin-bottom: var(--space-md);">
+            <label class="label">Who can see this moment?</label>
+            <div class="segmented-control" role="group" aria-label="Visibility">
+              <button class="segmented-item active" data-vis="followers">Followers</button>
+              <button class="segmented-item" data-vis="public">Public</button>
+              <button class="segmented-item" data-vis="private">Private</button>
+            </div>
+            <p id="visibility-desc" class="text-muted" style="font-size: var(--text-xs); margin-top: 6px; margin-bottom: 0;">
+              Only people you approve to follow you can view this moment.
+            </p>
+          </div>
+
+          <!-- General Error Box -->
+          <div id="builder-general-error" class="alert alert-danger" style="display: none; margin-top: var(--space-md);"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between;">
+          <button id="btn-back-step-3" class="btn btn-sand btn-md">&larr; Back</button>
+          <button id="btn-publish-moment" class="btn btn-primary btn-md">
+            Publish moment
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Right Column: Live Sticky Preview -->
+    <div class="builder-preview-col">
+      <div class="preview-sticky-wrap">
+        <div class="preview-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm);">
+            <span class="section-tag" style="font-size: 11px;">Live Preview</span>
+            <span id="preview-layout-badge" class="badge badge-stone">Grid</span>
+          </div>
+          <div id="builder-live-preview" style="min-height: 240px; border-radius: var(--radius-md); overflow: hidden; background-color: var(--color-paper-light); display: flex; align-items: center; justify-content: center;">
+            <p class="text-muted" style="font-size: var(--text-xs);">Select photos to preview your layout</p>
+          </div>
+        </div>
       </div>
     </div>
   </main>
 
   <footer class="footer">
-    <p>&copy; 2026 Keepsake. All rights reserved.</p>
+    <p>&copy; 2026 Keepsake. Keep the moments that matter.</p>
   </footer>
+
+  <script type="module" src="/js/pages/moment-new.js"></script>
 </body>
 </html>

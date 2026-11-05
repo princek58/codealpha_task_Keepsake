@@ -4,47 +4,284 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#F7F3EC">
-  <title>Sign In & Register — Keepsake</title>
+  <title>Sign In or Register — Keepsake</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+
+  <style>
+    .auth-wrapper {
+      min-height: calc(100vh - 140px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-md);
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 880px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      background-color: var(--color-white);
+      border: 1px solid var(--color-sand);
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-xl);
+      overflow: hidden;
+    }
+    @media (max-width: 768px) {
+      .auth-card {
+        grid-template-columns: 1fr;
+        max-width: 440px;
+      }
+      .auth-side-panel {
+        display: none !important;
+      }
+    }
+    .auth-form-side {
+      padding: var(--space-2xl) var(--space-xl);
+    }
+    .auth-side-panel {
+      background-color: var(--color-paper-light);
+      border-left: 1px solid var(--color-sand);
+      padding: var(--space-2xl) var(--space-xl);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+    .password-wrapper {
+      position: relative;
+    }
+    .password-toggle-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--color-stone);
+      cursor: pointer;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      padding: 4px 6px;
+      border-radius: var(--radius-xs);
+    }
+    .password-toggle-btn:hover {
+      color: var(--color-ink);
+    }
+    .strength-meter {
+      height: 4px;
+      background-color: var(--color-sand);
+      border-radius: var(--radius-pill);
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .strength-bar {
+      height: 100%;
+      width: 0%;
+      transition: width var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+    }
+    .auth-error-banner {
+      background-color: var(--color-brick-tint);
+      color: var(--color-brick);
+      border: 1px solid var(--color-brick);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      margin-bottom: var(--space-md);
+      display: none;
+    }
+  </style>
 </head>
 <body class="paper-grain" style="display: flex; flex-direction: column; min-height: 100vh;">
+
+  <!-- Header -->
   <header class="navbar" role="banner">
     <nav class="navbar-pill">
       <a href="/" class="navbar-brand">
         <img src="/assets/brand/mark.svg" width="28" height="28" alt="Keepsake">
         <span>Keepsake</span>
       </a>
-      <ul class="navbar-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/styleguide.html">Styleguide</a></li>
-      </ul>
-      <a href="/" class="btn btn-sand btn-sm">Back</a>
+      <div style="display: flex; gap: var(--space-xs); align-items: center;">
+        <a href="/" class="btn btn-sand btn-sm">Home</a>
+      </div>
     </nav>
   </header>
 
-  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-xl);">
-    <div class="empty-state" style="max-width: 520px;">
-      <img src="/assets/stickers/ticket.svg" width="72" height="72" alt="Sign In & Register" style="margin-bottom: var(--space-md);">
-      <span class="badge badge-teal" style="margin-bottom: var(--space-sm);">Coming in Build 3</span>
-      <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-xs);">Sign In & Register</h1>
-      <p class="text-muted" style="margin-bottom: var(--space-xl); font-size: var(--text-sm);">
-        Secure authentication, login, and registration. This full interface will be built and wired in Build 3 (Real App Pages).
-      </p>
-      <div style="display: flex; gap: var(--space-sm);">
-        <a href="/" class="btn btn-primary">Return Home</a>
-        <a href="/styleguide.html" class="btn btn-sand">View Styleguide</a>
+  <!-- Main Content -->
+  <main id="main-content" class="auth-wrapper">
+    <div class="auth-card">
+
+      <!-- Form Column -->
+      <div class="auth-form-side">
+        <!-- Auth Tabs -->
+        <div class="tabs" role="tablist" style="margin-bottom: var(--space-xl);">
+          <button class="tab-item active" id="tab-login" role="tab" aria-selected="true" aria-controls="panel-login">
+            Log in
+          </button>
+          <button class="tab-item" id="tab-register" role="tab" aria-selected="false" aria-controls="panel-register">
+            Create account
+          </button>
+        </div>
+
+        <div id="auth-alert" class="auth-error-banner" role="alert"></div>
+
+        <!-- 1. LOGIN FORM PANEL -->
+        <div id="panel-login" role="tabpanel" aria-labelledby="tab-login">
+          <form id="form-login" novalidate>
+            <div style="margin-bottom: var(--space-md);">
+              <label for="login-identifier" class="label">Username or email</label>
+              <input
+                type="text"
+                id="login-identifier"
+                name="identifier"
+                class="input"
+                autocomplete="username"
+                autofocus
+                required
+              >
+              <span class="field-error" id="err-login-identifier"></span>
+            </div>
+
+            <div style="margin-bottom: var(--space-lg);">
+              <label for="login-password" class="label">Password</label>
+              <div class="password-wrapper">
+                <input
+                  type="password"
+                  id="login-password"
+                  name="password"
+                  class="input"
+                  autocomplete="current-password"
+                  required
+                >
+                <button type="button" class="password-toggle-btn" data-target="login-password">Show</button>
+              </div>
+              <span class="field-error" id="err-login-password"></span>
+            </div>
+
+            <button type="submit" id="btn-login-submit" class="btn btn-primary btn-md" style="width: 100%;">
+              Sign in to Keepsake
+            </button>
+          </form>
+
+          <p style="margin-top: var(--space-lg); text-align: center; font-size: var(--text-xs); color: var(--color-stone);">
+            Don't have an account? <a href="#register" id="link-go-register" style="color: var(--color-terracotta); font-weight: 600;">Create one free</a>
+          </p>
+        </div>
+
+        <!-- 2. REGISTER FORM PANEL -->
+        <div id="panel-register" role="tabpanel" aria-labelledby="tab-register" style="display: none;">
+          <form id="form-register" novalidate>
+            <div style="margin-bottom: var(--space-md);">
+              <label for="reg-username" class="label">Username</label>
+              <input
+                type="text"
+                id="reg-username"
+                name="username"
+                class="input"
+                placeholder="e.g. daisy_meadows"
+                autocomplete="username"
+                required
+              >
+              <span class="field-error" id="err-reg-username"></span>
+              <span class="field-hint">3–20 letters, numbers, or underscores</span>
+            </div>
+
+            <div style="margin-bottom: var(--space-md);">
+              <label for="reg-displayName" class="label">Display name (optional)</label>
+              <input
+                type="text"
+                id="reg-displayName"
+                name="displayName"
+                class="input"
+                placeholder="e.g. Daisy"
+                autocomplete="name"
+              >
+              <span class="field-error" id="err-reg-displayName"></span>
+            </div>
+
+            <div style="margin-bottom: var(--space-md);">
+              <label for="reg-email" class="label">Email address</label>
+              <input
+                type="email"
+                id="reg-email"
+                name="email"
+                class="input"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+              >
+              <span class="field-error" id="err-reg-email"></span>
+            </div>
+
+            <div style="margin-bottom: var(--space-lg);">
+              <label for="reg-password" class="label">Password</label>
+              <div class="password-wrapper">
+                <input
+                  type="password"
+                  id="reg-password"
+                  name="password"
+                  class="input"
+                  autocomplete="new-password"
+                  required
+                >
+                <button type="button" class="password-toggle-btn" data-target="reg-password">Show</button>
+              </div>
+              <div class="strength-meter">
+                <div id="password-strength-bar" class="strength-bar"></div>
+              </div>
+              <span class="field-error" id="err-reg-password"></span>
+              <span class="field-hint" id="password-strength-text">At least 8 characters with letters & numbers</span>
+            </div>
+
+            <button type="submit" id="btn-reg-submit" class="btn btn-primary btn-md" style="width: 100%;">
+              Create your Keepsake
+            </button>
+          </form>
+
+          <p style="margin-top: var(--space-lg); text-align: center; font-size: var(--text-xs); color: var(--color-stone);">
+            Already have an account? <a href="#login" id="link-go-login" style="color: var(--color-teal); font-weight: 600;">Sign in here</a>
+          </p>
+        </div>
       </div>
+
+      <!-- Side Editorial Showcase Column (Desktop) -->
+      <aside class="auth-side-panel" aria-label="About Keepsake">
+        <div>
+          <span class="section-tag">A quiet home for memory</span>
+          <h2 style="font-size: var(--text-2xl); font-weight: 500; margin-bottom: var(--space-sm); color: var(--color-ink);">
+            Keep the moments that matter.
+          </h2>
+          <p class="text-muted" style="font-size: var(--text-sm); line-height: 1.6;">
+            Chronological, ad-free, and private by default. Collect your photographs, videos, and stories with care.
+          </p>
+        </div>
+
+        <div style="position: relative; height: 180px; display: flex; align-items: center; justify-content: center;">
+          <img src="/assets/stickers/camera.svg" width="64" height="64" alt="Camera sticker" style="position: absolute; left: 20px; top: 20px; transform: rotate(-8deg);">
+          <img src="/assets/stickers/sun.svg" width="56" height="56" alt="Sun sticker" style="position: absolute; right: 30px; top: 10px; transform: rotate(10deg);">
+          <img src="/assets/stickers/polaroid.svg" width="72" height="72" alt="Polaroid sticker" style="position: absolute; bottom: 10px; left: 45%; transform: translateX(-50%) rotate(4deg);">
+        </div>
+
+        <blockquote style="border-left: 2px solid var(--color-sand-hover); padding-left: var(--space-md); margin: 0; font-size: var(--text-xs); color: var(--color-stone); font-style: italic;">
+          "Photography takes an instant out of time, altering life by holding it still."
+        </blockquote>
+      </aside>
+
     </div>
   </main>
 
   <footer class="footer">
-    <p>&copy; 2026 Keepsake. All rights reserved.</p>
+    <p>&copy; 2026 Keepsake. Keep the moments that matter.</p>
   </footer>
+
+  <script type="module" src="/js/pages/auth.js"></script>
 </body>
 </html>

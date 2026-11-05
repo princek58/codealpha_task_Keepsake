@@ -4,47 +4,178 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#F7F3EC">
-  <title>Feed & Chronological Stream — Keepsake</title>
+  <title>Home — Keepsake</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
-</head>
-<body class="paper-grain" style="display: flex; flex-direction: column; min-height: 100vh;">
-  <header class="navbar" role="banner">
-    <nav class="navbar-pill">
-      <a href="/" class="navbar-brand">
-        <img src="/assets/brand/mark.svg" width="28" height="28" alt="Keepsake">
-        <span>Keepsake</span>
-      </a>
-      <ul class="navbar-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/styleguide.html">Styleguide</a></li>
-      </ul>
-      <a href="/" class="btn btn-sand btn-sm">Back</a>
-    </nav>
-  </header>
+  <link rel="stylesheet" href="/css/pages.css">
 
-  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-xl);">
-    <div class="empty-state" style="max-width: 520px;">
-      <img src="/assets/stickers/polaroid.svg" width="72" height="72" alt="Feed & Chronological Stream" style="margin-bottom: var(--space-md);">
-      <span class="badge badge-teal" style="margin-bottom: var(--space-sm);">Coming in Build 3</span>
-      <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-xs);">Feed & Chronological Stream</h1>
-      <p class="text-muted" style="margin-bottom: var(--space-xl); font-size: var(--text-sm);">
-        Your chronological feed of moments from people you follow. This full interface will be built and wired in Build 3 (Real App Pages).
-      </p>
-      <div style="display: flex; gap: var(--space-sm);">
-        <a href="/" class="btn btn-primary">Return Home</a>
-        <a href="/styleguide.html" class="btn btn-sand">View Styleguide</a>
+  <style>
+    .home-container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: var(--space-xl) var(--space-md) var(--space-4xl);
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: var(--space-2xl);
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .home-container {
+        grid-template-columns: 1fr;
+        padding-bottom: 80px; /* Space for mobile tab bar */
+      }
+      .home-sidebar {
+        order: 2;
+      }
+    }
+    .greeting-header {
+      margin-bottom: var(--space-xl);
+    }
+    .quick-actions-bar {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-xl);
+      flex-wrap: wrap;
+    }
+    .otd-strip {
+      display: flex;
+      gap: var(--space-md);
+      overflow-x: auto;
+      padding-bottom: var(--space-sm);
+      scrollbar-width: thin;
+    }
+    .otd-item-tile {
+      min-width: 160px;
+      width: 160px;
+      background-color: var(--color-white);
+      border: 1px solid var(--color-sand);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xs);
+      cursor: pointer;
+      transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+      flex-shrink: 0;
+    }
+    .otd-item-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .feed-moment-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2xl);
+    }
+  </style>
+</head>
+<body class="paper-grain">
+
+  <!-- Shared App Shell Mounts Header Here -->
+
+  <main id="main-content" class="home-container">
+    <!-- Left / Center Column: Stream -->
+    <div class="home-feed-col">
+      <!-- Greeting Header -->
+      <div class="greeting-header">
+        <h1 id="greeting-title" style="font-size: var(--text-3xl); margin-bottom: var(--space-2xs);">Good morning</h1>
+        <p class="text-muted" style="font-size: var(--text-sm);">Your chronological memory feed. What would you like to keep today?</p>
       </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions-bar">
+        <a href="/library.html?upload=1" class="btn btn-primary btn-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          <span>Upload media</span>
+        </a>
+        <a href="/moment-new.html" class="btn btn-sand btn-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          <span>New moment</span>
+        </a>
+        <a href="/albums.html?create=1" class="btn btn-sand btn-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <span>New album</span>
+        </a>
+      </div>
+
+      <!-- Welcome Card Mount (Only shown for first-time users) -->
+      <div id="welcome-mount"></div>
+
+      <!-- "On This Day" Resurface Card (Hidden when empty) -->
+      <section id="on-this-day-section" class="card" style="display: none; margin-bottom: var(--space-2xl); background-color: var(--color-paper-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+          <div style="display: flex; align-items: center; gap: var(--space-xs);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-terracotta)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <h2 style="font-size: var(--text-lg); margin: 0;">On This Day</h2>
+          </div>
+          <span class="badge badge-terracotta" id="otd-date-label">Today</span>
+        </div>
+        <div id="otd-strip" class="otd-strip"></div>
+      </section>
+
+      <!-- Main Feed Stream -->
+      <section aria-label="Chronological Feed">
+        <h2 class="sr-only">Moments Stream</h2>
+        <div id="feed-list" class="feed-moment-list">
+          <!-- Skeletons while loading -->
+          <div class="skeleton" style="height: 380px; border-radius: var(--radius-xl);"></div>
+          <div class="skeleton" style="height: 380px; border-radius: var(--radius-xl);"></div>
+        </div>
+
+        <!-- Infinite Scroll Sentinel -->
+        <div id="feed-sentinel" style="height: 40px; margin-top: var(--space-lg);"></div>
+
+        <!-- End of feed / Load more button -->
+        <div id="feed-footer" style="text-align: center; margin-top: var(--space-2xl); display: none;">
+          <p id="feed-end-message" class="text-muted" style="font-size: var(--text-sm); margin-bottom: var(--space-md);">
+            You're all caught up with moments from people you follow.
+          </p>
+          <button id="btn-load-more-feed" class="btn btn-sand btn-sm" style="display: none;">
+            Load earlier moments
+          </button>
+        </div>
+      </section>
     </div>
+
+    <!-- Right Sidebar Column -->
+    <aside class="home-sidebar" aria-label="Suggested and storage">
+      <!-- Live Storage Usage Card -->
+      <div id="sidebar-storage-mount" style="margin-bottom: var(--space-xl);"></div>
+
+      <!-- Suggested People Card -->
+      <div id="sidebar-suggestions-card" class="card" style="margin-bottom: var(--space-xl);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+          <h3 style="font-size: var(--text-md); margin: 0;">People to follow</h3>
+          <a href="/explore.html" style="font-size: var(--text-xs); color: var(--color-teal); font-weight: 600;">Explore</a>
+        </div>
+        <div id="suggestions-list" style="display: flex; flex-direction: column; gap: var(--space-sm);">
+          <div class="skeleton" style="height: 48px; border-radius: var(--radius-md);"></div>
+          <div class="skeleton" style="height: 48px; border-radius: var(--radius-md);"></div>
+        </div>
+      </div>
+
+      <!-- Quick Library & Album Links Card -->
+      <div class="card card-paper">
+        <h3 style="font-size: var(--text-sm); margin-bottom: var(--space-xs); font-weight: 600;">Your Archive</h3>
+        <p class="text-muted" style="font-size: var(--text-xs); line-height: 1.5; margin-bottom: var(--space-md);">
+          All your uploaded photographs and curated collections remain accessible and organized.
+        </p>
+        <div style="display: flex; gap: var(--space-xs);">
+          <a href="/library.html" class="btn btn-sand btn-sm" style="flex: 1; text-align: center;">Library</a>
+          <a href="/albums.html" class="btn btn-sand btn-sm" style="flex: 1; text-align: center;">Albums</a>
+        </div>
+      </div>
+    </aside>
   </main>
 
   <footer class="footer">
-    <p>&copy; 2026 Keepsake. All rights reserved.</p>
+    <p>&copy; 2026 Keepsake. Keep the moments that matter.</p>
   </footer>
+
+  <script type="module" src="/js/pages/home.js"></script>
 </body>
 </html>

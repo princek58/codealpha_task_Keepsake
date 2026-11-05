@@ -1,342 +1,499 @@
+// Keepsake Seed Script — Demo Data Generator
 require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const sharp = require('sharp');
 
+const config = require('../server/config');
+const storage = require('../server/services/storage');
 const User = require('../server/models/User');
-const Post = require('../server/models/Post');
+const Media = require('../server/models/Media');
+const Moment = require('../server/models/Moment');
+const Album = require('../server/models/Album');
 const Comment = require('../server/models/Comment');
 const Notification = require('../server/models/Notification');
 
+// Guard against production
+if (config.env === 'production' && !process.argv.includes('--force')) {
+  console.error('ERROR: Cannot run seed script in production without --force flag.');
+  process.exit(1);
+}
+
 const DEMO_PASSWORD = 'Password123';
-const DEMO_USERNAMES = [
-  'daisy_bloom',
-  'sunny_sprout',
-  'lavender_sky',
-  'rose_petal',
-  'starry_moth',
-  'cherry_blossom',
-  'gentle_blob',
-  'fern_green'
+const DEMO_USERS = [
+  { username: 'willow', displayName: 'Willow Vance', bio: 'Film photography, quiet mornings, ceramic cups and seaside air.', color: '#2F7F79' },
+  { username: 'jasper', displayName: 'Jasper Reid', bio: 'Documenting rainy afternoons, vintage books, and wooden cabins.', color: '#B4532A' },
+  { username: 'elena', displayName: 'Elena Rostova', bio: 'Architectural shadows, tea ceremonies, and film rolls from Kyoto.', color: '#A9B99B' },
+  { username: 'kai', displayName: 'Kai Takahashi', bio: 'Analog snapshots, train journeys across Hokkaido, and espresso.', color: '#4C6A92' },
+  { username: 'maya', displayName: 'Maya Lindqvist', bio: 'Nordic landscapes, sourdough baking, and soft wool blankets.', color: '#E0A53B' },
+  { username: 'sorin', displayName: 'Sorin Balea', bio: 'Carpentry, pine forests in Transylvania, and slow woodworking.', color: '#5F6B7A' },
+  { username: 'nora', displayName: 'Nora Chen', bio: 'Botanical gardens, watercolor sketches, and Sunday markets.', color: '#2F7F79' },
+  { username: 'clara', displayName: 'Clara Dubois', bio: 'Boulangeries, morning walks by the Seine, and linen journals.', color: '#B4532A' }
 ];
 
-const uploadsDir = path.join(__dirname, '../server/uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+const PALETTE = [
+  { bg: '#F7F3EC', fg: '#B4532A', name: 'Terracotta Paper' },
+  { bg: '#FAF8F5', fg: '#2F7F79', name: 'Teal Mist' },
+  { bg: '#EDE4D3', fg: '#5F6B7A', name: 'Sand Stone' },
+  { bg: '#F2EDE4', fg: '#A9B99B', name: 'Sage Linen' },
+  { bg: '#F5EFEB', fg: '#E0A53B', name: 'Mustard Grain' },
+  { bg: '#EAE6DF', fg: '#4C6A92', name: 'Slate Harbor' }
+];
+
+const PLACES = [
+  'Kyoto, Japan',
+  'Big Sur, California',
+  'Edinburgh Old Town, Scotland',
+  'Cornwall Coast, England',
+  'Lake Bled, Slovenia',
+  'Stockholm Archipelago, Sweden',
+  'Bergen, Norway',
+  'Giverny, France',
+  'Cinque Terre, Italy',
+  'Kamakura, Japan'
+];
+
+const CAPTIONS = [
+  'Morning light finding its way across the wooden table.',
+  'A slow walk through the old pine grove after the rain.',
+  'Steaming tea on a crisp November morning.',
+  'The silent beauty of ancient stone alleys at dawn.',
+  'Collecting smooth driftwood along the shoreline.',
+  'Finding quiet moments between long train rides.',
+  'Warm shadows stretching across the linen curtains.',
+  'Rain tapping gently against the greenhouse glass.',
+  'A quiet corner of the bookstore with coffee.',
+  'Sunlight filtering through the autumn foliage.'
+];
+
+const TAG_POOL = ['film', 'morning', 'autumn', 'coffee', 'fog', 'sea', 'books', 'travel', 'calm', 'nature'];
+
+// Generate an avatar SVG and convert to WebP
+async function generateAvatarBuffer(name, color) {
+  const initial = (name || 'K').charAt(0).toUpperCase();
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+      <rect width="256" height="256" fill="${color}"/>
+      <circle cx="128" cy="128" r="96" fill="#FFFFFF" fill-opacity="0.2"/>
+      <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, serif" font-size="104" font-weight="600" fill="#FFFFFF">
+        ${initial}
+      </text>
+    </svg>
+  `;
+  return sharp(Buffer.from(svg)).webp({ quality: 90 }).toBuffer();
 }
 
-// Generate sample pastel image files in uploads for blooms
-function generateSampleImages() {
-  const images = [];
-  const svgSamples = [
-    {
-      name: 'seed_garden_window.svg',
-      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
-        <rect width="800" height="600" fill="#FFF8F3"/>
-        <circle cx="400" cy="300" r="220" fill="#CDEFE2" opacity="0.6"/>
-        <circle cx="400" cy="240" r="120" fill="#FFF0B3" stroke="#4A2C4F" stroke-width="8"/>
-        <path d="M400 360 L400 480" stroke="#4A2C4F" stroke-width="12" stroke-linecap="round"/>
-        <path d="M400 420 Q350 400 330 420 Q350 450 400 440" fill="#CDEFE2" stroke="#4A2C4F" stroke-width="8"/>
-        <path d="M400 400 Q450 380 470 400 Q450 430 400 420" fill="#CDEFE2" stroke="#4A2C4F" stroke-width="8"/>
-      </svg>`
-    },
-    {
-      name: 'seed_tea_table.svg',
-      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
-        <rect width="800" height="600" fill="#FFF8F3"/>
-        <circle cx="400" cy="300" r="240" fill="#FFCDB2" opacity="0.5"/>
-        <rect x="280" y="260" width="240" height="160" rx="30" fill="#FFFFFF" stroke="#4A2C4F" stroke-width="8"/>
-        <path d="M520 300 Q570 340 520 380" fill="none" stroke="#4A2C4F" stroke-width="8" stroke-linecap="round"/>
-        <ellipse cx="400" cy="260" rx="120" ry="24" fill="#FFB3C7" stroke="#4A2C4F" stroke-width="6"/>
-      </svg>`
-    },
-    {
-      name: 'seed_sweet_peas.svg',
-      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
-        <rect width="800" height="600" fill="#FFF8F3"/>
-        <circle cx="400" cy="300" r="220" fill="#D9C8FF" opacity="0.5"/>
-        <circle cx="340" cy="260" r="60" fill="#FFB3C7" stroke="#4A2C4F" stroke-width="7"/>
-        <circle cx="460" cy="260" r="60" fill="#FF6F91" stroke="#4A2C4F" stroke-width="7"/>
-        <circle cx="400" cy="340" r="60" fill="#FFF0B3" stroke="#4A2C4F" stroke-width="7"/>
-      </svg>`
+// Generate aesthetic photo WebP
+async function generatePhotoBuffer(width, height, colorPair, title, subtitle) {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <defs>
+        <radialGradient id="grad" cx="50%" cy="40%" r="60%">
+          <stop offset="0%" stop-color="${colorPair.bg}" stop-opacity="0.95"/>
+          <stop offset="100%" stop-color="${colorPair.fg}" stop-opacity="0.25"/>
+        </radialGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="${colorPair.bg}"/>
+      <rect width="${width}" height="${height}" fill="url(#grad)"/>
+      <circle cx="${width / 2}" cy="${height / 2}" r="${Math.min(width, height) * 0.28}" fill="${colorPair.fg}" fill-opacity="0.15"/>
+      <circle cx="${width / 2}" cy="${height / 2}" r="${Math.min(width, height) * 0.16}" fill="${colorPair.fg}" fill-opacity="0.3"/>
+      <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, serif" font-size="${Math.max(18, Math.round(width * 0.04))}" font-weight="600" fill="#1F2A37">
+        ${title}
+      </text>
+      <text x="50%" y="58%" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="${Math.max(12, Math.round(width * 0.024))}" fill="#5F6B7A">
+        ${subtitle}
+      </text>
+    </svg>
+  `;
+
+  return sharp(Buffer.from(svg)).webp({ quality: 85 }).toBuffer();
+}
+
+async function findSampleVideoBuffer() {
+  const storageDir = path.resolve(config.storageDir);
+  try {
+    const files = fs.readdirSync(storageDir, { recursive: true });
+    for (const f of files) {
+      if (typeof f === 'string' && f.endsWith('.mp4')) {
+        const full = path.join(storageDir, f);
+        if (fs.existsSync(full)) {
+          return fs.readFileSync(full);
+        }
+      }
     }
-  ];
-
-  svgSamples.forEach((item) => {
-    const fullPath = path.join(uploadsDir, item.name);
-    fs.writeFileSync(fullPath, item.svg);
-    images.push(`/uploads/${item.name}`);
-  });
-
-  return images;
+  } catch {
+    // fallback if no storage mp4
+  }
+  return null;
 }
 
-async function seed() {
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/bloomly';
-  console.log(`Connecting to MongoDB at ${mongoUri}...`);
+async function runSeed() {
+  console.log('Connecting to database:', config.mongodbUri);
+  await mongoose.connect(config.mongodbUri);
 
-  await mongoose.connect(mongoUri);
-  console.log('Connected to database.');
+  console.log('Clearing previous demo seed data...');
+  const existingUsers = await User.find({ username: { $in: DEMO_USERS.map((u) => u.username) } });
+  const userIds = existingUsers.map((u) => u._id);
 
-  // 1. Clean previous demo seed data
-  console.log('Clearing previous demo records...');
-  const existingDemoUsers = await User.find({ username: { $in: DEMO_USERNAMES } });
-  const demoUserIds = existingDemoUsers.map(u => u._id);
+  if (userIds.length > 0) {
+    await Media.deleteMany({ owner: { $in: userIds } });
+    await Moment.deleteMany({ author: { $in: userIds } });
+    await Album.deleteMany({ owner: { $in: userIds } });
+    await Comment.deleteMany({ author: { $in: userIds } });
+    await Notification.deleteMany({ $or: [{ to: { $in: userIds } }, { from: { $in: userIds } }] });
+    await User.deleteMany({ _id: { $in: userIds } });
 
-  if (demoUserIds.length > 0) {
-    await Post.deleteMany({ author: { $in: demoUserIds } });
-    await Comment.deleteMany({ author: { $in: demoUserIds } });
-    await Notification.deleteMany({ $or: [{ to: { $in: demoUserIds } }, { from: { $in: demoUserIds } }] });
-    await User.deleteMany({ _id: { $in: demoUserIds } });
+    // Clean user storage dirs
+    for (const id of userIds) {
+      try {
+        await storage.remove(id.toString());
+      } catch {}
+    }
   }
 
-  // 2. Hash password
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
-  const sampleImages = generateSampleImages();
-
-  // 3. Create ~8 gardeners
-  console.log('Creating demo gardeners...');
-  const gardenersData = [
-    {
-      username: 'daisy_bloom',
-      email: 'daisy@bloomly.app',
-      displayName: 'Daisy',
-      bio: 'Planting quiet moments and afternoon chamomile tea 🌼',
-      moodSticker: 'flower'
-    },
-    {
-      username: 'sunny_sprout',
-      email: 'sunny@bloomly.app',
-      displayName: 'Sunny',
-      bio: 'Small daily joys, windowsill basil, and gentle sunbeams ☀️🌱',
-      moodSticker: 'sprout'
-    },
-    {
-      username: 'lavender_sky',
-      email: 'lavender@bloomly.app',
-      displayName: 'Lavender',
-      bio: 'Soft clouds, rainy books, and sleepy evening poetry ☁️💜',
-      moodSticker: 'cloud'
-    },
-    {
-      username: 'rose_petal',
-      email: 'rose@bloomly.app',
-      displayName: 'Rose',
-      bio: 'Curating memories of wild garden roses and cozy bakeries 🌹🍰',
-      moodSticker: 'heart'
-    },
-    {
-      username: 'starry_moth',
-      email: 'orion@bloomly.app',
-      displayName: 'Orion',
-      bio: 'Stargazing from the balcony and nocturnal tea walks ✨🌙',
-      moodSticker: 'star'
-    },
-    {
-      username: 'cherry_blossom',
-      email: 'sakura@bloomly.app',
-      displayName: 'Sakura',
-      bio: 'Pink blossoms in the gentle spring breeze 🌸🍒',
-      moodSticker: 'cherry'
-    },
-    {
-      username: 'gentle_blob',
-      email: 'mochi@bloomly.app',
-      displayName: 'Mochi',
-      bio: 'Soft round thoughts, warm blankets, and peaceful naps 🍮',
-      moodSticker: 'smiley_blob'
-    },
-    {
-      username: 'fern_green',
-      email: 'fern@bloomly.app',
-      displayName: 'Fern',
-      bio: 'Collecting vintage botanicals and forest moss 🌿🪴',
-      moodSticker: 'plant'
-    }
-  ];
-
+  console.log('Creating demo users...');
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const createdUsers = [];
-  for (const g of gardenersData) {
-    const user = await User.create({
-      ...g,
-      passwordHash
+
+  for (const u of DEMO_USERS) {
+    const userDoc = new User({
+      username: u.username,
+      displayName: u.displayName,
+      email: `${u.username}@example.com`,
+      passwordHash,
+      bio: u.bio,
+      storageQuotaBytes: config.userQuotaBytes,
+      storageUsedBytes: 0,
+      following: [],
+      followers: []
     });
-    createdUsers.push(user);
+
+    // Generate avatar
+    const avatarBuf = await generateAvatarBuffer(u.displayName, u.color);
+    const avatarRelPath = `avatars/${userDoc._id}_${Date.now()}.webp`;
+    await storage.writeBuffer(avatarRelPath, avatarBuf);
+    userDoc.avatarPath = avatarRelPath;
+
+    await userDoc.save();
+    createdUsers.push(userDoc);
   }
 
-  // 4. Create follow relationships
-  console.log('Establishing garden connections (follows)...');
-  // Daisy connects with Sunny, Lavender, Rose, Sakura
-  createdUsers[0].following.push(createdUsers[1]._id, createdUsers[2]._id, createdUsers[3]._id, createdUsers[5]._id);
-  // Sunny connects with Daisy, Rose, Fern, Mochi
-  createdUsers[1].following.push(createdUsers[0]._id, createdUsers[3]._id, createdUsers[7]._id, createdUsers[6]._id);
-  // Lavender connects with Daisy, Orion, Sakura
-  createdUsers[2].following.push(createdUsers[0]._id, createdUsers[4]._id, createdUsers[5]._id);
-  // Rose connects with Daisy, Sunny, Mochi
-  createdUsers[3].following.push(createdUsers[0]._id, createdUsers[1]._id, createdUsers[6]._id);
-  // Orion connects with Lavender, Sakura, Fern
-  createdUsers[4].following.push(createdUsers[2]._id, createdUsers[5]._id, createdUsers[7]._id);
-  // Sakura connects with Daisy, Lavender, Rose
-  createdUsers[5].following.push(createdUsers[0]._id, createdUsers[2]._id, createdUsers[3]._id);
-  // Mochi connects with Daisy, Sunny, Fern
-  createdUsers[6].following.push(createdUsers[0]._id, createdUsers[1]._id, createdUsers[7]._id);
-  // Fern connects with Daisy, Sunny, Orion
-  createdUsers[7].following.push(createdUsers[0]._id, createdUsers[1]._id, createdUsers[4]._id);
+  // Follow network
+  console.log('Building social graph...');
+  for (let i = 0; i < createdUsers.length; i++) {
+    const user = createdUsers[i];
+    // Follow next 3 users
+    for (let j = 1; j <= 3; j++) {
+      const target = createdUsers[(i + j) % createdUsers.length];
+      user.following.push(target._id);
+      target.followers.push(user._id);
+    }
+    await user.save();
+  }
 
-  // Update followers arrays
-  for (const u of createdUsers) {
-    for (const followedId of u.following) {
-      const followedUser = createdUsers.find(x => x._id.equals(followedId));
-      if (followedUser && !followedUser.followers.some(id => id.equals(u._id))) {
-        followedUser.followers.push(u._id);
+  // Generate Media library items for each user
+  console.log('Generating photos and media library for each user...');
+  const sampleVideoBuf = await findSampleVideoBuffer();
+  const allMediaByUser = new Map();
+
+  const aspectRatios = [
+    { w: 800, h: 800, name: '1:1' },
+    { w: 800, h: 600, name: '4:3' },
+    { w: 960, h: 540, name: '16:9' },
+    { w: 600, h: 800, name: '3:4' }
+  ];
+
+  const now = new Date();
+  const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+  const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+
+  // Pre-generate base image buffers for each aspect ratio & palette combination
+  const imageBufferCache = new Map();
+  for (let a = 0; a < aspectRatios.length; a++) {
+    const ar = aspectRatios[a];
+    for (let p = 0; p < PALETTE.length; p++) {
+      const colorPair = PALETTE[p];
+      const key = `${ar.name}_${p}`;
+      const disp = await generatePhotoBuffer(ar.w, ar.h, colorPair, colorPair.name, 'Keepsake Memory');
+      const thm = await sharp(disp).resize(400, 400, { fit: 'inside' }).webp({ quality: 75 }).toBuffer();
+      imageBufferCache.set(key, { disp, thm });
+    }
+  }
+
+  for (let uIdx = 0; uIdx < createdUsers.length; uIdx++) {
+    const user = createdUsers[uIdx];
+    const userMediaList = [];
+    const mediaCount = 18; // 18 photos per user
+
+    for (let mIdx = 0; mIdx < mediaCount; mIdx++) {
+      const mediaId = new mongoose.Types.ObjectId();
+      const ar = aspectRatios[mIdx % aspectRatios.length];
+      const pIdx = (uIdx + mIdx) % PALETTE.length;
+      const place = PLACES[(uIdx * 2 + mIdx) % PLACES.length];
+      const caption = CAPTIONS[(uIdx + mIdx) % CAPTIONS.length];
+
+      // Taken date: mix of today, on-this-day, and past months
+      let takenAt;
+      if (mIdx === 0) {
+        takenAt = oneYearAgo; // Exactly 1 year ago for On This Day
+      } else if (mIdx === 1) {
+        takenAt = twoYearsAgo; // Exactly 2 years ago for On This Day
+      } else if (mIdx < 4) {
+        takenAt = new Date(now.getTime() - mIdx * 86400000 * 2); // recent days
+      } else {
+        takenAt = new Date(now.getTime() - mIdx * 86400000 * 18); // past months
+      }
+
+      const cached = imageBufferCache.get(`${ar.name}_${pIdx}`);
+      const displayBuf = cached.disp;
+      const thumbBuf = cached.thm;
+
+      const origRel = `${user._id}/${mediaId}/original.webp`;
+      const dispRel = `${user._id}/${mediaId}/display.webp`;
+      const thmRel = `${user._id}/${mediaId}/thumb.webp`;
+
+      await storage.writeBuffer(origRel, displayBuf);
+      await storage.writeBuffer(dispRel, displayBuf);
+      await storage.writeBuffer(thmRel, thumbBuf);
+
+      const sizeBytes = displayBuf.length * 2 + thumbBuf.length;
+
+      const mediaDoc = await Media.create({
+        _id: mediaId,
+        owner: user._id,
+        type: 'image',
+        status: 'ready',
+        originalName: `photo_${mIdx + 1}.webp`,
+        mime: 'image/webp',
+        sizeBytes,
+        width: ar.w,
+        height: ar.h,
+        takenAt,
+        caption,
+        place,
+        blurDataUrl: 'data:image/webp;base64,UklGRkAAAABXRUJQVlA4IDQAAACwAQCdASoUABQAPpE+mkkkIqIhAAA/sWYA',
+        paths: {
+          original: origRel,
+          display: dispRel,
+          thumb: thmRel,
+          video: null,
+          poster: null
+        }
+      });
+
+      userMediaList.push(mediaDoc);
+      await User.findByIdAndUpdate(user._id, { $inc: { storageUsedBytes: sizeBytes } });
+    }
+
+    // Add 1 sample video for the first 3 users
+    if (uIdx < 3 && sampleVideoBuf) {
+      const vMediaId = new mongoose.Types.ObjectId();
+      const vOrig = `${user._id}/${vMediaId}/original.mp4`;
+      const vVideo = `${user._id}/${vMediaId}/video.mp4`;
+      const vPoster = `${user._id}/${vMediaId}/poster.webp`;
+      const vThumb = `${user._id}/${vMediaId}/thumb.webp`;
+
+      const posterBuf = await generatePhotoBuffer(800, 450, PALETTE[uIdx], 'Coastal Waves', 'Video Clip');
+      const thumbBuf = await sharp(posterBuf).resize(400, 225).webp().toBuffer();
+
+      await storage.writeBuffer(vOrig, sampleVideoBuf);
+      await storage.writeBuffer(vVideo, sampleVideoBuf);
+      await storage.writeBuffer(vPoster, posterBuf);
+      await storage.writeBuffer(vThumb, thumbBuf);
+
+      const vSizeBytes = sampleVideoBuf.length * 2 + posterBuf.length;
+
+      const vidDoc = await Media.create({
+        _id: vMediaId,
+        owner: user._id,
+        type: 'video',
+        status: 'ready',
+        originalName: 'clip.mp4',
+        mime: 'video/mp4',
+        sizeBytes: vSizeBytes,
+        width: 800,
+        height: 450,
+        durationSec: 5,
+        takenAt: new Date(now.getTime() - 86400000 * 5),
+        caption: 'Gentle waves rolling in at dusk.',
+        place: 'Cornwall Coast, England',
+        paths: {
+          original: vOrig,
+          display: null,
+          thumb: vThumb,
+          video: vVideo,
+          poster: vPoster
+        }
+      });
+
+      userMediaList.push(vidDoc);
+      await User.findByIdAndUpdate(user._id, { $inc: { storageUsedBytes: vSizeBytes } });
+    }
+
+    allMediaByUser.set(user.username, userMediaList);
+  }
+
+  // Create Moments (~25 moments)
+  console.log('Creating moments with collage, grid, and carousel layouts...');
+  const createdMoments = [];
+
+  const momentConfigs = [
+    { title: 'Golden Hour by the Canal', layout: { type: 'collage', template: 'collage-1-2', gap: 8 }, count: 3, place: 'Kyoto, Japan', vis: 'public', tags: ['autumn', 'film', 'travel'] },
+    { title: 'A Day at the Coast', layout: { type: 'collage', template: 'collage-2-1', gap: 8 }, count: 3, place: 'Cornwall Coast, England', vis: 'public', tags: ['sea', 'calm'] },
+    { title: 'Fog Rolling Through the Pines', layout: { type: 'grid', gap: 12 }, count: 4, place: 'Big Sur, California', vis: 'public', tags: ['fog', 'nature'] },
+    { title: 'Ceramic Studio & Tea', layout: { type: 'carousel', gap: 8 }, count: 5, place: 'Edinburgh Old Town, Scotland', vis: 'followers', tags: ['coffee', 'morning'] },
+    { title: 'Reflections on Lake Bled', layout: { type: 'collage', template: 'collage-2x2', gap: 8 }, count: 4, place: 'Lake Bled, Slovenia', vis: 'public', tags: ['travel', 'nature'] },
+    { title: 'Morning Light in the Kitchen', layout: { type: 'grid', gap: 8 }, count: 2, place: 'Bergen, Norway', vis: 'public', tags: ['morning', 'calm'] },
+    { title: 'Autumn Leafpress Notebook', layout: { type: 'collage', template: 'collage-mosaic', gap: 8 }, count: 4, place: 'Stockholm, Sweden', vis: 'public', tags: ['autumn', 'books'] },
+    { title: 'Quiet Stroll through Kamakura', layout: { type: 'grid', gap: 12 }, count: 3, place: 'Kamakura, Japan', vis: 'public', tags: ['travel', 'calm'] }
+  ];
+
+  for (let i = 0; i < createdUsers.length; i++) {
+    const user = createdUsers[i];
+    const uMedia = allMediaByUser.get(user.username) || [];
+
+    for (let cIdx = 0; cIdx < 3; cIdx++) {
+      const cfg = momentConfigs[(i * 3 + cIdx) % momentConfigs.length];
+      const sliceStart = (cIdx * 4) % Math.max(1, uMedia.length - cfg.count);
+      const chosenMedia = uMedia.slice(sliceStart, sliceStart + cfg.count);
+      if (chosenMedia.length === 0) continue;
+
+      // Make first moment for willow exactly 1 year ago so it shows in On This Day!
+      let takenOn = chosenMedia[0].takenAt || new Date();
+      if (user.username === 'willow' && cIdx === 0) {
+        takenOn = oneYearAgo;
+      }
+
+      const moment = await Moment.create({
+        owner: user._id,
+        media: chosenMedia.map((m) => m._id),
+        title: `${cfg.title} ${i > 3 ? 'II' : ''}`.trim(),
+        caption: `Preserving a serene moment from our journey. ${CAPTIONS[(i + cIdx) % CAPTIONS.length]}`,
+        layout: {
+          type: cfg.layout.type,
+          template: cfg.layout.template || cfg.layout.type,
+          gap: cfg.layout.gap || 8,
+          background: '#EDE4D3'
+        },
+        takenOn,
+        place: cfg.place,
+        tags: cfg.tags,
+        visibility: cfg.vis,
+        likes: [],
+        likesCount: 0,
+        commentsCount: 0
+      });
+
+      createdMoments.push(moment);
+    }
+  }
+
+  // Social: Likes, Comments, Notifications
+  console.log('Seeding likes, comments, and notifications...');
+  for (let mIdx = 0; mIdx < createdMoments.length; mIdx++) {
+    const m = createdMoments[mIdx];
+    // Add 2-4 likes
+    const numLikes = (mIdx % 4) + 1;
+    for (let l = 0; l < numLikes; l++) {
+      const liker = createdUsers[(mIdx + l + 1) % createdUsers.length];
+      if (!m.likes.includes(liker._id)) {
+        m.likes.push(liker._id);
+      }
+    }
+    m.likesCount = m.likes.length;
+
+    // Add 1-2 comments
+    const commenter1 = createdUsers[(mIdx + 2) % createdUsers.length];
+    const c1 = await Comment.create({
+      moment: m._id,
+      author: commenter1._id,
+      text: 'Such a peaceful atmosphere, love the color tones here.'
+    });
+
+    m.commentsCount = 1;
+
+    if (mIdx % 2 === 0) {
+      const commenter2 = createdUsers[(mIdx + 3) % createdUsers.length];
+      await Comment.create({
+        moment: m._id,
+        author: commenter2._id,
+        text: 'This brings back wonderful memories of traveling there.'
+      });
+      m.commentsCount = 2;
+    }
+
+    await m.save();
+
+    // Create notifications for the moment author
+    if (m.likes.length > 0) {
+      const liker = createdUsers.find((u) => u._id.equals(m.likes[0]));
+      if (liker && !liker._id.equals(m.owner)) {
+        await Notification.create({
+          to: m.owner,
+          from: liker._id,
+          type: 'like',
+          moment: m._id
+        });
       }
     }
   }
 
-  // Save all users with updated counts
-  for (const u of createdUsers) {
-    await u.save();
-  }
-
-  // 5. Create ~25 cozy bloom posts
-  console.log('Planting ~25 moments (blooms)...');
-  const postTexts = [
-    { u: 0, text: 'Morning tea by the garden window with sweet peas in bloom 🌱☕️', img: sampleImages[2] },
-    { u: 1, text: 'The basil seeds sprouted this morning! Tiny green wonders on the kitchen sill.', img: null },
-    { u: 2, text: 'A gentle drizzle outside. Curling up with an old notebook and hot lavender brew.', img: sampleImages[1] },
-    { u: 3, text: 'Baked fresh cinnamon scones with strawberry jam. Wishing everyone a sweet afternoon.', img: null },
-    { u: 4, text: 'Clear skies tonight. Spotting Jupiter and quiet city lights from my porch.', img: null },
-    { u: 5, text: 'First cherry blossom petals drifting past the studio door. Spring is whispering.', img: sampleImages[0] },
-    { u: 6, text: 'Reminder to drink some water, relax your shoulders, and breathe deeply today.', img: null },
-    { u: 7, text: 'Repotted my favorite maidenhair fern in fresh earth. Gardening is therapy.', img: null },
-    { u: 0, text: 'Sunlight filtering through the curtains like honey. Happy quiet Sunday.', img: null },
-    { u: 1, text: 'Found a baby ladybug resting on a sweet pea leaf. Nature is so gentle.', img: null },
-    { u: 2, text: 'Listening to classical piano while watching the rain patter against the glass pane.', img: null },
-    { u: 3, text: 'Rosemary and thyme drying upside down in the kitchen corner. Smells wonderful.', img: null },
-    { u: 4, text: 'Midnight sketches and quiet thoughts. The world is peaceful when asleep.', img: null },
-    { u: 5, text: 'Watercolor painting little wildflowers all afternoon. Hands full of soft pastel colors.', img: sampleImages[1] },
-    { u: 6, text: 'Warm vanilla oat latte and a thick fluffy cardigan. Peak cozy season.', img: null },
-    { u: 7, text: 'Walking in the pine forest after morning fog. The air smells like fresh rain.', img: null },
-    { u: 0, text: 'Gave a sprig of garden lavender to my neighbor today. Little kindnesses bloom big.', img: null },
-    { u: 1, text: 'Sunset turned the entire sky into peach and strawberry cream.', img: null },
-    { u: 2, text: 'Reading old letters tucked inside vintage books. Time moves in gentle circles.', img: null },
-    { u: 3, text: 'Pressed a wild buttercup inside my journal pages.', img: null },
-    { u: 4, text: 'The moon is a delicate silver crescent tonight.', img: null },
-    { u: 5, text: 'Brewed a pot of white peach tea for the afternoon garden break.', img: sampleImages[2] },
-    { u: 6, text: 'Slow days are not wasted days. Rest is productive.', img: null },
-    { u: 7, text: 'Spotted a little brown sparrow taking a bath in the bird fountain!', img: null },
-    { u: 0, text: 'Thank you all for sharing such peaceful moments in this quiet garden.', img: null }
+  // Create Albums (~10 albums)
+  console.log('Creating curated albums with share tokens...');
+  const albumNames = [
+    { title: 'Kyoto Memories', desc: 'Ancient shrines, moss gardens, and cedar wood.', vis: 'public' },
+    { title: 'Northern Coastlines', desc: 'Granite cliffs and salt breeze across the north.', vis: 'public' },
+    { title: 'Ceramics & Still Life', desc: 'Clay, glazes, and morning kettle steam.', vis: 'followers' },
+    { title: 'Autumn in the Highlands', desc: 'Golden heather, misty glens, and warm fires.', vis: 'public' },
+    { title: 'Quiet Architecture', desc: 'Geometric arches, light corridors, and shadows.', vis: 'private' },
+    { title: 'Coffee & Notebooks', desc: 'Sketches, notes, and fountain pens from cafes.', vis: 'followers' },
+    { title: 'Forest Wanderings', desc: 'Ferns, morning moss, and tall pines.', vis: 'public' },
+    { title: 'Subtle Details', desc: 'Small moments that made the journey memorable.', vis: 'public' },
+    { title: 'Scandinavian Winter', desc: 'Snow on timber houses and frozen lakes.', vis: 'public' },
+    { title: 'Sunday Baking', desc: 'Flour on the counter and sourdough loaves.', vis: 'private' }
   ];
 
-  const createdPosts = [];
-  for (let i = 0; i < postTexts.length; i++) {
-    const item = postTexts[i];
-    const author = createdUsers[item.u];
+  for (let aIdx = 0; aIdx < albumNames.length; aIdx++) {
+    const user = createdUsers[aIdx % createdUsers.length];
+    const uMedia = allMediaByUser.get(user.username) || [];
+    const mediaSlice = uMedia.slice(0, 6);
 
-    // Stagger dates slightly over the last few days
-    const postDate = new Date(Date.now() - (postTexts.length - i) * 3600000 * 3);
+    const aData = albumNames[aIdx];
+    const shareToken = aIdx === 0 || aIdx === 1 ? crypto.randomBytes(12).toString('hex') : null;
 
-    const post = await Post.create({
-      author: author._id,
-      text: item.text,
-      image: item.img || '',
-      likes: [],
-      commentsCount: 0,
-      createdAt: postDate
-    });
-
-    author.postsCount = (author.postsCount || 0) + 1;
-    await author.save();
-    createdPosts.push(post);
-  }
-
-  // 6. Add Likes, Comments, and Notifications
-  console.log('Sprinkling hearts and sweet comments...');
-  const commentsPool = [
-    'This made my morning so much brighter!',
-    'What a peaceful moment to share 🌱',
-    'Saving this cozy inspiration for later.',
-    'Such lovely words. Thank you for planting this!',
-    'The colors are wonderful ✨',
-    'Sending warm thoughts from my corner of the garden!'
-  ];
-
-  for (let i = 0; i < createdPosts.length; i++) {
-    const post = createdPosts[i];
-    // Pick 2-4 random likers
-    const likers = createdUsers.filter((u, idx) => idx !== (i % createdUsers.length) && (idx + i) % 2 === 0);
-    for (const liker of likers) {
-      post.likes.push(liker._id);
-
-      // Create notification
-      await Notification.create({
-        to: post.author,
-        from: liker._id,
-        type: 'like',
-        postId: post._id,
-        postPreview: post.text ? post.text.slice(0, 40) : '',
-        read: i < 15,
-        createdAt: new Date(post.createdAt.getTime() + 600000)
-      });
-    }
-
-    // Add 1-2 comments on some posts
-    if (i % 2 === 0) {
-      const commenter = createdUsers[(i + 1) % createdUsers.length];
-      const commentText = commentsPool[i % commentsPool.length];
-
-      const comment = await Comment.create({
-        post: post._id,
-        author: commenter._id,
-        text: commentText,
-        createdAt: new Date(post.createdAt.getTime() + 1200000)
-      });
-
-      post.commentsCount = 1;
-
-      // Notification
-      await Notification.create({
-        to: post.author,
-        from: commenter._id,
-        type: 'comment',
-        postId: post._id,
-        postPreview: post.text ? post.text.slice(0, 40) : '',
-        read: i < 15,
-        createdAt: comment.createdAt
-      });
-    }
-
-    await post.save();
-  }
-
-  // Add follow notifications
-  for (let i = 1; i < 4; i++) {
-    await Notification.create({
-      to: createdUsers[0]._id,
-      from: createdUsers[i]._id,
-      type: 'follow',
-      read: false,
-      createdAt: new Date(Date.now() - i * 1800000)
+    await Album.create({
+      owner: user._id,
+      title: aData.title,
+      description: aData.desc,
+      visibility: aData.vis,
+      media: mediaSlice.map((m) => m._id),
+      cover: mediaSlice[0]?._id || null,
+      shareToken
     });
   }
 
-  console.log('\n=============================================');
-  console.log('   BLOONLY GARDEN SEED COMPLETE!');
-  console.log('=============================================');
-  console.log(`Gardeners Created : ${createdUsers.length}`);
-  console.log(`Blooms Planted    : ${createdPosts.length}`);
-  console.log(`Demo Password     : ${DEMO_PASSWORD}`);
-  console.log('\nDemo Gardener Logins:');
+  console.log('\n======================================================');
+  console.log('✓ SEEDING COMPLETED SUCCESSFULLY!');
+  console.log('======================================================');
+  console.log(`Created ${createdUsers.length} users, ${createdMoments.length} moments, and 10 albums.`);
+  console.log('\nDemo User Accounts (Password: Password123 for all):');
   createdUsers.forEach((u) => {
-    console.log(`  - @${u.username.padEnd(16)} | Email: ${u.email.padEnd(22)} | Mood: ${u.moodSticker}`);
+    console.log(`  - @${u.username.padEnd(12)} (${u.displayName})`);
   });
-  console.log('=============================================\n');
+  console.log('\nActive Public Shared Album URL:');
+  const sharedAlbum = await Album.findOne({ shareToken: { $ne: null } });
+  if (sharedAlbum) {
+    console.log(`  http://localhost:5000/shared.html?token=${sharedAlbum.shareToken}`);
+  }
+  console.log('======================================================\n');
 
   await mongoose.disconnect();
 }
 
-seed().catch((err) => {
-  console.error('Seed error:', err);
+runSeed().catch((err) => {
+  console.error('Seed script error:', err);
   process.exit(1);
 });

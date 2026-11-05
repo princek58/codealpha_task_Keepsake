@@ -4,47 +4,237 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#F7F3EC">
-  <title>Media Library — Keepsake</title>
+  <title>Your Library — Keepsake</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
-</head>
-<body class="paper-grain" style="display: flex; flex-direction: column; min-height: 100vh;">
-  <header class="navbar" role="banner">
-    <nav class="navbar-pill">
-      <a href="/" class="navbar-brand">
-        <img src="/assets/brand/mark.svg" width="28" height="28" alt="Keepsake">
-        <span>Keepsake</span>
-      </a>
-      <ul class="navbar-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/styleguide.html">Styleguide</a></li>
-      </ul>
-      <a href="/" class="btn btn-sand btn-sm">Back</a>
-    </nav>
-  </header>
+  <link rel="stylesheet" href="/css/pages.css">
 
-  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-xl);">
-    <div class="empty-state" style="max-width: 520px;">
-      <img src="/assets/stickers/film-roll.svg" width="72" height="72" alt="Media Library" style="margin-bottom: var(--space-md);">
-      <span class="badge badge-teal" style="margin-bottom: var(--space-sm);">Coming in Build 3</span>
-      <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-xs);">Media Library</h1>
-      <p class="text-muted" style="margin-bottom: var(--space-xl); font-size: var(--text-sm);">
-        Your private archive of uploaded photos and videos. This full interface will be built and wired in Build 3 (Real App Pages).
-      </p>
-      <div style="display: flex; gap: var(--space-sm);">
-        <a href="/" class="btn btn-primary">Return Home</a>
-        <a href="/styleguide.html" class="btn btn-sand">View Styleguide</a>
+  <style>
+    .library-container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: var(--space-xl) var(--space-lg) var(--space-4xl);
+    }
+    @media (max-width: 768px) {
+      .library-container {
+        padding: var(--space-lg) var(--space-sm) 90px;
+      }
+    }
+    .library-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+      flex-wrap: wrap;
+    }
+    .timeline-group {
+      margin-bottom: var(--space-3xl);
+    }
+    .timeline-heading {
+      position: sticky;
+      top: 72px;
+      z-index: 10;
+      background-color: var(--color-paper);
+      padding: var(--space-xs) 0;
+      margin-bottom: var(--space-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .upload-drawer {
+      position: fixed;
+      inset: 0;
+      background-color: var(--color-ink-muted);
+      backdrop-filter: blur(2px);
+      z-index: var(--z-modal-backdrop);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--duration-normal) var(--ease-out), visibility var(--duration-normal) var(--ease-out);
+      padding: var(--space-md);
+    }
+    .upload-drawer.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .upload-drawer-card {
+      background-color: var(--color-white);
+      border-radius: var(--radius-2xl);
+      max-width: 600px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: var(--space-xl);
+      box-shadow: var(--shadow-xl);
+    }
+  </style>
+</head>
+<body class="paper-grain">
+
+  <!-- Shell Mounts Header Here -->
+
+  <main id="main-content" class="library-container">
+    <!-- Storage Warning Banner (Visible if quota full) -->
+    <div id="storage-warning-banner" class="alert alert-warning" style="display: none; margin-bottom: var(--space-md);">
+      <strong>Storage limit reached:</strong> Your storage quota is 100% full. Delete older items to enable uploading new media.
+    </div>
+
+    <!-- Header & Action Row -->
+    <div class="page-header" style="padding-top: var(--space-md);">
+      <div>
+        <div style="display: flex; align-items: center; gap: var(--space-xs); margin-bottom: 2px;">
+          <h1 style="font-size: var(--text-3xl); margin: 0;">Your Library</h1>
+          <span id="lib-count-badge" class="badge badge-teal">0 items</span>
+        </div>
+        <p class="text-muted" style="font-size: var(--text-sm);">All your original photographs and video clips, saved securely.</p>
+      </div>
+
+      <div style="display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap;">
+        <button id="btn-select-mode" class="btn btn-sand btn-sm">Select mode</button>
+        <button id="btn-open-upload" class="btn btn-primary btn-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          <span>Upload media</span>
+        </button>
       </div>
     </div>
+
+    <!-- Storage Bar Strip -->
+    <div id="lib-storage-mount" style="margin-bottom: var(--space-lg);"></div>
+
+    <!-- Filter & View Controls -->
+    <div class="library-controls">
+      <!-- Media Type Filter Chips -->
+      <div style="display: flex; gap: var(--space-xs); align-items: center;">
+        <button class="chip active" data-filter-type="">All media</button>
+        <button class="chip" data-filter-type="image">Photos</button>
+        <button class="chip" data-filter-type="video">Videos</button>
+      </div>
+
+      <!-- Right Controls: Sort & View Toggle -->
+      <div style="display: flex; gap: var(--space-sm); align-items: center;">
+        <select id="select-sort" class="select" style="padding: 6px 12px; font-size: var(--text-xs); height: 34px;">
+          <option value="takenAt_desc">Taken date (newest first)</option>
+          <option value="takenAt_asc">Taken date (oldest first)</option>
+          <option value="createdAt_desc">Uploaded date (newest first)</option>
+          <option value="createdAt_asc">Uploaded date (oldest first)</option>
+        </select>
+
+        <div class="segmented-control" role="group" aria-label="View Style">
+          <button id="view-timeline-btn" class="segmented-item active" title="Grouped Timeline View">Timeline</button>
+          <button id="view-grid-btn" class="segmented-item" title="Continuous Justified Grid">Grid</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gallery Mount -->
+    <div id="library-gallery-mount" style="min-height: 480px;">
+      <!-- Skeletons on load -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px;">
+        <div class="skeleton" style="height: 180px; border-radius: var(--radius-sm);"></div>
+        <div class="skeleton" style="height: 180px; border-radius: var(--radius-sm);"></div>
+        <div class="skeleton" style="height: 180px; border-radius: var(--radius-sm);"></div>
+        <div class="skeleton" style="height: 180px; border-radius: var(--radius-sm);"></div>
+      </div>
+    </div>
+
+    <!-- Infinite Scroll Sentinel -->
+    <div id="lib-sentinel" style="height: 40px; margin-top: var(--space-xl);"></div>
   </main>
 
+  <!-- Floating Selection Toolbar -->
+  <div id="lib-selection-toolbar" class="selection-toolbar" role="toolbar" aria-label="Media actions">
+    <span id="selected-counter" style="font-size: var(--text-sm); font-weight: 600;">0 selected</span>
+    <button id="btn-make-moment" class="btn btn-primary btn-sm">Make moment</button>
+    <button id="btn-add-album" class="btn btn-sand btn-sm">Add to album</button>
+    <button id="btn-delete-selected" class="btn btn-danger btn-sm">Delete</button>
+    <button id="btn-clear-selection" class="btn btn-ghost btn-sm" style="color: var(--color-white);">Clear</button>
+  </div>
+
+  <!-- Upload Modal / Drawer -->
+  <div id="upload-modal" class="upload-drawer" role="dialog" aria-modal="true" aria-label="Upload Media">
+    <div class="upload-drawer-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+        <h3 style="font-size: var(--text-lg); margin: 0;">Upload Photos & Videos</h3>
+        <button id="btn-close-upload" class="btn-icon" aria-label="Close upload modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="library-dropzone-mount"></div>
+    </div>
+  </div>
+
+  <!-- Add to Album Sheet Modal -->
+  <div id="album-picker-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Add to Album">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Add to Album</h3>
+        <button class="btn-icon" data-close-album-modal aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: var(--space-md) var(--space-xl);">
+        <div id="album-picker-list" style="display: flex; flex-direction: column; gap: var(--space-xs); max-height: 240px; overflow-y: auto; margin-bottom: var(--space-md);">
+          <div class="skeleton" style="height: 44px; border-radius: var(--radius-md);"></div>
+        </div>
+
+        <div style="border-top: 1px solid var(--color-sand); padding-top: var(--space-md);">
+          <label class="label" for="new-album-inline-title">Or create a new album:</label>
+          <div style="display: flex; gap: var(--space-xs);">
+            <input type="text" id="new-album-inline-title" class="input" placeholder="Album title..." style="font-size: var(--text-sm);">
+            <button id="btn-create-add-album" class="btn btn-sand btn-sm" style="flex-shrink: 0;">Create & add</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" data-close-album-modal>Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Media Info Sheet Modal -->
+  <div id="media-edit-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Edit Details">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Photo Details</h3>
+        <button class="btn-icon" data-close-edit-modal aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: var(--space-md) var(--space-xl);">
+        <div style="margin-bottom: var(--space-md);">
+          <label for="edit-media-caption" class="label">Caption</label>
+          <input type="text" id="edit-media-caption" class="input" placeholder="Add a memory description...">
+        </div>
+        <div style="margin-bottom: var(--space-md);">
+          <label for="edit-media-place" class="label">Location / Place</label>
+          <input type="text" id="edit-media-place" class="input" placeholder="Where was this taken?">
+        </div>
+        <div style="margin-bottom: var(--space-md);">
+          <label for="edit-media-date" class="label">Date taken</label>
+          <input type="date" id="edit-media-date" class="input">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" data-close-edit-modal>Cancel</button>
+        <button id="btn-save-media-edit" class="btn btn-primary btn-sm">Save details</button>
+      </div>
+    </div>
+  </div>
+
   <footer class="footer">
-    <p>&copy; 2026 Keepsake. All rights reserved.</p>
+    <p>&copy; 2026 Keepsake. Keep the moments that matter.</p>
   </footer>
+
+  <script type="module" src="/js/pages/library.js"></script>
 </body>
 </html>

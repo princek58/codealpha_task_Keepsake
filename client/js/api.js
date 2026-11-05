@@ -205,3 +205,10 @@ export const markNotificationRead = (id) => request(`/api/notifications/${id}/re
 export const getStats = () => request('/api/stats');
 export const getHealth = () => request('/api/health');
 
+// Convenient aliases
+export const getFeed = getFeedMoments;
+export const toggleLikeMoment = toggleMomentLike;
+export const getSuggestions = getUserSuggestions;
+export const followUser = toggleFollowUser;
+
+

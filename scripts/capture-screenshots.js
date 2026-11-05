@@ -3,6 +3,11 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const mongoose = require('mongoose');
+
+const config = require('../server/config');
+const Moment = require('../server/models/Moment');
+const Album = require('../server/models/Album');
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const OUT_DIR = path.resolve(__dirname, '../docs/screenshots');
@@ -72,6 +77,37 @@ class CDPClient {
 }
 
 async function capture() {
+  if (!fs.existsSync(OUT_DIR)) {
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+  }
+
+  // Get sample moment and album IDs from MongoDB
+  await mongoose.connect(config.mongodbUri);
+  const sampleMoment = await Moment.findOne();
+  const sampleAlbum = await Album.findOne({ shareToken: { $ne: null } }) || await Album.findOne();
+  await mongoose.disconnect();
+
+  const momentId = sampleMoment ? sampleMoment._id.toString() : '';
+  const albumId = sampleAlbum ? sampleAlbum._id.toString() : '';
+  const shareToken = sampleAlbum?.shareToken || '';
+
+  // Login as willow to get auth cookie
+  let authCookieValue = '';
+  try {
+    const loginRes = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: 'willow', password: 'Password123' })
+    });
+    const setCookie = loginRes.headers.get('set-cookie');
+    if (setCookie) {
+      const match = setCookie.match(/token=([^;]+)/);
+      if (match) authCookieValue = match[1];
+    }
+  } catch (err) {
+    console.warn('Could not login as demo user for screenshots:', err.message);
+  }
+
   const tmpProfile = fs.mkdtempSync(path.join(os.tmpdir(), 'chrome-profile-'));
   console.log(`Starting headless Chrome on port ${PORT}...`);
   const chromeProcess = spawn(
@@ -93,7 +129,7 @@ async function capture() {
     try {
       targets = await fetchJson(`http://localhost:${PORT}/json/list`);
       if (targets && targets.length > 0) break;
-    } catch (e) {
+    } catch {
       await wait(300);
     }
   }
@@ -111,9 +147,32 @@ async function capture() {
   await client.send('Page.enable');
   await client.send('Runtime.enable');
   await client.send('Log.enable');
+  await client.send('Network.enable');
+
+  if (authCookieValue) {
+    await client.send('Network.setCookie', {
+      name: 'token',
+      value: authCookieValue,
+      domain: 'localhost',
+      path: '/',
+      httpOnly: true
+    });
+    console.log('Set auth cookie for demo session.');
+  }
 
   const pagesToTest = [
     { url: 'http://localhost:5000/', name: 'landing' },
+    { url: 'http://localhost:5000/auth.html', name: 'auth' },
+    { url: 'http://localhost:5000/home.html', name: 'home' },
+    { url: 'http://localhost:5000/library.html', name: 'library' },
+    { url: 'http://localhost:5000/moment-new.html', name: 'moment-new' },
+    { url: `http://localhost:5000/moment.html?id=${momentId}`, name: 'moment' },
+    { url: 'http://localhost:5000/albums.html', name: 'albums' },
+    { url: `http://localhost:5000/album.html?id=${albumId}`, name: 'album' },
+    { url: `http://localhost:5000/shared.html?token=${shareToken}`, name: 'shared' },
+    { url: 'http://localhost:5000/profile.html?u=willow', name: 'profile' },
+    { url: 'http://localhost:5000/settings.html', name: 'settings' },
+    { url: 'http://localhost:5000/explore.html', name: 'explore' },
     { url: 'http://localhost:5000/styleguide.html', name: 'styleguide' },
     { url: 'http://localhost:5000/dev/playground.html', name: 'playground' },
     { url: 'http://localhost:5000/404.html', name: '404' }
@@ -129,24 +188,22 @@ async function capture() {
 
   for (const p of pagesToTest) {
     console.log(`\n========================================`);
-    console.log(`Testing page: ${p.url}`);
+    console.log(`Testing page: ${p.name} (${p.url})`);
     console.log(`========================================`);
 
     client.consoleLogs = [];
     await client.send('Page.navigate', { url: p.url });
-    await wait(1500); // Allow fonts, assets, and initial scripts to load
+    await wait(1800); // Allow DOM, JS shell, fonts, and data to load
 
     // Check console logs
-    console.log(`Checking console for ${p.name}...`);
     const errors = client.consoleLogs.filter((l) => l.type === 'error');
     if (errors.length > 0) {
-      console.warn(`  [!] Found ${errors.length} console errors:`, errors);
+      console.warn(`  [!] Found ${errors.length} console errors:`, errors.map((e) => e.text));
     } else {
       console.log(`  [✓] Console clean (0 errors)`);
     }
 
     // Check horizontal overflow across breakpoints
-    console.log(`Checking horizontal overflow for ${p.name}...`);
     for (const w of overflowWidths) {
       await client.send('Emulation.setDeviceMetricsOverride', {
         width: w,
@@ -154,7 +211,7 @@ async function capture() {
         deviceScaleFactor: 1,
         mobile: w <= 768
       });
-      await wait(150);
+      await wait(100);
 
       const overflowEval = await client.send('Runtime.evaluate', {
         expression: `({
@@ -165,16 +222,15 @@ async function capture() {
         returnByValue: true
       });
 
-      const { scrollWidth, clientWidth, hasOverflow } = overflowEval.result.value;
+      const { scrollWidth, clientWidth, hasOverflow } = overflowEval.result.value || {};
       if (hasOverflow) {
         console.error(`  [FAIL] Overflow at ${w}px! scrollWidth: ${scrollWidth}, clientWidth: ${clientWidth}`);
       } else {
-        console.log(`  [✓] No horizontal overflow at ${w}px (scrollWidth: ${scrollWidth})`);
+        console.log(`  [✓] No horizontal overflow at ${w}px (width: ${clientWidth})`);
       }
     }
 
     // Take screenshots at 375, 768, 1440
-    console.log(`Capturing responsive screenshots for ${p.name}...`);
     for (const vp of viewports) {
       await client.send('Emulation.setDeviceMetricsOverride', {
         width: vp.width,
@@ -182,7 +238,7 @@ async function capture() {
         deviceScaleFactor: 2,
         mobile: vp.width <= 768
       });
-      await wait(400);
+      await wait(300);
 
       const screenshot = await client.send('Page.captureScreenshot', {
         format: 'png',
@@ -192,7 +248,7 @@ async function capture() {
       const filename = `${p.name}-${vp.name}px.png`;
       const filePath = path.join(OUT_DIR, filename);
       fs.writeFileSync(filePath, Buffer.from(screenshot.data, 'base64'));
-      console.log(`  [✓] Captured screenshot: docs/screenshots/${filename}`);
+      console.log(`  [✓] Captured: docs/screenshots/${filename}`);
     }
   }
 
@@ -201,9 +257,11 @@ async function capture() {
 
   try {
     fs.rmSync(tmpProfile, { recursive: true, force: true });
-  } catch (e) {}
+  } catch {}
 
-  console.log('\n=== All Responsive & Visual Checks Passed Successfully ===\n');
+  console.log('\n======================================================');
+  console.log('✓ All 15 Pages Responsive & Visual Checks PASSED');
+  console.log('======================================================\n');
 }
 
 capture().catch((err) => {

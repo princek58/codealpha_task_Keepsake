@@ -4,47 +4,156 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#F7F3EC">
-  <title>Explore Public Moments — Keepsake</title>
+  <title>Explore — Keepsake</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+  <style>
+    .explore-page-container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: var(--space-md) var(--space-sm) var(--space-3xl);
+    }
+    .explore-header-strip {
+      margin-bottom: var(--space-xl);
+    }
+    .explore-search-wrap {
+      position: relative;
+      max-width: 540px;
+      margin-top: var(--space-md);
+    }
+    .explore-search-input {
+      padding-left: 38px;
+    }
+    .explore-search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-stone);
+      pointer-events: none;
+      display: inline-flex;
+    }
+    .explore-tabs {
+      display: flex;
+      gap: var(--space-xs);
+      border-bottom: 1px solid var(--color-sand);
+      margin-bottom: var(--space-lg);
+    }
+    .explore-tab-btn {
+      padding: var(--space-xs) var(--space-md);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-stone);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+    .explore-tab-btn.active {
+      color: var(--color-ink);
+      border-bottom-color: var(--color-terracotta);
+    }
+    .explore-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-lg);
+    }
+    .explore-moment-card {
+      background-color: var(--color-white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-sand);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+      cursor: pointer;
+    }
+    .explore-moment-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .explore-user-card {
+      background-color: var(--color-white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-sand);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      margin-bottom: var(--space-sm);
+    }
+  </style>
 </head>
-<body class="paper-grain" style="display: flex; flex-direction: column; min-height: 100vh;">
-  <header class="navbar" role="banner">
-    <nav class="navbar-pill">
-      <a href="/" class="navbar-brand">
-        <img src="/assets/brand/mark.svg" width="28" height="28" alt="Keepsake">
-        <span>Keepsake</span>
-      </a>
-      <ul class="navbar-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/styleguide.html">Styleguide</a></li>
-      </ul>
-      <a href="/" class="btn btn-sand btn-sm">Back</a>
-    </nav>
-  </header>
+<body class="paper-grain" style="min-height: 100vh; display: flex; flex-direction: column;">
+  <div id="shell-mount"></div>
 
-  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-xl);">
-    <div class="empty-state" style="max-width: 520px;">
-      <img src="/assets/stickers/sun.svg" width="72" height="72" alt="Explore Public Moments" style="margin-bottom: var(--space-md);">
-      <span class="badge badge-teal" style="margin-bottom: var(--space-sm);">Coming in Build 3</span>
-      <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-xs);">Explore Public Moments</h1>
-      <p class="text-muted" style="margin-bottom: var(--space-xl); font-size: var(--text-sm);">
-        Discover open moments from the Keepsake community. This full interface will be built and wired in Build 3 (Real App Pages).
-      </p>
-      <div style="display: flex; gap: var(--space-sm);">
-        <a href="/" class="btn btn-primary">Return Home</a>
-        <a href="/styleguide.html" class="btn btn-sand">View Styleguide</a>
+  <main id="main-content" style="flex: 1;" class="page-container">
+    <div class="explore-page-container">
+      <header class="explore-header-strip">
+        <h1 style="font-size: var(--text-2xl); font-weight: 600; margin-bottom: 4px;">Explore Keepsake</h1>
+        <p class="text-muted" style="font-size: var(--text-sm);">Discover open moments and connect with mindful storytellers.</p>
+
+        <div class="explore-search-wrap">
+          <span id="explore-icon-mount" class="explore-search-icon"></span>
+          <input type="search" id="explore-search-input" class="input explore-search-input" placeholder="Search people by name or username..." style="width: 100%;">
+        </div>
+      </header>
+
+      <!-- Tabs Navigation -->
+      <div class="explore-tabs" role="tablist">
+        <button id="tab-btn-moments" class="explore-tab-btn active" role="tab" aria-selected="true">
+          Public Moments
+        </button>
+        <button id="tab-btn-people" class="explore-tab-btn" role="tab" aria-selected="false">
+          People
+        </button>
+      </div>
+
+      <!-- Moments Panel -->
+      <div id="panel-moments">
+        <div id="explore-moments-skeleton" class="explore-grid">
+          <div class="card" style="aspect-ratio: 4/3; border-radius: var(--radius-lg);"><div class="skeleton" style="width: 100%; height: 100%;"></div></div>
+          <div class="card" style="aspect-ratio: 4/3; border-radius: var(--radius-lg);"><div class="skeleton" style="width: 100%; height: 100%;"></div></div>
+          <div class="card" style="aspect-ratio: 4/3; border-radius: var(--radius-lg);"><div class="skeleton" style="width: 100%; height: 100%;"></div></div>
+        </div>
+
+        <div id="explore-moments-grid" class="explore-grid" style="display: none;"></div>
+
+        <div id="explore-moments-empty" class="empty-state" style="display: none; padding: var(--space-3xl) var(--space-lg); background-color: var(--color-white); border-radius: var(--radius-lg); border: 1px solid var(--color-sand);">
+          <img src="/assets/stickers/sun.svg" width="64" height="64" alt="No public moments" style="margin-bottom: var(--space-md);">
+          <h2 style="margin-bottom: var(--space-xs);">No public moments yet</h2>
+          <p class="text-muted" style="margin-bottom: var(--space-lg);">Be the first to share a quiet memory with the community.</p>
+          <a href="/moment-new.html" class="btn btn-primary">Create a Moment</a>
+        </div>
+
+        <!-- Infinite Scroll Sentinel -->
+        <div id="explore-sentinel" style="height: 40px; margin-top: var(--space-xl);"></div>
+      </div>
+
+      <!-- People Panel -->
+      <div id="panel-people" style="display: none;">
+        <div id="explore-people-list"></div>
+
+        <div id="explore-people-empty" class="empty-state" style="display: none; padding: var(--space-3xl) var(--space-lg); background-color: var(--color-white); border-radius: var(--radius-lg); border: 1px solid var(--color-sand);">
+          <img src="/assets/stickers/compass.svg" width="64" height="64" alt="No users found" style="margin-bottom: var(--space-md);">
+          <h2 id="people-empty-title" style="margin-bottom: var(--space-xs);">No people found</h2>
+          <p id="people-empty-desc" class="text-muted" style="margin-bottom: var(--space-lg);">Try searching for a different name or username.</p>
+        </div>
       </div>
     </div>
   </main>
 
-  <footer class="footer">
-    <p>&copy; 2026 Keepsake. All rights reserved.</p>
-  </footer>
+  <script type="module" src="/js/pages/explore.js"></script>
 </body>
 </html>

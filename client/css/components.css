@@ -1241,3 +1241,233 @@
   color: var(--color-ink);
 }
 
+/* ==========================================================================
+   14. App Shell Extensions: Skip Link, Drawer, Search, Welcome & Offline Banner
+   ========================================================================== */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: var(--space-md);
+  background-color: var(--color-ink);
+  color: var(--color-white);
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  z-index: var(--z-toast);
+  transition: top var(--duration-fast) var(--ease-out);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: var(--space-md);
+}
+
+.navbar-search {
+  position: relative;
+  width: 220px;
+}
+
+@media (max-width: 900px) {
+  .navbar-search {
+    display: none;
+  }
+}
+
+.navbar-search-input {
+  width: 100%;
+  padding: 6px 12px 6px 32px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-sand);
+  background-color: var(--color-paper-light);
+  color: var(--color-ink);
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+}
+
+.navbar-search-input:focus {
+  border-color: var(--color-teal);
+  background-color: var(--color-white);
+}
+
+.navbar-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--color-stone);
+}
+
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 280px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-sand);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dropdown);
+  max-height: 360px;
+  overflow-y: auto;
+  display: none;
+  padding: var(--space-2xs);
+}
+
+.search-dropdown.open {
+  display: block;
+}
+
+.search-result-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--color-ink);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.search-result-row:hover, .search-result-row:focus {
+  background-color: var(--color-sand);
+}
+
+.nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: var(--color-terracotta);
+  color: var(--color-white);
+  font-size: 10px;
+  font-weight: 700;
+  height: 16px;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Slide-over Drawer (Notifications & Drawers) */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: var(--color-ink-muted);
+  backdrop-filter: blur(2px);
+  z-index: var(--z-modal-backdrop);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--duration-normal) var(--ease-out), visibility var(--duration-normal) var(--ease-out);
+}
+
+.drawer-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 400px;
+  max-width: 90vw;
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-xl);
+  z-index: var(--z-modal);
+  transform: translateX(100%);
+  transition: transform var(--duration-normal) var(--ease-out);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-backdrop.open .drawer-panel {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-sand);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+}
+
+.notification-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-terracotta);
+  flex-shrink: 0;
+}
+
+/* Offline Banner */
+.offline-banner {
+  background-color: var(--color-mustard-tint);
+  color: var(--color-ink);
+  border-bottom: 1px solid var(--color-sand);
+  padding: 8px var(--space-md);
+  text-align: center;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  display: none;
+}
+
+.offline-banner.active {
+  display: block;
+}
+
+/* Welcome Card */
+.welcome-card {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-sand);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.welcome-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+@media (max-width: 680px) {
+  .welcome-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+.welcome-step {
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  background-color: var(--color-paper-light);
+  border: 1px solid var(--color-sand);
+  text-decoration: none;
+  color: var(--color-ink);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+
+.welcome-step:hover {
+  border-color: var(--color-teal);
+  transform: translateY(-2px);
+}
+
+

@@ -8,43 +8,180 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+  <style>
+    .settings-page-container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: var(--space-md) var(--space-sm) var(--space-3xl);
+    }
+    .settings-card {
+      background-color: var(--color-white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-sand);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-xl);
+      margin-bottom: var(--space-xl);
+    }
+    .shortcut-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-xs) 0;
+      border-bottom: 1px solid var(--color-sand);
+      font-size: var(--text-sm);
+    }
+    .shortcut-row:last-child {
+      border-bottom: none;
+    }
+    .kbd-chip {
+      background-color: var(--color-sand);
+      border: 1px solid var(--color-sand-active);
+      border-radius: var(--radius-sm);
+      padding: 2px 6px;
+      font-size: 11px;
+      font-family: monospace;
+      font-weight: 600;
+      color: var(--color-ink);
+    }
+  </style>
 </head>
-<body class="paper-grain" style="display: flex; flex-direction: column; min-height: 100vh;">
-  <header class="navbar" role="banner">
-    <nav class="navbar-pill">
-      <a href="/" class="navbar-brand">
-        <img src="/assets/brand/mark.svg" width="28" height="28" alt="Keepsake">
-        <span>Keepsake</span>
-      </a>
-      <ul class="navbar-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/styleguide.html">Styleguide</a></li>
-      </ul>
-      <a href="/" class="btn btn-sand btn-sm">Back</a>
-    </nav>
-  </header>
+<body class="paper-grain" style="min-height: 100vh; display: flex; flex-direction: column;">
+  <div id="shell-mount"></div>
 
-  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-xl);">
-    <div class="empty-state" style="max-width: 520px;">
-      <img src="/assets/stickers/cassette.svg" width="72" height="72" alt="Account Settings" style="margin-bottom: var(--space-md);">
-      <span class="badge badge-teal" style="margin-bottom: var(--space-sm);">Coming in Build 3</span>
-      <h1 style="font-size: var(--text-2xl); margin-bottom: var(--space-xs);">Account Settings</h1>
-      <p class="text-muted" style="margin-bottom: var(--space-xl); font-size: var(--text-sm);">
-        Profile details, storage quota, and privacy controls. This full interface will be built and wired in Build 3 (Real App Pages).
-      </p>
-      <div style="display: flex; gap: var(--space-sm);">
-        <a href="/" class="btn btn-primary">Return Home</a>
-        <a href="/styleguide.html" class="btn btn-sand">View Styleguide</a>
-      </div>
+  <main id="main-content" style="flex: 1;" class="page-container">
+    <div class="settings-page-container">
+      <header style="margin-bottom: var(--space-xl);">
+        <h1 style="font-size: var(--text-2xl); font-weight: 600; margin-bottom: 4px;">Account Settings</h1>
+        <p class="text-muted" style="font-size: var(--text-sm);">Manage your profile, storage quota, and preferences.</p>
+      </header>
+
+      <!-- Profile Settings Form -->
+      <section class="settings-card">
+        <h2 style="font-size: var(--text-lg); font-weight: 600; margin-bottom: var(--space-md);">Public Profile</h2>
+
+        <form id="form-settings-profile">
+          <!-- Avatar section -->
+          <div style="display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-lg);">
+            <div id="settings-avatar-wrap"></div>
+            <div>
+              <label for="settings-avatar-file" class="btn btn-sand btn-sm" style="cursor: pointer; display: inline-block;">Change Photo</label>
+              <input type="file" id="settings-avatar-file" accept="image/*" style="display: none;">
+              <button type="button" id="btn-settings-remove-avatar" class="btn btn-ghost btn-sm" style="color: var(--color-terracotta); display: none;">Remove Photo</button>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: var(--space-md);">
+            <label for="settings-username" class="label" style="font-size: var(--text-xs); font-weight: 600; display: block; margin-bottom: 4px;">Username</label>
+            <input type="text" id="settings-username" class="input" readonly style="width: 100%; background-color: var(--color-paper-light);">
+            <span style="font-size: 11px; color: var(--color-stone); margin-top: 2px; display: block;">Usernames cannot be changed.</span>
+          </div>
+
+          <div class="form-group" style="margin-bottom: var(--space-md);">
+            <label for="settings-email" class="label" style="font-size: var(--text-xs); font-weight: 600; display: block; margin-bottom: 4px;">Email Address</label>
+            <input type="email" id="settings-email" class="input" readonly style="width: 100%; background-color: var(--color-paper-light);">
+          </div>
+
+          <div class="form-group" style="margin-bottom: var(--space-md);">
+            <label for="settings-display-name" class="label" style="font-size: var(--text-xs); font-weight: 600; display: block; margin-bottom: 4px;">Display Name</label>
+            <input type="text" id="settings-display-name" class="input" maxlength="30" style="width: 100%;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: var(--space-lg);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <label for="settings-bio" class="label" style="font-size: var(--text-xs); font-weight: 600;">Bio</label>
+              <span id="settings-bio-count" style="font-size: 11px; color: var(--color-stone);">0/160</span>
+            </div>
+            <textarea id="settings-bio" class="input" rows="3" maxlength="160" placeholder="A little about yourself..." style="width: 100%; resize: vertical;"></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="submit" id="btn-save-settings" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Storage Breakdown -->
+      <section class="settings-card">
+        <h2 style="font-size: var(--text-lg); font-weight: 600; margin-bottom: var(--space-xs);">Storage Quota</h2>
+        <p class="text-muted" style="font-size: var(--text-xs); margin-bottom: var(--space-md);">Each Keepsake account includes 500 MB of quiet memory storage.</p>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="display: flex; justify-content: space-between; font-size: var(--text-sm); font-weight: 600; margin-bottom: 6px;">
+            <span id="storage-summary-text">Calculating...</span>
+            <span id="storage-percent-text">0%</span>
+          </div>
+          <div class="storage-bar-track" style="height: 10px; background-color: var(--color-sand); border-radius: var(--radius-full); overflow: hidden;">
+            <div id="storage-progress-fill" style="height: 100%; width: 0%; background-color: var(--color-terracotta); transition: width var(--transition-normal);"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-sm); font-size: var(--text-xs); color: var(--color-stone);">
+          <span id="storage-breakdown-counts">0 photos · 0 videos</span>
+          <a href="/library.html" style="color: var(--color-ink); font-weight: 600; text-decoration: none;">Manage Library &rarr;</a>
+        </div>
+      </section>
+
+      <!-- Keyboard Shortcuts -->
+      <section class="settings-card">
+        <h2 style="font-size: var(--text-lg); font-weight: 600; margin-bottom: var(--space-md);">Keyboard Shortcuts</h2>
+        
+        <div style="display: flex; flex-direction: column;">
+          <div class="shortcut-row">
+            <span>Go to Home Feed</span>
+            <div><span class="kbd-chip">G</span> then <span class="kbd-chip">H</span></div>
+          </div>
+          <div class="shortcut-row">
+            <span>Go to Media Library</span>
+            <div><span class="kbd-chip">G</span> then <span class="kbd-chip">L</span></div>
+          </div>
+          <div class="shortcut-row">
+            <span>Create New Moment</span>
+            <div><span class="kbd-chip">G</span> then <span class="kbd-chip">C</span></div>
+          </div>
+          <div class="shortcut-row">
+            <span>Go to Curated Albums</span>
+            <div><span class="kbd-chip">G</span> then <span class="kbd-chip">A</span></div>
+          </div>
+          <div class="shortcut-row">
+            <span>Go to Explore</span>
+            <div><span class="kbd-chip">G</span> then <span class="kbd-chip">E</span></div>
+          </div>
+          <div class="shortcut-row">
+            <span>Go to Your Profile</span>
+            <div><span class="kbd-chip">G</span> then <span class="kbd-chip">P</span></div>
+          </div>
+          <div class="shortcut-row">
+            <span>Focus Search</span>
+            <div><span class="kbd-chip">/</span></div>
+          </div>
+          <div class="shortcut-row">
+            <span>Help Dialog</span>
+            <div><span class="kbd-chip">?</span></div>
+          </div>
+          <div class="shortcut-row">
+            <span>Close Lightbox / Modal</span>
+            <div><span class="kbd-chip">Esc</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Account Actions -->
+      <section class="settings-card" style="border-color: var(--color-sand);">
+        <h2 style="font-size: var(--text-lg); font-weight: 600; margin-bottom: var(--space-xs); color: var(--color-terracotta);">Account Session</h2>
+        <p class="text-muted" style="font-size: var(--text-xs); margin-bottom: var(--space-md);">Log out of your Keepsake session on this device.</p>
+
+        <div>
+          <button id="btn-settings-logout" class="btn btn-sand" style="color: var(--color-terracotta);">Log Out</button>
+        </div>
+      </section>
     </div>
   </main>
 
-  <footer class="footer">
-    <p>&copy; 2026 Keepsake. All rights reserved.</p>
-  </footer>
+  <script type="module" src="/js/pages/settings.js"></script>
 </body>
 </html>

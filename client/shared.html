@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F7F3EC">
+  <title>Shared Album — Keepsake</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+  <style>
+    .shared-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-md) var(--space-sm) var(--space-3xl);
+    }
+    .shared-banner {
+      background-color: var(--color-white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-sand);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-xl);
+      margin-bottom: var(--space-xl);
+    }
+    .cta-strip {
+      background-color: var(--color-sand);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-top: var(--space-3xl);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body class="paper-grain" style="min-height: 100vh; display: flex; flex-direction: column;">
+  <!-- Public Minimal Header -->
+  <header class="navbar" role="banner" style="position: sticky; top: 0; z-index: var(--z-sticky); backdrop-filter: blur(8px);">
+    <nav class="navbar-pill">
+      <a href="/" class="navbar-brand">
+        <img src="/assets/brand/mark.svg" width="28" height="28" alt="Keepsake">
+        <span>Keepsake</span>
+      </a>
+      <div style="display: flex; align-items: center; gap: var(--space-xs);">
+        <a href="/auth.html" class="btn btn-sand btn-sm">Log in</a>
+        <a href="/auth.html" class="btn btn-primary btn-sm">Get Started</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main-content" style="flex: 1;" class="page-container">
+    <div class="shared-container">
+      <!-- Loading Skeleton -->
+      <div id="shared-skeleton" class="shared-banner">
+        <div class="skeleton" style="width: 40%; height: 32px; margin-bottom: var(--space-sm); border-radius: 4px;"></div>
+        <div class="skeleton" style="width: 70%; height: 16px; margin-bottom: var(--space-md); border-radius: 4px;"></div>
+        <div class="skeleton" style="width: 25%; height: 20px; border-radius: 4px;"></div>
+      </div>
+
+      <!-- Error / Revoked state -->
+      <div id="shared-error" class="empty-state" style="display: none; padding: var(--space-3xl) var(--space-lg); background-color: var(--color-white); border-radius: var(--radius-lg); border: 1px solid var(--color-sand);">
+        <img src="/assets/stickers/bookmark.svg" width="64" height="64" alt="Link expired" style="margin-bottom: var(--space-md);">
+        <h2 id="shared-error-title" style="margin-bottom: var(--space-xs);">Link Expired or Invalid</h2>
+        <p id="shared-error-desc" class="text-muted" style="margin-bottom: var(--space-lg); max-width: 440px;">
+          This shared album link may have been revoked by the owner or the address is incorrect.
+        </p>
+        <a href="/" class="btn btn-primary">Return Home</a>
+      </div>
+
+      <!-- Shared Content -->
+      <div id="shared-content" style="display: none;">
+        <header class="shared-banner">
+          <div style="display: flex; align-items: center; gap: var(--space-xs); margin-bottom: var(--space-xs);">
+            <span class="badge badge-teal" style="font-size: 11px;">Shared Album</span>
+          </div>
+
+          <h1 id="shared-title" style="font-size: var(--text-2xl); font-weight: 600; margin-bottom: var(--space-xs); line-height: 1.2;"></h1>
+          <p id="shared-desc" class="text-muted" style="font-size: var(--text-base); margin-bottom: var(--space-md); max-width: 680px;"></p>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--color-sand);">
+            <div id="shared-owner-wrap" style="display: flex; align-items: center; gap: var(--space-xs);"></div>
+            <div>
+              <button id="btn-shared-slideshow" class="btn btn-primary btn-sm">Start Slideshow</button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Justified Gallery mount -->
+        <div id="shared-gallery-mount" style="min-height: 200px;"></div>
+
+        <!-- Call to Action strip -->
+        <section class="cta-strip">
+          <div>
+            <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 2px;">Keep your own dearest memories safe</h3>
+            <p class="text-muted" style="font-size: var(--text-xs);">Keepsake is a cozy, chronological space for the moments you treasure most.</p>
+          </div>
+          <div>
+            <a href="/auth.html" class="btn btn-primary">Create Your Free Account</a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" style="margin-top: auto; padding: var(--space-xl) var(--space-md); text-align: center; font-size: var(--text-xs); color: var(--color-stone);">
+    <p>&copy; 2026 Keepsake. All rights reserved.</p>
+  </footer>
+
+  <script type="module" src="/js/pages/shared.js"></script>
+</body>
+</html>
+
