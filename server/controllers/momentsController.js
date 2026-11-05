@@ -25,8 +25,12 @@ const ALLOWED_COLLAGE_TEMPLATES = {
 };
 
 const validateLayoutAndMedia = (layout, mediaCount) => {
-  const effectiveLayout = layout || { type: 'grid', template: 'grid', gap: 8, background: '#ffffff' };
-  const type = effectiveLayout.type || 'grid';
+  const effectiveLayout = layout ? { ...layout } : { type: 'grid', template: 'grid', gap: 8, background: '#ffffff' };
+  let type = effectiveLayout.type || 'grid';
+  if (type === 'single' || type === 'stack') {
+    type = 'grid';
+  }
+  effectiveLayout.type = type;
 
   if (!['collage', 'grid', 'carousel'].includes(type)) {
     throw new Error('Invalid layout type. Allowed: collage, grid, carousel');
@@ -43,6 +47,8 @@ const validateLayoutAndMedia = (layout, mediaCount) => {
         `Template "${template}" requires ${allowedCounts.join(' or ')} media items, got ${mediaCount}`
       );
     }
+  } else if (!effectiveLayout.template) {
+    effectiveLayout.template = type;
   }
 
   if (effectiveLayout.gap !== undefined) {
@@ -50,6 +56,9 @@ const validateLayoutAndMedia = (layout, mediaCount) => {
     if (isNaN(gap) || gap < 0 || gap > 24) {
       throw new Error('Layout gap must be a number between 0 and 24');
     }
+    effectiveLayout.gap = gap;
+  } else {
+    effectiveLayout.gap = 8;
   }
 
   if (effectiveLayout.background) {
@@ -57,6 +66,8 @@ const validateLayoutAndMedia = (layout, mediaCount) => {
     if (!hexRegex.test(effectiveLayout.background)) {
       throw new Error('Layout background must be a valid hex color');
     }
+  } else {
+    effectiveLayout.background = '#ffffff';
   }
 
   return effectiveLayout;

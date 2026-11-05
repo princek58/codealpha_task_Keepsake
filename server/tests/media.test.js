@@ -115,6 +115,10 @@ describe('Media Pipeline & API', () => {
     const displayMeta = await sharp(displayAbs).metadata();
     expect(displayMeta.exif).toBeUndefined();
 
+    const thumbAbs = storage.resolveSafePath(mediaDoc.paths.thumb);
+    const thumbMeta = await sharp(thumbAbs).metadata();
+    expect(thumbMeta.exif).toBeUndefined();
+
     // Verify storage used quota increased
     const updatedUser = await User.findById(user.id);
     expect(updatedUser.storageUsedBytes).toBe(mediaDoc.sizeBytes);
@@ -144,6 +148,38 @@ describe('Media Pipeline & API', () => {
     expect(readyDoc.paths.video).toBeDefined();
     expect(readyDoc.paths.poster).toBeDefined();
     expect(readyDoc.blurDataUrl).toMatch(/^data:image\/webp;base64,/);
+
+    // Verify video streams with ffprobe (H.264/AAC, <= 720p)
+    const ffprobe = require('ffprobe-static');
+    const { spawn } = require('child_process');
+    const videoAbs = storage.resolveSafePath(readyDoc.paths.video);
+    const probeOutput = await new Promise((resolve, reject) => {
+      const proc = spawn(ffprobe.path, [
+        '-v',
+        'quiet',
+        '-print_format',
+        'json',
+        '-show_streams',
+        videoAbs
+      ]);
+      let out = '';
+      proc.stdout.on('data', (d) => {
+        out += d;
+      });
+      proc.on('close', (code) => {
+        if (code === 0) resolve(JSON.parse(out));
+        else reject(new Error('ffprobe failed'));
+      });
+    });
+
+    const vStream = probeOutput.streams.find((s) => s.codec_type === 'video');
+    const aStream = probeOutput.streams.find((s) => s.codec_type === 'audio');
+    expect(vStream).toBeDefined();
+    expect(vStream.codec_name).toBe('h264');
+    expect(vStream.width).toBeLessThanOrEqual(720);
+    expect(vStream.height).toBeLessThanOrEqual(720);
+    expect(aStream).toBeDefined();
+    expect(aStream.codec_name).toBe('aac');
 
     // Test streaming video with Range request
     const rangeRes = await request(app)
@@ -342,5 +378,38 @@ describe('Media Pipeline & API', () => {
     expect(typeof storageRes.body.usedBytes).toBe('number');
     expect(typeof storageRes.body.percent).toBe('number');
     expect(storageRes.body.counts).toEqual({ images: 0, videos: 0 });
+  });
+
+  test('GET /api/media/limits returns configured limits and allowed mimes', async () => {
+    const res = await request(app).get('/api/media/limits');
+
+    expect(res.status).toBe(200);
+    expect(res.body.maxImageBytes).toBe(config.maxImageBytes);
+    expect(res.body.maxVideoBytes).toBe(config.maxVideoBytes);
+    expect(res.body.maxVideoSeconds).toBe(config.maxVideoSeconds);
+    expect(res.body.maxFilesPerRequest).toBe(config.maxFilesPerRequest);
+    expect(res.body.maxItemsPerMoment).toBe(config.maxItemsPerMoment);
+    expect(res.body.maxItemsPerAlbum).toBe(config.maxItemsPerAlbum);
+    expect(res.body.userQuotaBytes).toBe(config.userQuotaBytes);
+    expect(Array.isArray(res.body.allowedImageMimes)).toBe(true);
+    expect(Array.isArray(res.body.allowedVideoMimes)).toBe(true);
+  });
+
+  test('Rejects upload with more than MAX_FILES_PER_REQUEST files', async () => {
+    const { cookie } = await createTestUser();
+    const imgBuf = await sharp({
+      create: { width: 10, height: 10, channels: 3, background: { r: 0, g: 0, b: 0 } }
+    })
+      .png()
+      .toBuffer();
+
+    const req = request(app).post('/api/media').set('Cookie', cookie);
+    for (let i = 0; i < (config.maxFilesPerRequest || 10) + 1; i++) {
+      req.attach('files', imgBuf, `file_${i}.png`);
+    }
+
+    const res = await req;
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/Cannot upload more than/i);
   });
 });

@@ -113,7 +113,7 @@ describe('Albums API', () => {
       .set('Cookie', cookie);
 
     expect(shareRes.status).toBe(200);
-    expect(shareRes.body.shareToken).toHaveLength(64);
+    expect(shareRes.body.shareToken).toHaveLength(24);
     const token = shareRes.body.shareToken;
 
     // Anonymous view via shared link

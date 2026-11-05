@@ -541,6 +541,20 @@ const getUserStorage = async (req, res, next) => {
   }
 };
 
+const getLimits = (req, res) => {
+  res.status(200).json({
+    maxImageBytes: config.maxImageBytes,
+    maxVideoBytes: config.maxVideoBytes,
+    maxVideoSeconds: config.maxVideoSeconds,
+    maxFilesPerRequest: config.maxFilesPerRequest,
+    maxItemsPerMoment: config.maxItemsPerMoment,
+    maxItemsPerAlbum: config.maxItemsPerAlbum,
+    userQuotaBytes: config.userQuotaBytes,
+    allowedImageMimes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+    allowedVideoMimes: ['video/mp4', 'video/quicktime', 'video/webm']
+  });
+};
+
 module.exports = {
   uploadMedia,
   getMediaLibrary,
@@ -550,6 +564,7 @@ module.exports = {
   deleteMedia,
   bulkDeleteMedia,
   streamMediaFile,
-  getUserStorage
+  getUserStorage,
+  getLimits
 };
 

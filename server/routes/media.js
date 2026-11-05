@@ -28,8 +28,7 @@ const upload = multer({
   }
 });
 
-router.post(
-  '/',
+const handleUpload = [
   protect,
   uploadLimiter,
   (req, res, next) => {
@@ -49,8 +48,12 @@ router.post(
     });
   },
   mediaController.uploadMedia
-);
+];
 
+router.post('/', ...handleUpload);
+router.post('/upload', ...handleUpload);
+
+router.get('/limits', mediaController.getLimits);
 router.get('/', protect, mediaController.getMediaLibrary);
 router.get('/status', protect, mediaController.getMediaStatus);
 router.post('/bulk-delete', protect, actionLimiter, mediaController.bulkDeleteMedia);

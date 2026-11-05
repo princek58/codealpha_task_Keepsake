@@ -62,16 +62,22 @@ const formatMoment = (moment, currentUserId = null, token = null) => {
       likes.some((likeId) => (likeId._id || likeId).toString() === currentUserId.toString())
   );
 
+  const rawLayout = moment.layout || {};
+  let layoutType = rawLayout.type || 'grid';
+  if (layoutType === 'single' || layoutType === 'stack' || !['collage', 'grid', 'carousel'].includes(layoutType)) {
+    layoutType = 'grid';
+  }
+
   const formatted = {
     id,
     title: moment.title || '',
     caption: moment.caption || '',
     media: formattedMedia,
-    layout: moment.layout || {
-      type: 'grid',
-      template: 'grid',
-      gap: 8,
-      background: '#ffffff'
+    layout: {
+      type: layoutType,
+      template: rawLayout.template || layoutType,
+      gap: typeof rawLayout.gap === 'number' ? rawLayout.gap : 8,
+      background: rawLayout.background || '#ffffff'
     },
     takenOn: moment.takenOn || moment.createdAt,
     place: moment.place || '',

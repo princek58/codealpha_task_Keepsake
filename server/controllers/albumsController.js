@@ -440,7 +440,8 @@ const createShareToken = async (req, res, next) => {
       return res.status(404).json({ message: 'Album not found' });
     }
 
-    const token = crypto.randomBytes(32).toString('hex');
+    // 24 hex characters (12 crypto random bytes)
+    const token = crypto.randomBytes(12).toString('hex');
     album.shareToken = token;
     await album.save();
 

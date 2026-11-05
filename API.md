@@ -271,13 +271,30 @@ Comprehensive reference for all backend endpoints in Keepsake, a memory-keeping 
 
 ## Media Endpoints
 
-### POST `/api/media`
+### POST `/api/media/upload` (and `POST /api/media`)
 - **Auth:** Protected
 - **Content-Type:** `multipart/form-data`
 - **Form Fields:**
   - `files` (array of up to 10 files: JPG, PNG, WebP, GIF, MP4, MOV, WebM)
 - **Per-File Error Handling:** Returns `{ items: [Media], errors: [{ originalName, code, message }] }`.
 - **Response:** `200 OK`
+
+### GET `/api/media/limits`
+- **Auth:** None / Public
+- **Response:** `200 OK` with:
+  ```json
+  {
+    "maxImageBytes": 20971520,
+    "maxVideoBytes": 157286400,
+    "maxVideoSeconds": 180,
+    "maxFilesPerRequest": 10,
+    "maxItemsPerMoment": 20,
+    "maxItemsPerAlbum": 500,
+    "userQuotaBytes": 524288000,
+    "allowedImageMimes": ["image/jpeg", "image/png", "image/webp", "image/gif"],
+    "allowedVideoMimes": ["video/mp4", "video/quicktime", "video/webm"]
+  }
+  ```
 
 ### GET `/api/media`
 - **Auth:** Protected (returns authenticated user's library)
@@ -460,6 +477,7 @@ Comprehensive reference for all backend endpoints in Keepsake, a memory-keeping 
 
 ### POST `/api/albums/:id/share`
 - **Auth:** Protected (owner only)
+- **Description:** Generates or rotates the album's share token (24 hex characters, generated from 12 crypto random bytes).
 - **Response:** `200 OK` with `{ shareToken: string, shareUrl: "/api/albums/shared/:token" }`
 
 ### DELETE `/api/albums/:id/share`

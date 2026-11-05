@@ -94,6 +94,44 @@ describe('Moments API', () => {
       });
 
     expect(wrongCountRes.status).toBe(400);
+
+    // 6. Default layout (no layout provided) defaults to grid
+    const defaultRes = await request(app)
+      .post('/api/moments')
+      .set('Cookie', cookie)
+      .send({
+        title: 'Default Moment',
+        media: [m1._id.toString()]
+      });
+
+    expect(defaultRes.status).toBe(201);
+    expect(defaultRes.body.moment.layout.type).toBe('grid');
+    expect(defaultRes.body.moment.layout.template).toBe('grid');
+
+    // 7. Legacy layouts (single, stack) safely fallback to grid
+    const legacySingleRes = await request(app)
+      .post('/api/moments')
+      .set('Cookie', cookie)
+      .send({
+        title: 'Legacy Single Moment',
+        media: [m1._id.toString()],
+        layout: { type: 'single' }
+      });
+
+    expect(legacySingleRes.status).toBe(201);
+    expect(legacySingleRes.body.moment.layout.type).toBe('grid');
+
+    // 8. Arbitrary invalid layout type is rejected
+    const invalidTypeRes = await request(app)
+      .post('/api/moments')
+      .set('Cookie', cookie)
+      .send({
+        title: 'Invalid Layout',
+        media: [m1._id.toString()],
+        layout: { type: 'nonexistent-layout' }
+      });
+
+    expect(invalidTypeRes.status).toBe(400);
   });
 
   test('Rejects using someone else media or failed media items', async () => {
