@@ -274,19 +274,39 @@ const getUserMoments = async (req, res, next) => {
 
 const getOnThisDay = async (req, res, next) => {
   try {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth() + 1;
-    const currentDay = today.getDate();
+    const today = req.query.date ? new Date(req.query.date) : new Date();
+    const utcYear = today.getUTCFullYear();
+    const utcMonth = today.getUTCMonth() + 1;
+    const utcDay = today.getUTCDate();
+
+    const localYear = today.getFullYear();
+    const localMonth = today.getMonth() + 1;
+    const localDay = today.getDate();
+
+    const momentExprConditions = [
+      {
+        $and: [
+          { $eq: [{ $month: '$takenOn' }, utcMonth] },
+          { $eq: [{ $dayOfMonth: '$takenOn' }, utcDay] },
+          { $lt: [{ $year: '$takenOn' }, utcYear] }
+        ]
+      }
+    ];
+
+    if (localDay !== utcDay || localMonth !== utcMonth) {
+      momentExprConditions.push({
+        $and: [
+          { $eq: [{ $month: '$takenOn' }, localMonth] },
+          { $eq: [{ $dayOfMonth: '$takenOn' }, localDay] },
+          { $lt: [{ $year: '$takenOn' }, localYear] }
+        ]
+      });
+    }
 
     const moments = await Moment.find({
       owner: req.user._id,
       $expr: {
-        $and: [
-          { $eq: [{ $month: '$takenOn' }, currentMonth] },
-          { $eq: [{ $dayOfMonth: '$takenOn' }, currentDay] },
-          { $lt: [{ $year: '$takenOn' }, currentYear] }
-        ]
+        $or: momentExprConditions
       }
     })
       .sort({ takenOn: -1 })
@@ -296,16 +316,32 @@ const getOnThisDay = async (req, res, next) => {
         { path: 'media' }
       ]);
 
+    const mediaExprConditions = [
+      {
+        $and: [
+          { $eq: [{ $month: '$takenAt' }, utcMonth] },
+          { $eq: [{ $dayOfMonth: '$takenAt' }, utcDay] },
+          { $lt: [{ $year: '$takenAt' }, utcYear] }
+        ]
+      }
+    ];
+
+    if (localDay !== utcDay || localMonth !== utcMonth) {
+      mediaExprConditions.push({
+        $and: [
+          { $eq: [{ $month: '$takenAt' }, localMonth] },
+          { $eq: [{ $dayOfMonth: '$takenAt' }, localDay] },
+          { $lt: [{ $year: '$takenAt' }, localYear] }
+        ]
+      });
+    }
+
     const mediaItems = await Media.find({
       owner: req.user._id,
       status: 'ready',
       takenAt: { $ne: null },
       $expr: {
-        $and: [
-          { $eq: [{ $month: '$takenAt' }, currentMonth] },
-          { $eq: [{ $dayOfMonth: '$takenAt' }, currentDay] },
-          { $lt: [{ $year: '$takenAt' }, currentYear] }
-        ]
+        $or: mediaExprConditions
       }
     })
       .sort({ takenAt: -1 })

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 36" width="160" height="36" fill="none">
+  <!-- Bookmark / Photo Corner Keep Mark -->
+  <path d="M6 4h18v26l-9-6-9 6z" fill="#B4532A"/>
+  <rect x="9" y="8" width="12" height="10" rx="1.5" fill="#EDE4D3"/>
+  <circle cx="15" cy="13" r="2.5" fill="#2F7F79"/>
+  <!-- Wordmark -->
+  <text x="32" y="25" font-family="'Fraunces', Georgia, serif" font-size="22" font-weight="600" fill="#1F2A37" letter-spacing="-0.5">Keepsake</text>
+</svg>

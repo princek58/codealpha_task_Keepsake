@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F7F3EC">
+  <title>Keepsake Dev Playground — Live Backend Integration</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages.css">
+
+  <style>
+    .pg-container { max-width: 1200px; margin: 0 auto; padding: var(--space-xl) var(--space-md); }
+    .pg-grid { display: grid; grid-template-columns: 360px 1fr; gap: var(--space-xl); }
+    @media (max-width: 860px) { .pg-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { #auth-indicator { display: none; } }
+  </style>
+</head>
+<body class="paper-grain">
+
+  <header class="navbar">
+    <nav class="navbar-pill">
+      <a href="/" class="navbar-brand">
+        <img src="/assets/brand/mark.svg" width="28" height="28" alt="Keepsake">
+        <span>Dev Playground</span>
+      </a>
+      <div id="auth-indicator" style="font-size: var(--text-xs); color: var(--color-stone);">
+        Authenticating demo session...
+      </div>
+      <a href="/styleguide.html" class="btn btn-sand btn-sm">Styleguide</a>
+    </nav>
+  </header>
+
+  <main class="pg-container">
+    <div style="margin-bottom: var(--space-xl);">
+      <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-2xs);">Live Backend Testbed</h1>
+      <p class="text-muted">Proving end-to-end integration: authentication, batch uploads, real library querying, justified gallery layout, full-screen lightbox, and collage canvas PNG export.</p>
+    </div>
+
+    <div class="pg-grid">
+      <!-- Left Column: Upload Manager & Storage Bar -->
+      <div>
+        <!-- Live Storage Bar -->
+        <div id="storage-bar-mount" style="margin-bottom: var(--space-lg);"></div>
+
+        <!-- Live Drop Zone -->
+        <div class="card" style="margin-bottom: var(--space-lg);">
+          <h3 style="font-size: var(--text-md); margin-bottom: var(--space-sm);">Upload Real Media</h3>
+          <div id="playground-dropzone"></div>
+        </div>
+
+        <!-- Collage Creator from Selection -->
+        <div class="card">
+          <h3 style="font-size: var(--text-md); margin-bottom: var(--space-2xs);">Build & Export Collage</h3>
+          <p class="text-muted" style="font-size: var(--text-xs); margin-bottom: var(--space-sm);">
+            Select 2 to 6 items in the gallery, choose a template, and export a high-res PNG.
+          </p>
+          <div style="display: flex; gap: var(--space-xs); margin-bottom: var(--space-sm); flex-wrap: wrap;">
+            <button class="chip active" data-tmpl="collage-1-2">Feature Left (3)</button>
+            <button class="chip" data-tmpl="collage-1x2">Split (2)</button>
+            <button class="chip" data-tmpl="collage-2x2">Quad (4)</button>
+          </div>
+          <button id="btn-export-collage" class="btn btn-primary btn-sm" style="width: 100%;">
+            Export Collage PNG
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Library & Justified Gallery -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md); flex-wrap: wrap; gap: var(--space-xs);">
+          <div style="display: flex; align-items: center; gap: var(--space-xs);">
+            <h2 style="font-size: var(--text-xl);">Your Live Library</h2>
+            <span id="library-count" class="badge badge-teal">0 items</span>
+          </div>
+          <div style="display: flex; gap: var(--space-xs);">
+            <button id="btn-toggle-select" class="btn btn-sand btn-sm">Select Mode</button>
+            <button id="btn-refresh-lib" class="btn btn-ghost btn-sm">Refresh</button>
+          </div>
+        </div>
+
+        <div id="playground-gallery" style="min-height: 400px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { register, login, getMe, getMediaLibrary } from '/js/api.js';
+    import { JustifiedGallery } from '/js/gallery.js';
+    import { openLightbox } from '/js/lightbox.js';
+    import { UploadManager, buildDropZone, mountStorageBar } from '/js/upload-manager.js';
+    import { renderCollage, exportCollagePng, downloadBlob } from '/js/collage.js';
+    import { showToast } from '/js/ui.js';
+
+    let currentUser = null;
+    let galleryInstance = null;
+    let selectedTemplate = 'collage-1-2';
+    let isSelectMode = false;
+
+    // 1. Auto-authenticate demo user
+    async function ensureAuth() {
+      const authLabel = document.getElementById('auth-indicator');
+      try {
+        const me = await getMe();
+        currentUser = me.user;
+        authLabel.textContent = `Logged in as @${currentUser.username}`;
+      } catch {
+        // Register or login test user
+        const demoCreds = {
+          username: 'demo_keeper',
+          email: 'demo_keeper@keepsake.local',
+          password: 'Password123'
+        };
+        try {
+          const res = await login({ identifier: demoCreds.username, password: demoCreds.password });
+          currentUser = res.user;
+        } catch {
+          const regRes = await register(demoCreds);
+          currentUser = regRes.user;
+        }
+        authLabel.textContent = `Logged in as @${currentUser.username}`;
+      }
+    }
+
+    // 2. Refresh media library from backend
+    async function refreshLibrary() {
+      try {
+        const res = await getMediaLibrary({ limit: 60 });
+        const items = res.items || [];
+        document.getElementById('library-count').textContent = `${items.length} items`;
+        galleryInstance.setItems(items);
+        mountStorageBar(document.getElementById('storage-bar-mount'));
+      } catch (err) {
+        showToast('Failed to load library: ' + err.message, 'error');
+      }
+    }
+
+    // Initialize playground
+    (async () => {
+      await ensureAuth();
+
+      // Mount storage bar
+      mountStorageBar(document.getElementById('storage-bar-mount'));
+
+      // Mount Justified Gallery
+      const galEl = document.getElementById('playground-gallery');
+      galleryInstance = new JustifiedGallery(galEl, {
+        gap: 8,
+        onTileClick: ({ item, index, items }) => {
+          openLightbox({
+            items,
+            startIndex: index,
+            isOwner: true
+          });
+        },
+        onSelectionChange: (ids) => {
+          showToast(`${ids.length} item(s) selected`, 'info', 1500);
+        }
+      });
+
+      // Mount Upload Manager
+      const uploader = new UploadManager({
+        onAllFinished: () => {
+          showToast('All uploads completed!', 'success');
+          refreshLibrary();
+        }
+      });
+      buildDropZone(uploader, document.getElementById('playground-dropzone'));
+
+      // Initial Library Load
+      await refreshLibrary();
+
+      // Refresh button
+      document.getElementById('btn-refresh-lib').onclick = () => refreshLibrary();
+
+      // Toggle select mode
+      const selectBtn = document.getElementById('btn-toggle-select');
+      selectBtn.onclick = () => {
+        isSelectMode = !isSelectMode;
+        selectBtn.classList.toggle('active', isSelectMode);
+        selectBtn.textContent = isSelectMode ? 'Exit Selection' : 'Select Mode';
+        galleryInstance.setSelectable(isSelectMode);
+      };
+
+      // Template switcher for collage
+      document.querySelectorAll('[data-tmpl]').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('[data-tmpl]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedTemplate = btn.dataset.tmpl;
+        };
+      });
+
+      // Export collage button
+      document.getElementById('btn-export-collage').onclick = async () => {
+        const selectedIds = galleryInstance.getSelectedIds();
+        if (selectedIds.length === 0) {
+          showToast('Please select media items in the gallery first', 'error');
+          return;
+        }
+
+        const items = galleryInstance.items.filter(i => selectedIds.includes(i.id || i._id));
+        try {
+          showToast('Generating high-res collage...', 'info');
+          const blob = await exportCollagePng(items, selectedTemplate, 12, 'white', 1600);
+          downloadBlob(blob, `keepsake-collage-${Date.now()}.png`);
+          showToast('Collage PNG downloaded successfully!', 'success');
+        } catch (err) {
+          showToast('Export failed: ' + err.message, 'error');
+        }
+      };
+    })();
+  </script>
+</body>
+</html>
+

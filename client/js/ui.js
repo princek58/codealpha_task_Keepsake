@@ -1,574 +1,499 @@
-// Bloomly UI helper library
+// Keepsake UI Component Controller & Element Builders
+import { icon, sticker } from './icons.js';
+import { getMediaUrl } from './media-url.js';
 
-import { getStickerSvg } from './stickers.js';
-
-export function formatTimeAgo(dateInput) {
-  if (!dateInput) return '';
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-  const now = new Date();
-  const diffInSeconds = Math.floor((now - date) / 1000);
-
-  if (diffInSeconds < 45) return 'just now';
-  if (diffInSeconds < 3600) {
-    const mins = Math.floor(diffInSeconds / 60);
-    return `${mins}m ago`;
+// 1. Toast Controller
+let toastContainer = null;
+function getToastContainer() {
+  if (!toastContainer || !document.body.contains(toastContainer)) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    toastContainer.setAttribute('role', 'region');
+    toastContainer.setAttribute('aria-label', 'Notifications');
+    document.body.appendChild(toastContainer);
   }
-  if (diffInSeconds < 86400) {
-    const hours = Math.floor(diffInSeconds / 3600);
-    return `${hours}h ago`;
-  }
-  if (diffInSeconds < 604800) {
-    const days = Math.floor(diffInSeconds / 86400);
-    return `${days}d ago`;
-  }
-
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric'
-  });
+  return toastContainer;
 }
 
-export function toast(message, type = 'info', duration = 3200) {
-  let container = document.getElementById('toast-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'toast-container';
-    container.className = 'toast-container';
-    container.setAttribute('aria-live', 'polite');
-    document.body.appendChild(container);
-  }
-
-  const toastEl = document.createElement('div');
-  toastEl.className = 'toast';
-  if (type === 'error') toastEl.classList.add('toast--error');
-
-  const iconSpan = document.createElement('span');
-  iconSpan.style.width = '24px';
-  iconSpan.style.height = '24px';
-  iconSpan.style.flexShrink = '0';
-  iconSpan.style.display = 'inline-flex';
-
-  if (type === 'error') {
-    iconSpan.innerHTML = getStickerSvg('sparkle', { size: 22 });
-  } else if (type === 'success') {
-    iconSpan.innerHTML = getStickerSvg('heart', { size: 22 });
-  } else {
-    iconSpan.innerHTML = getStickerSvg('flower', { size: 22 });
-  }
+export function showToast(message, type = 'info', duration = 3500) {
+  const container = getToastContainer();
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.setAttribute('role', 'status');
 
   const textSpan = document.createElement('span');
-  textSpan.style.flex = '1';
-  textSpan.textContent = message;
+  textSpan.textContent = message; // Safe text
+  toast.appendChild(textSpan);
 
-  const closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'btn-ghost';
-  closeBtn.style.padding = '2px 8px';
-  closeBtn.style.minHeight = 'auto';
-  closeBtn.style.fontSize = 'var(--text-lg)';
-  closeBtn.style.lineHeight = '1';
-  closeBtn.setAttribute('aria-label', 'Close toast');
-  closeBtn.textContent = '×';
+  container.appendChild(toast);
 
-  const removeToast = () => {
-    toastEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-    toastEl.style.opacity = '0';
-    toastEl.style.transform = 'translateY(-10px) scale(0.95)';
-    setTimeout(() => {
-      if (toastEl.parentNode) {
-        toastEl.parentNode.removeChild(toastEl);
-      }
-    }, 200);
-  };
-
-  closeBtn.addEventListener('click', removeToast);
-
-  toastEl.appendChild(iconSpan);
-  toastEl.appendChild(textSpan);
-  toastEl.appendChild(closeBtn);
-  container.appendChild(toastEl);
-
-  if (duration > 0) {
-    setTimeout(removeToast, duration);
-  }
-
-  return toastEl;
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(8px)';
+    toast.style.transition = 'all 200ms ease';
+    setTimeout(() => toast.remove(), 200);
+  }, duration);
 }
 
-export function createAvatar({ avatar, displayName = '', moodSticker = '', size = 'md' }) {
-  const wrapper = document.createElement('div');
-  wrapper.className = `avatar-wrapper avatar-wrapper--${size}`;
-  wrapper.style.position = 'relative';
-  wrapper.style.display = 'inline-flex';
-
-  const avatarEl = document.createElement('div');
-  avatarEl.className = `avatar avatar-${size}`;
-
-  const initial = (displayName && displayName.trim().charAt(0).toUpperCase()) || '?';
-
-  if (avatar) {
-    const img = document.createElement('img');
-    img.src = avatar;
-    img.alt = displayName || 'User avatar';
-    img.loading = 'lazy';
-    img.onerror = () => {
-      img.remove();
-      avatarEl.textContent = initial;
-    };
-    avatarEl.appendChild(img);
-  } else {
-    avatarEl.textContent = initial;
-  }
-
-  wrapper.appendChild(avatarEl);
-
-  if (moodSticker) {
-    const badge = document.createElement('div');
-    badge.className = 'avatar-sticker-badge';
-    badge.style.position = 'absolute';
-    badge.style.bottom = '-4px';
-    badge.style.right = '-4px';
-    badge.style.width = size === 'xl' ? '28px' : size === 'lg' ? '22px' : '18px';
-    badge.style.height = size === 'xl' ? '28px' : size === 'lg' ? '22px' : '18px';
-    badge.style.filter = 'drop-shadow(0 1px 2px rgba(74, 44, 79, 0.15))';
-    badge.innerHTML = getStickerSvg(moodSticker);
-    wrapper.appendChild(badge);
-  }
-
-  return wrapper;
-}
-
-let activeModal = null;
-let lastFocusedElement = null;
-
-export function openModal({ title = '', content = null, onClose = null }) {
-  closeModal();
-
-  lastFocusedElement = document.activeElement;
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'modal-backdrop active';
-  backdrop.setAttribute('role', 'dialog');
-  backdrop.setAttribute('aria-modal', 'true');
-
-  const card = document.createElement('div');
-  card.className = 'modal-card';
-
-  const closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'modal-close';
-  closeBtn.setAttribute('aria-label', 'Close dialog');
-  closeBtn.textContent = '×';
-
-  if (title) {
-    const heading = document.createElement('h3');
-    heading.className = 'modal-title';
-    heading.textContent = title;
-    card.appendChild(heading);
-  }
-
-  card.appendChild(closeBtn);
-
-  if (content instanceof HTMLElement) {
-    card.appendChild(content);
-  } else if (typeof content === 'string') {
-    const p = document.createElement('p');
-    p.textContent = content;
-    card.appendChild(p);
-  }
-
-  backdrop.appendChild(card);
-  document.body.appendChild(backdrop);
-  document.body.style.overflow = 'hidden';
-
-  const handleClose = () => {
-    backdrop.classList.remove('active');
-    setTimeout(() => {
-      if (backdrop.parentNode) {
-        backdrop.parentNode.removeChild(backdrop);
-      }
-      document.body.style.overflow = '';
-      if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
-        lastFocusedElement.focus();
-      }
-      if (onClose) onClose();
-      activeModal = null;
-    }, 200);
-  };
-
-  closeBtn.addEventListener('click', handleClose);
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) handleClose();
-  });
-
-  const keyHandler = (e) => {
-    if (e.key === 'Escape') {
-      handleClose();
-      document.removeEventListener('keydown', keyHandler);
-    }
-  };
-  document.addEventListener('keydown', keyHandler);
-
-  activeModal = { backdrop, close: handleClose };
-  closeBtn.focus();
-  return activeModal;
-}
-
-export function closeModal() {
-  if (activeModal) {
-    activeModal.close();
-  }
-}
-
-export function createSkeletonPost() {
-  const card = document.createElement('div');
-  card.className = 'post-card';
-  card.innerHTML = `
-    <div class="post-header">
-      <div class="skeleton skeleton-avatar"></div>
-      <div class="post-meta" style="flex:1;">
-        <div class="skeleton skeleton-text skeleton-text--short"></div>
-        <div class="skeleton skeleton-text" style="width: 25%;"></div>
-      </div>
-    </div>
-    <div class="skeleton skeleton-text" style="width: 90%;"></div>
-    <div class="skeleton skeleton-text" style="width: 75%;"></div>
-    <div class="skeleton" style="height: 180px; border-radius: var(--radius-lg); margin-top: var(--space-2);"></div>
-  `;
-  return card;
-}
-
-export function createSkeletonUser() {
-  const row = document.createElement('div');
-  row.className = 'user-row';
-  row.innerHTML = `
-    <div class="skeleton skeleton-avatar"></div>
-    <div class="user-row-info">
-      <div class="skeleton skeleton-text skeleton-text--short"></div>
-      <div class="skeleton skeleton-text" style="width: 30%;"></div>
-    </div>
-    <div class="skeleton" style="width: 70px; height: 32px; border-radius: var(--radius-full);"></div>
-  `;
-  return row;
-}
-
-export function buildEmptyState({
-  title = 'Nothing here yet',
-  subtitle = 'When little moments bloom, they will appear here.',
-  stickerName = 'sprout',
-  actionText = '',
-  actionHref = '',
-  onAction = null
-}) {
-  const box = document.createElement('div');
-  box.className = 'empty-state';
-
-  const sticker = document.createElement('div');
-  sticker.className = 'empty-state-sticker';
-  sticker.innerHTML = getStickerSvg(stickerName, { size: 72 });
-
-  const h3 = document.createElement('h3');
-  h3.className = 'empty-state-title';
-  h3.textContent = title;
-
-  const p = document.createElement('p');
-  p.className = 'empty-state-desc';
-  p.textContent = subtitle;
-
-  box.appendChild(sticker);
-  box.appendChild(h3);
-  box.appendChild(p);
-
-  if (actionText) {
-    let btn;
-    if (actionHref) {
-      btn = document.createElement('a');
-      btn.href = actionHref;
-    } else {
-      btn = document.createElement('button');
-      btn.type = 'button';
-    }
-    btn.className = 'btn btn-primary';
-    btn.textContent = actionText;
-    if (onAction) {
-      btn.addEventListener('click', onAction);
-    }
-    box.appendChild(btn);
-  }
-
-  return box;
-}
-
-export function openLightbox(src) {
-  if (!src) return;
-  const backdrop = document.createElement('div');
-  backdrop.className = 'lightbox-backdrop';
-  backdrop.setAttribute('role', 'dialog');
-  backdrop.setAttribute('aria-label', 'Image preview');
-
-  const img = document.createElement('img');
-  img.src = src;
-  img.className = 'lightbox-img';
-  img.alt = 'Full size moment';
-
-  backdrop.appendChild(img);
-  document.body.appendChild(backdrop);
-  document.body.style.overflow = 'hidden';
-
-  const close = () => {
-    backdrop.remove();
-    document.body.style.overflow = '';
-    document.removeEventListener('keydown', keyHandler);
-  };
-
-  backdrop.addEventListener('click', close);
-  const keyHandler = (e) => {
-    if (e.key === 'Escape') close();
-  };
-  document.addEventListener('keydown', keyHandler);
-}
-
-export function buildPostCard(post, handlers = {}) {
-  const card = document.createElement('article');
-  card.className = 'post-card';
-  card.setAttribute('data-id', post.id);
-
-  // 1. Header
-  const header = document.createElement('div');
-  header.className = 'post-header';
-
-  const author = post.author || {};
-  const avatarWrapper = createAvatar({
-    avatar: author.avatar,
-    displayName: author.displayName || author.username,
-    moodSticker: author.moodSticker,
-    size: 'md'
-  });
-
-  const meta = document.createElement('div');
-  meta.className = 'post-meta';
-
-  const nameLink = document.createElement('a');
-  nameLink.href = `/profile.html?u=${encodeURIComponent(author.username || '')}`;
-  nameLink.className = 'post-author-name';
-  nameLink.textContent = author.displayName || author.username || 'Bloom Friend';
-
-  const handle = document.createElement('span');
-  handle.className = 'post-author-handle';
-  handle.textContent = `@${author.username || 'user'}`;
-
-  meta.appendChild(nameLink);
-  meta.appendChild(handle);
-
-  const timeEl = document.createElement('time');
-  timeEl.className = 'post-time';
-  timeEl.dateTime = post.createdAt || '';
-  timeEl.textContent = formatTimeAgo(post.createdAt);
-
-  header.appendChild(avatarWrapper);
-  header.appendChild(meta);
-  header.appendChild(timeEl);
-
-  // Author Delete action menu
-  const currentUser = window.currentUser;
-  const isAuthor = currentUser && (
-    author.id === currentUser.id ||
-    author.id === currentUser._id ||
-    author.username === currentUser.username
+// 2. Focus Trap Helper
+function setupFocusTrap(container, onEscape) {
+  const focusable = container.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
   );
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
 
-  if (isAuthor && handlers.onDelete) {
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'btn-ghost btn-sm';
-    deleteBtn.style.padding = '2px 8px';
-    deleteBtn.style.color = 'var(--color-text-light)';
-    deleteBtn.title = 'Delete bloom';
-    deleteBtn.innerHTML = '•••';
-    deleteBtn.addEventListener('click', () => {
-      openModal({
-        title: 'Prune this Bloom?',
-        content: `
-          <p style="color: var(--color-text-muted); margin-bottom: var(--space-4);">
-            Are you sure you want to remove this moment from the garden? This action cannot be undone.
-          </p>
-          <div style="display: flex; justify-content: flex-end; gap: var(--space-2);">
-            <button class="btn btn-secondary" id="confirm-cancel-btn">Cancel</button>
-            <button class="btn btn-primary" id="confirm-delete-btn" style="background-color: var(--color-danger);">Prune Bloom</button>
-          </div>
-        `
-      });
+  const handleKeydown = (e) => {
+    if (e.key === 'Escape' && onEscape) {
+      e.preventDefault();
+      onEscape();
+      return;
+    }
+    if (e.key !== 'Tab') return;
 
-      const confirmBtn = document.getElementById('confirm-delete-btn');
-      const cancelBtn = document.getElementById('confirm-cancel-btn');
-      if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
-      if (confirmBtn) {
-        confirmBtn.addEventListener('click', () => {
-          closeModal();
-          handlers.onDelete(post, card);
-        });
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        last?.focus();
+        e.preventDefault();
       }
-    });
-    header.appendChild(deleteBtn);
+    } else {
+      if (document.activeElement === last) {
+        first?.focus();
+        e.preventDefault();
+      }
+    }
+  };
+
+  container.addEventListener('keydown', handleKeydown);
+  first?.focus();
+
+  return () => {
+    container.removeEventListener('keydown', handleKeydown);
+  };
+}
+
+// 3. Modal Controller
+let previousFocusedElement = null;
+
+export function openModal(modalBackdrop, { onClose } = {}) {
+  if (!modalBackdrop) return;
+  previousFocusedElement = document.activeElement;
+  modalBackdrop.classList.add('open');
+  modalBackdrop.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+
+  const modal = modalBackdrop.querySelector('.modal') || modalBackdrop;
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+
+  const removeTrap = setupFocusTrap(modal, () => {
+    closeModal(modalBackdrop);
+    if (onClose) onClose();
+  });
+
+  modalBackdrop._cleanupTrap = removeTrap;
+  modalBackdrop._onClose = onClose;
+
+  const closeBtn = modalBackdrop.querySelector('[data-close-modal]');
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      closeModal(modalBackdrop);
+      if (onClose) onClose();
+    };
   }
+}
+
+export function closeModal(modalBackdrop) {
+  if (!modalBackdrop) return;
+  modalBackdrop.classList.remove('open');
+  modalBackdrop.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+
+  if (modalBackdrop._cleanupTrap) {
+    modalBackdrop._cleanupTrap();
+    delete modalBackdrop._cleanupTrap;
+  }
+
+  if (previousFocusedElement && typeof previousFocusedElement.focus === 'function') {
+    previousFocusedElement.focus();
+    previousFocusedElement = null;
+  }
+}
+
+// 4. Slide-up Sheet Controller
+export function openSheet(sheetBackdrop, { onClose } = {}) {
+  if (!sheetBackdrop) return;
+  previousFocusedElement = document.activeElement;
+  sheetBackdrop.classList.add('open');
+  sheetBackdrop.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+
+  const sheet = sheetBackdrop.querySelector('.sheet') || sheetBackdrop;
+  const removeTrap = setupFocusTrap(sheet, () => {
+    closeSheet(sheetBackdrop);
+    if (onClose) onClose();
+  });
+
+  sheetBackdrop._cleanupTrap = removeTrap;
+}
+
+export function closeSheet(sheetBackdrop) {
+  if (!sheetBackdrop) return;
+  sheetBackdrop.classList.remove('open');
+  sheetBackdrop.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+
+  if (sheetBackdrop._cleanupTrap) {
+    sheetBackdrop._cleanupTrap();
+    delete sheetBackdrop._cleanupTrap;
+  }
+
+  if (previousFocusedElement) {
+    previousFocusedElement.focus();
+    previousFocusedElement = null;
+  }
+}
+
+// 5. Confirm Dialog
+export function confirmDialog({
+  title = 'Are you sure?',
+  message = '',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  danger = false
+} = {}) {
+  return new Promise((resolve) => {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+
+    const modal = document.createElement('div');
+    modal.className = 'modal confirm-dialog';
+
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+    const h3 = document.createElement('h3');
+    h3.textContent = title;
+    header.appendChild(h3);
+
+    const body = document.createElement('div');
+    body.className = 'modal-body';
+    const p = document.createElement('p');
+    p.textContent = message;
+    body.appendChild(p);
+
+    const footer = document.createElement('div');
+    footer.className = 'modal-footer';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-sand';
+    cancelBtn.textContent = cancelText;
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+    confirmBtn.textContent = confirmText;
+
+    footer.appendChild(cancelBtn);
+    footer.appendChild(confirmBtn);
+
+    modal.appendChild(header);
+    modal.appendChild(body);
+    modal.appendChild(footer);
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+
+    const cleanup = (result) => {
+      closeModal(backdrop);
+      setTimeout(() => backdrop.remove(), 250);
+      resolve(result);
+    };
+
+    cancelBtn.onclick = () => cleanup(false);
+    confirmBtn.onclick = () => cleanup(true);
+    backdrop.onclick = (e) => {
+      if (e.target === backdrop) cleanup(false);
+    };
+
+    openModal(backdrop, { onClose: () => cleanup(false) });
+  });
+}
+
+// 6. Formatters
+export function formatTimeAgo(dateInput) {
+  if (!dateInput) return '';
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return '';
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  const years = Math.floor(days / 365);
+  return `${years}y ago`;
+}
+
+export function formatDate(dateInput, options = { month: 'short', day: 'numeric', year: 'numeric' }) {
+  if (!dateInput) return '';
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-US', options).format(date);
+}
+
+export function formatBytes(bytes) {
+  if (typeof bytes !== 'number' || isNaN(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
+}
+
+export function formatDuration(seconds) {
+  if (!seconds || isNaN(seconds)) return '0:00';
+  const s = Math.floor(seconds);
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}:${rem < 10 ? '0' : ''}${rem}`;
+}
+
+// 7. Safe Element Builders
+export function createAvatar(user = {}, size = 'md') {
+  const container = document.createElement('div');
+  container.className = `avatar avatar-${size}`;
+
+  if (user && user.avatarUrl) {
+    const img = document.createElement('img');
+    img.src = user.avatarUrl;
+    img.alt = user.displayName || user.username || 'Avatar';
+    img.loading = 'lazy';
+    container.appendChild(img);
+  } else {
+    const initial = (user?.displayName || user?.username || '?').charAt(0).toUpperCase();
+    const span = document.createElement('span');
+    span.textContent = initial;
+    container.appendChild(span);
+  }
+
+  return container;
+}
+
+export function buildMediaTile(media, options = {}) {
+  const tile = document.createElement('div');
+  tile.className = 'media-tile';
+  tile.setAttribute('tabindex', '0');
+  tile.setAttribute('role', 'button');
+
+  const id = media.id || media._id;
+  tile.dataset.id = id;
+
+  if (media.blurDataUrl) {
+    tile.style.backgroundImage = `url("${media.blurDataUrl}")`;
+    tile.style.backgroundSize = 'cover';
+  }
+
+  const thumbUrl = getMediaUrl(media, 'thumb', options.token);
+  const img = document.createElement('img');
+  img.src = thumbUrl;
+  img.alt = media.caption || 'Media';
+  img.loading = 'lazy';
+  img.style.opacity = '0';
+  img.style.transition = 'opacity 300ms ease';
+  img.onload = () => {
+    img.style.opacity = '1';
+  };
+  tile.appendChild(img);
+
+  if (media.type === 'video') {
+    const badge = document.createElement('div');
+    badge.className = 'media-badge';
+    badge.appendChild(icon('play', { size: 12 }));
+    if (media.durationSec) {
+      const dur = document.createElement('span');
+      dur.textContent = formatDuration(media.durationSec);
+      badge.appendChild(dur);
+    }
+    tile.appendChild(badge);
+  }
+
+  if (media.status === 'processing') {
+    const overlay = document.createElement('div');
+    overlay.className = 'media-overlay';
+    overlay.textContent = 'Processing...';
+    tile.appendChild(overlay);
+  } else if (media.status === 'failed') {
+    const overlay = document.createElement('div');
+    overlay.className = 'media-overlay';
+    overlay.textContent = 'Failed';
+    tile.appendChild(overlay);
+  }
+
+  if (options.selectable) {
+    const check = document.createElement('div');
+    check.className = 'media-check';
+    check.appendChild(icon('check', { size: 14 }));
+    tile.appendChild(check);
+
+    if (options.selected) {
+      tile.classList.add('selected');
+    }
+  }
+
+  return tile;
+}
+
+export function buildMomentCard(moment, options = {}) {
+  const card = document.createElement('article');
+  card.className = 'moment-card';
+  card.dataset.id = moment.id || moment._id;
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'moment-header';
+
+  const authorLink = document.createElement('a');
+  authorLink.className = 'moment-author';
+  authorLink.href = `/profile.html?user=${encodeURIComponent(moment.author?.username || '')}`;
+  authorLink.appendChild(createAvatar(moment.author, 'sm'));
+
+  const authorName = document.createElement('strong');
+  authorName.textContent = moment.author?.displayName || moment.author?.username || 'Anonymous';
+  authorLink.appendChild(authorName);
+  header.appendChild(authorLink);
+
+  const timeSpan = document.createElement('span');
+  timeSpan.className = 'text-muted';
+  timeSpan.style.fontSize = 'var(--text-xs)';
+  timeSpan.textContent = formatTimeAgo(moment.createdAt);
+  header.appendChild(timeSpan);
 
   card.appendChild(header);
 
-  // 2. Text body
-  if (post.text) {
-    const textEl = document.createElement('p');
-    textEl.className = 'post-text';
-    textEl.textContent = post.text;
-    card.appendChild(textEl);
+  // Content Container for Renderers
+  const content = document.createElement('div');
+  content.className = 'moment-content';
+  card.appendChild(content);
+
+  // Meta Section
+  const meta = document.createElement('div');
+  meta.className = 'moment-meta';
+
+  if (moment.title) {
+    const h3 = document.createElement('h3');
+    h3.className = 'moment-title';
+    h3.textContent = moment.title;
+    meta.appendChild(h3);
   }
 
-  // 3. Image with click-to-zoom
-  if (post.image) {
-    const imgContainer = document.createElement('div');
-    imgContainer.className = 'post-image-container';
-    imgContainer.style.cursor = 'zoom-in';
-
-    const img = document.createElement('img');
-    img.src = post.image;
-    img.alt = 'Bloom moment';
-    img.loading = 'lazy';
-    img.addEventListener('click', () => openLightbox(post.image));
-
-    imgContainer.appendChild(img);
-    card.appendChild(imgContainer);
+  if (moment.caption) {
+    const p = document.createElement('p');
+    p.className = 'moment-caption readable';
+    p.textContent = moment.caption;
+    meta.appendChild(p);
   }
 
-  // 4. Actions
+  if (moment.place) {
+    const placeDiv = document.createElement('div');
+    placeDiv.className = 'text-muted';
+    placeDiv.style.fontSize = 'var(--text-xs)';
+    placeDiv.style.display = 'flex';
+    placeDiv.style.alignItems = 'center';
+    placeDiv.style.gap = '4px';
+    placeDiv.appendChild(icon('map-pin', { size: 14 }));
+    const placeSpan = document.createElement('span');
+    placeSpan.textContent = moment.place;
+    placeDiv.appendChild(placeSpan);
+    meta.appendChild(placeDiv);
+  }
+
+  card.appendChild(meta);
+
+  // Actions
   const actions = document.createElement('div');
-  actions.className = 'post-actions';
+  actions.className = 'moment-actions';
 
-  // Like button
   const likeBtn = document.createElement('button');
-  likeBtn.type = 'button';
-  likeBtn.className = `action-btn ${post.likedByMe ? 'active' : ''}`;
-  likeBtn.setAttribute('aria-label', post.likedByMe ? 'Unlike post' : 'Like post');
-
-  const heartIcon = document.createElement('span');
-  heartIcon.style.width = '20px';
-  heartIcon.style.height = '20px';
-  heartIcon.style.display = 'inline-flex';
-  heartIcon.innerHTML = getStickerSvg('heart', { size: 20 });
-
-  const likeCount = document.createElement('span');
-  likeCount.className = 'like-count';
-  likeCount.textContent = String(post.likesCount || 0);
-
-  likeBtn.appendChild(heartIcon);
-  likeBtn.appendChild(likeCount);
-
-  if (handlers.onLike) {
-    likeBtn.addEventListener('click', (e) => handlers.onLike(post, likeBtn, e));
-  }
-
-  // Comment button
-  const commentBtn = document.createElement(handlers.onComment ? 'button' : 'a');
-  if (!handlers.onComment) {
-    commentBtn.href = `/post.html?id=${post.id}`;
-  } else {
-    commentBtn.type = 'button';
-  }
-  commentBtn.className = 'action-btn';
-  commentBtn.setAttribute('aria-label', 'View comments');
-
-  const commentIcon = document.createElement('span');
-  commentIcon.style.width = '18px';
-  commentIcon.style.height = '18px';
-  commentIcon.style.display = 'inline-flex';
-  commentIcon.innerHTML = getStickerSvg('sparkle', { size: 18 });
-
-  const commentCount = document.createElement('span');
-  commentCount.textContent = String(post.commentsCount || 0);
-
-  commentBtn.appendChild(commentIcon);
-  commentBtn.appendChild(commentCount);
-
-  if (handlers.onComment) {
-    commentBtn.addEventListener('click', () => handlers.onComment(post));
-  }
-
-  // Share button
-  const shareBtn = document.createElement('button');
-  shareBtn.type = 'button';
-  shareBtn.className = 'action-btn';
-  shareBtn.setAttribute('aria-label', 'Share bloom link');
-
-  const shareIcon = document.createElement('span');
-  shareIcon.style.width = '18px';
-  shareIcon.style.height = '18px';
-  shareIcon.style.display = 'inline-flex';
-  shareIcon.innerHTML = getStickerSvg('sprout', { size: 18 });
-
-  shareBtn.appendChild(shareIcon);
-  shareBtn.appendChild(document.createTextNode('Share'));
-
-  shareBtn.addEventListener('click', async () => {
-    const postUrl = `${window.location.origin}/post.html?id=${post.id}`;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      try {
-        await navigator.clipboard.writeText(postUrl);
-        toast('Bloom link copied to clipboard!', 'info');
-      } catch {
-        toast(postUrl, 'info');
-      }
-    } else {
-      toast(postUrl, 'info');
-    }
-  });
-
+  likeBtn.className = 'btn-icon';
+  likeBtn.setAttribute('aria-label', moment.likedByMe ? 'Unlike moment' : 'Like moment');
+  likeBtn.appendChild(icon(moment.likedByMe ? 'heart-filled' : 'heart', { size: 20 }));
   actions.appendChild(likeBtn);
+
+  const commentBtn = document.createElement('button');
+  commentBtn.className = 'btn-icon';
+  commentBtn.setAttribute('aria-label', 'Comments');
+  commentBtn.appendChild(icon('comment', { size: 20 }));
   actions.appendChild(commentBtn);
-  actions.appendChild(shareBtn);
+
   card.appendChild(actions);
 
   return card;
 }
 
-export function buildUserRow(user, handlers = {}) {
-  const row = document.createElement('div');
-  row.className = 'user-row';
-  row.setAttribute('data-id', user.id);
+export function buildAlbumCard(album, options = {}) {
+  const card = document.createElement('div');
+  card.className = 'album-card';
+  card.dataset.id = album.id || album._id;
 
-  const avatar = createAvatar({
-    avatar: user.avatar,
-    displayName: user.displayName || user.username,
-    moodSticker: user.moodSticker,
-    size: 'md'
-  });
+  const cover = document.createElement('div');
+  cover.className = 'album-cover';
+  if (album.cover) {
+    const img = document.createElement('img');
+    img.src = getMediaUrl(album.cover, 'display', options.token);
+    img.alt = album.title;
+    img.loading = 'lazy';
+    cover.appendChild(img);
+  }
+  card.appendChild(cover);
 
   const info = document.createElement('div');
-  info.className = 'user-row-info';
+  info.className = 'album-info';
 
-  const nameLink = document.createElement('a');
-  nameLink.href = `/profile.html?u=${encodeURIComponent(user.username)}`;
-  nameLink.className = 'user-row-name';
-  nameLink.textContent = user.displayName || user.username;
+  const title = document.createElement('h4');
+  title.className = 'album-title';
+  title.textContent = album.title;
+  info.appendChild(title);
+
+  const count = document.createElement('span');
+  count.className = 'album-count';
+  count.textContent = `${album.mediaCount || 0} moments`;
+  info.appendChild(count);
+
+  card.appendChild(info);
+  return card;
+}
+
+export function buildUserRow(user, options = {}) {
+  const row = document.createElement('div');
+  row.className = 'user-row';
+
+  const infoLink = document.createElement('a');
+  infoLink.className = 'user-info';
+  infoLink.href = `/profile.html?user=${encodeURIComponent(user.username)}`;
+  infoLink.appendChild(createAvatar(user, 'md'));
+
+  const details = document.createElement('div');
+  const name = document.createElement('div');
+  name.style.fontWeight = '600';
+  name.textContent = user.displayName || user.username;
+  details.appendChild(name);
 
   const handle = document.createElement('div');
-  handle.className = 'user-row-handle';
+  handle.className = 'text-muted';
+  handle.style.fontSize = 'var(--text-xs)';
   handle.textContent = `@${user.username}`;
+  details.appendChild(handle);
 
-  info.appendChild(nameLink);
-  info.appendChild(handle);
+  infoLink.appendChild(details);
+  row.appendChild(infoLink);
 
-  row.appendChild(avatar);
-  row.appendChild(info);
-
-  if (!user.isMe) {
+  if (!user.isMe && options.showFollowButton) {
     const followBtn = document.createElement('button');
-    followBtn.type = 'button';
-    followBtn.className = `btn btn-sm ${user.isFollowing ? 'btn-secondary' : 'btn-primary'}`;
-    followBtn.innerHTML = `
-      <span class="btn-icon-slot" style="width: 14px; height: 14px; display: inline-flex;">${getStickerSvg(user.isFollowing ? 'flower' : 'sprout', { size: 14 })}</span>
-      <span class="follow-text">${user.isFollowing ? 'Planted' : 'Plant'}</span>
-    `;
-
-    if (handlers.onFollow) {
-      followBtn.addEventListener('click', (e) => handlers.onFollow(user, followBtn, e));
+    followBtn.className = user.isFollowing ? 'btn btn-sand btn-sm' : 'btn btn-primary btn-sm';
+    followBtn.textContent = user.isFollowing ? 'Following' : 'Follow';
+    if (options.onFollowToggle) {
+      followBtn.onclick = () => options.onFollowToggle(user, followBtn);
     }
     row.appendChild(followBtn);
   }
@@ -576,118 +501,149 @@ export function buildUserRow(user, handlers = {}) {
   return row;
 }
 
-export function buildCommentItem(comment, handlers = {}) {
+export function buildCommentItem(comment) {
   const item = document.createElement('div');
   item.className = 'comment-item';
-  item.setAttribute('data-id', comment.id);
 
-  const author = comment.author || {};
-  const avatar = createAvatar({
-    avatar: author.avatar,
-    displayName: author.displayName || author.username,
-    moodSticker: author.moodSticker,
-    size: 'sm'
-  });
+  item.appendChild(createAvatar(comment.author, 'sm'));
 
-  const content = document.createElement('div');
-  content.className = 'comment-content';
+  const body = document.createElement('div');
+  body.className = 'comment-body';
 
-  const header = document.createElement('div');
-  header.className = 'comment-header';
+  const author = document.createElement('div');
+  author.className = 'comment-author';
+  author.textContent = comment.author?.displayName || comment.author?.username || 'Anonymous';
+  body.appendChild(author);
 
-  const authorLink = document.createElement('a');
-  authorLink.href = `/profile.html?u=${encodeURIComponent(author.username || '')}`;
-  authorLink.className = 'comment-author';
-  authorLink.textContent = author.displayName || author.username || 'User';
-
-  const timeEl = document.createElement('time');
-  timeEl.className = 'comment-time';
-  timeEl.textContent = formatTimeAgo(comment.createdAt);
-
-  header.appendChild(authorLink);
-  header.appendChild(timeEl);
-
-  const text = document.createElement('p');
+  const text = document.createElement('div');
   text.className = 'comment-text';
-  text.textContent = comment.text;
+  text.textContent = comment.text; // Text only, never innerHTML
+  body.appendChild(text);
 
-  content.appendChild(header);
-  content.appendChild(text);
-
-  item.appendChild(avatar);
-  item.appendChild(content);
-
+  item.appendChild(body);
   return item;
 }
 
 export function buildNotificationItem(notification) {
   const item = document.createElement('div');
   item.className = `notification-item ${notification.read ? '' : 'unread'}`;
-  item.setAttribute('data-id', notification.id);
 
-  const fromUser = notification.from || {};
-  const avatar = createAvatar({
-    avatar: fromUser.avatar,
-    displayName: fromUser.displayName || fromUser.username,
-    size: 'sm'
-  });
+  item.appendChild(createAvatar(notification.from, 'sm'));
 
   const textDiv = document.createElement('div');
-  textDiv.className = 'notification-text';
+  textDiv.style.flex = '1';
+  textDiv.style.fontSize = 'var(--text-sm)';
 
-  const senderName = fromUser.displayName || fromUser.username || 'Someone';
-  let actionDesc = 'interacted with you';
-  if (notification.type === 'like') actionDesc = 'liked your bloom';
-  if (notification.type === 'comment') actionDesc = 'commented on your bloom';
-  if (notification.type === 'follow') actionDesc = 'started following you';
+  const strong = document.createElement('strong');
+  strong.textContent = notification.from?.displayName || notification.from?.username || 'Someone';
+  textDiv.appendChild(strong);
 
-  textDiv.innerHTML = `<strong>${escapeSafe(senderName)}</strong> ${escapeSafe(actionDesc)}`;
+  const actionSpan = document.createElement('span');
+  if (notification.type === 'like') {
+    actionSpan.textContent = ' liked your moment ';
+  } else if (notification.type === 'comment') {
+    actionSpan.textContent = ' commented on ';
+  } else if (notification.type === 'follow') {
+    actionSpan.textContent = ' started following you.';
+  }
+  textDiv.appendChild(actionSpan);
 
-  if (notification.postPreview) {
-    const preview = document.createElement('span');
-    preview.style.display = 'block';
-    preview.style.fontSize = 'var(--text-xs)';
-    preview.style.color = 'var(--color-text-light)';
-    preview.style.fontStyle = 'italic';
-    preview.textContent = `"${notification.postPreview}"`;
+  if (notification.momentPreview) {
+    const preview = document.createElement('em');
+    preview.textContent = `"${notification.momentPreview}"`;
     textDiv.appendChild(preview);
   }
 
-  const timeEl = document.createElement('time');
-  timeEl.className = 'notification-time';
-  timeEl.textContent = formatTimeAgo(notification.createdAt);
-
-  item.appendChild(avatar);
   item.appendChild(textDiv);
-  item.appendChild(timeEl);
-
   return item;
 }
 
-function escapeSafe(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+export function buildEmptyState({ iconName = 'bookmark', title = 'Nothing here yet', description = '', actionButton = null } = {}) {
+  const empty = document.createElement('div');
+  empty.className = 'empty-state';
+
+  const stickerIcon = sticker(iconName, { size: 72, className: 'empty-state-icon' });
+  empty.appendChild(stickerIcon);
+
+  const h3 = document.createElement('h3');
+  h3.className = 'empty-state-title';
+  h3.textContent = title;
+  empty.appendChild(h3);
+
+  if (description) {
+    const p = document.createElement('p');
+    p.className = 'empty-state-desc';
+    p.textContent = description;
+    empty.appendChild(p);
+  }
+
+  if (actionButton) {
+    empty.appendChild(actionButton);
+  }
+
+  return empty;
 }
 
-export const ui = {
-  formatTimeAgo,
-  toast,
-  createAvatar,
-  openModal,
-  closeModal,
-  createSkeletonPost,
-  createSkeletonUser,
-  buildEmptyState,
-  buildPostCard,
-  buildUserRow,
-  buildCommentItem,
-  buildNotificationItem
-};
+export function buildSkeletonTile() {
+  const tile = document.createElement('div');
+  tile.className = 'skeleton skeleton-tile';
+  return tile;
+}
 
-export default ui;
+export function buildSkeletonCard() {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.marginBottom = 'var(--space-md)';
+
+  const header = document.createElement('div');
+  header.style.display = 'flex';
+  header.style.gap = 'var(--space-sm)';
+  header.style.alignItems = 'center';
+  header.style.marginBottom = 'var(--space-md)';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'skeleton skeleton-avatar';
+  avatar.style.width = '36px';
+  avatar.style.height = '36px';
+  header.appendChild(avatar);
+
+  const name = document.createElement('div');
+  name.className = 'skeleton skeleton-text';
+  name.style.width = '120px';
+  name.style.height = '14px';
+  header.appendChild(name);
+  card.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'skeleton skeleton-tile';
+  card.appendChild(body);
+
+  return card;
+}
+
+// 8. Utilities
+export function debounce(fn, delay = 250) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+export function createAbortHelper() {
+  let controller = null;
+  return {
+    getSignal: () => {
+      if (controller) controller.abort();
+      controller = new AbortController();
+      return controller.signal;
+    },
+    abort: () => {
+      if (controller) {
+        controller.abort();
+        controller = null;
+      }
+    }
+  };
+}
 

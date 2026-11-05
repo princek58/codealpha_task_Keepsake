@@ -1,91 +1,114 @@
+/* Keepsake Design Tokens */
 :root {
-  /* Brand Palette */
-  --color-bg: #FFF8F3;
-  --color-surface: #FFFFFF;
-  --color-surface-translucent: rgba(255, 255, 255, 0.85);
-  --color-primary: #FFB3C7;
-  --color-primary-strong: #FF6F91;
-  --color-primary-hover: #F2587E;
-  --color-primary-light: #FFEBF0;
-  --color-secondary: #D9C8FF;
-  --color-secondary-light: #F4EFFF;
-  --color-accent-peach: #FFCDB2;
-  --color-accent-peach-light: #FFF2EB;
-  --color-accent-mint: #CDEFE2;
-  --color-accent-mint-light: #EDFAF4;
-  --color-accent-butter: #FFF0B3;
-  --color-accent-butter-light: #FFFBEB;
+  /* Base Palette */
+  --color-paper: #F7F3EC;
+  --color-paper-light: #FAF8F5;
+  --color-white: #FFFFFF;
+  --color-sand: #EDE4D3;
+  --color-sand-hover: #E3D8C3;
+  --color-sand-active: #D9CCB4;
+  --color-ink: #1F2A37;
+  --color-ink-muted: rgba(31, 42, 55, 0.7);
+  --color-ink-faint: rgba(31, 42, 55, 0.15);
+  --color-ink-subtle: rgba(31, 42, 55, 0.08);
+  --color-stone: #5F6B7A;
+  --color-stone-light: #8A96A4;
+  --color-stone-faint: rgba(95, 107, 122, 0.12);
+  --color-terracotta: #B4532A;
+  --color-terracotta-hover: #9C431E;
+  --color-terracotta-active: #843818;
+  --color-terracotta-tint: rgba(180, 83, 42, 0.12);
+  --color-teal: #2F7F79;
+  --color-teal-hover: #266964;
+  --color-teal-active: #1D5450;
+  --color-teal-tint: rgba(47, 127, 121, 0.12);
+  --color-sage: #A9B99B;
+  --color-sage-tint: rgba(169, 185, 155, 0.2);
+  --color-mustard: #E0A53B;
+  --color-mustard-hover: #C78F2D;
+  --color-mustard-tint: rgba(224, 165, 59, 0.18);
+  --color-slate: #4C6A92;
+  --color-slate-tint: rgba(76, 106, 146, 0.15);
+  --color-brick: #B3261E;
+  --color-brick-hover: #951F18;
+  --color-brick-active: #791913;
+  --color-brick-tint: rgba(179, 38, 30, 0.12);
+  --color-charcoal: #14171C;
+  --color-charcoal-surface: #1E232B;
+  --color-charcoal-border: rgba(255, 255, 255, 0.12);
+  --color-charcoal-muted: rgba(255, 255, 255, 0.65);
+  --color-charcoal-faint: rgba(255, 255, 255, 0.2);
 
-  /* Text & Border */
-  --color-text: #4A2C4F;
-  --color-text-muted: #8E7391;
-  --color-text-light: #B49FB7;
-  --color-border: #F3D8E2;
-  --color-border-strong: #E5BCCB;
-  --color-border-focus: #FF6F91;
-  --color-danger: #FF5A79;
-  --color-danger-light: #FFE8EC;
+  /* Typography Families */
+  --font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-accent: 'Caveat', cursive, sans-serif;
 
-  /* Typography */
-  --font-heading: 'Fredoka', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-accent: 'Caveat', 'Comic Sans MS', cursive;
+  /* Fluid Typography Scale */
+  --text-xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);
+  --text-sm: clamp(0.84rem, 0.81rem + 0.18vw, 0.9375rem);
+  --text-base: clamp(0.95rem, 0.91rem + 0.22vw, 1.0625rem);
+  --text-md: clamp(1.08rem, 1.02rem + 0.32vw, 1.25rem);
+  --text-lg: clamp(1.25rem, 1.16rem + 0.5vw, 1.5rem);
+  --text-xl: clamp(1.5rem, 1.35rem + 0.8vw, 1.875rem);
+  --text-2xl: clamp(1.85rem, 1.62rem + 1.2vw, 2.5rem);
+  --text-3xl: clamp(2.25rem, 1.9rem + 1.8vw, 3.25rem);
+  --text-4xl: clamp(2.75rem, 2.25rem + 2.6vw, 4.25rem);
 
-  /* Font Sizes */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
-  --text-5xl: 3rem;
-  --text-6xl: 3.75rem;
+  /* Spacing Scale */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
 
-  /* Spacing */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-20: 5rem;
-  --space-24: 6rem;
+  /* Radius Scale */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-pill: 9999px;
 
-  /* Radii (20-28px on cards, pill buttons) */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
-  --radius-xl: 26px;
-  --radius-2xl: 32px;
-  --radius-full: 9999px;
+  /* Shadow Scale (Ink-derived neutral shadows) */
+  --shadow-sm: 0 1px 3px rgba(31, 42, 55, 0.08), 0 1px 2px rgba(31, 42, 55, 0.05);
+  --shadow-md: 0 4px 12px rgba(31, 42, 55, 0.08), 0 2px 4px rgba(31, 42, 55, 0.04);
+  --shadow-lg: 0 12px 28px rgba(31, 42, 55, 0.12), 0 4px 8px rgba(31, 42, 55, 0.06);
+  --shadow-xl: 0 24px 48px rgba(31, 42, 55, 0.16), 0 8px 16px rgba(31, 42, 55, 0.08);
+  --shadow-inner: inset 0 2px 4px rgba(31, 42, 55, 0.06);
 
-  /* Soft Pink-Tinted Shadows */
-  --shadow-xs: 0 2px 6px rgba(255, 111, 145, 0.06);
-  --shadow-sm: 0 4px 14px rgba(255, 111, 145, 0.08);
-  --shadow-md: 0 8px 24px rgba(255, 111, 145, 0.12);
-  --shadow-lg: 0 14px 36px rgba(255, 111, 145, 0.15);
-  --shadow-float: 0 18px 42px rgba(74, 44, 79, 0.09);
+  /* Z-Index Hierarchy */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-header: 300;
+  --z-tray: 400;
+  --z-modal-backdrop: 500;
+  --z-modal: 510;
+  --z-sheet: 520;
+  --z-lightbox: 600;
+  --z-toast: 700;
+  --z-tooltip: 800;
 
   /* Transitions & Easing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.15, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-lazy: 600ms;
 
-  /* Z-Index Scale */
-  --z-base: 1;
-  --z-card: 10;
-  --z-nav: 100;
-  --z-toast: 500;
-  --z-modal: 1000;
-  --z-preloader: 2000;
+  /* Borders & Focus Rings */
+  --border-subtle: 1px solid var(--color-sand);
+  --border-medium: 1px solid var(--color-stone-faint);
+  --border-focus: 2px solid var(--color-teal);
+  --focus-ring: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-teal);
+  --focus-ring-charcoal: 0 0 0 2px var(--color-charcoal), 0 0 0 4px var(--color-teal);
 }
 

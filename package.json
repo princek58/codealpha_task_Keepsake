@@ -8,8 +8,11 @@
     "dev": "nodemon server/server.js",
     "test": "jest --testPathIgnorePatterns=\"/client/\" --runInBand --detectOpenHandles --forceExit",
     "test:client": "jest --testMatch=\"**/client/tests/**/*.test.js\" --runInBand --detectOpenHandles --forceExit",
+    "test:all": "npm test && npm run test:client",
     "test:e2e": "node scripts/e2e_runner.js",
-    "audit:tokens": "node scripts/audit_tokens.js",
+    "audit:tokens": "node scripts/audit-tokens.js",
+    "audit:contrast": "node scripts/audit-contrast.js",
+    "verify:responsive": "node scripts/verify-responsive.js",
     "seed": "node scripts/seed.js",
     "verify:all": "node scripts/verify_all.js"
   },
@@ -42,7 +45,11 @@
     "sharp": "^0.35.5"
   },
   "devDependencies": {
+    "@babel/core": "^8.1.0",
+    "@babel/preset-env": "^8.0.7",
+    "babel-jest": "^30.5.2",
     "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.5.2",
     "mongodb-memory-server": "^10.1.4",
     "nodemon": "^3.1.9",
     "supertest": "^7.0.0"

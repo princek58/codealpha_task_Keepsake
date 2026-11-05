@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Design System &amp; Component Styleguide — Bloomly</title>
+  <meta name="theme-color" content="#F7F3EC">
+  <title>Keepsake — Design System & Component Styleguide</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
@@ -16,558 +17,401 @@
   <link rel="stylesheet" href="/css/pages.css">
 
   <style>
-    .sg-container {
-      max-width: 1040px;
-      margin: 0 auto;
-      padding: var(--space-8) var(--space-4) var(--space-20);
-    }
-    .sg-section {
-      margin-bottom: var(--space-16);
-      background-color: var(--color-surface);
-      border: 2px solid var(--color-border);
-      border-radius: var(--radius-2xl);
-      padding: var(--space-8);
-      box-shadow: var(--shadow-sm);
-    }
-    .sg-header {
-      border-bottom: 2px solid var(--color-border);
-      padding-bottom: var(--space-4);
-      margin-bottom: var(--space-6);
-    }
-    .sg-title {
-      font-family: var(--font-heading);
-      font-size: var(--text-2xl);
-      color: var(--color-text);
-      margin: 0 0 var(--space-1);
-    }
-    .sg-subtitle {
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-      margin: 0;
-    }
-    .sg-grid-colors {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-      gap: var(--space-4);
-    }
-    .sg-color-card {
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      background: var(--color-surface);
-    }
-    .sg-color-swatch {
-      height: 70px;
-      width: 100%;
-    }
-    .sg-color-info {
-      padding: var(--space-3);
-      font-size: var(--text-xs);
-    }
-    .sg-color-name {
-      font-family: var(--font-heading);
-      font-weight: 600;
-      color: var(--color-text);
-      margin-bottom: 2px;
-    }
-    .sg-color-hex {
-      color: var(--color-text-light);
-      font-family: monospace;
-    }
-    .sg-color-var {
-      color: var(--color-text-muted);
-      font-size: 11px;
-    }
-    .sg-flex-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-4);
-      align-items: center;
-    }
-    .sg-sticker-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: var(--space-4);
-    }
-    .sg-sticker-card {
-      background-color: var(--color-bg);
-      border: 2px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      padding: var(--space-4);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: var(--space-2);
-      cursor: pointer;
-      transition: all var(--duration-fast) var(--ease-smooth);
-    }
-    .sg-sticker-card:hover {
-      transform: translateY(-4px) scale(1.05);
-      border-color: var(--color-primary);
-      box-shadow: var(--shadow-md);
-    }
-    .sg-sticker-card span {
-      font-family: var(--font-heading);
-      font-size: var(--text-xs);
-      color: var(--color-text);
-      text-transform: capitalize;
+    .sg-container { max-width: 1200px; margin: 0 auto; padding: var(--space-2xl) var(--space-lg); }
+    .sg-section { margin-bottom: var(--space-4xl); padding-bottom: var(--space-3xl); border-bottom: 1px solid var(--color-sand); }
+    .sg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-md); }
+    .swatch { height: 80px; border-radius: var(--radius-md); border: 1px solid var(--color-sand); display: flex; align-items: flex-end; padding: 8px; font-size: var(--text-xs); font-weight: 600; }
+    .row { display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: center; margin-bottom: var(--space-md); }
+    @media (max-width: 480px) {
+      .sg-container { padding: var(--space-lg) var(--space-sm); }
+      .sg-grid { grid-template-columns: 1fr; }
     }
   </style>
-
-  <script type="module">
-    import { getAllStickers, getStickerSvg } from '/js/stickers.js';
-    import { toast, openModal, createSkeletonPost, createAvatar, buildPostCard, buildUserRow, buildCommentItem, buildNotificationItem } from '/js/ui.js';
-
-    document.addEventListener('DOMContentLoaded', () => {
-      // 1. Populate Stickers Grid
-      const stickerGrid = document.getElementById('sticker-grid');
-      const stickers = getAllStickers();
-      stickers.forEach((s) => {
-        const card = document.createElement('div');
-        card.className = 'sg-sticker-card';
-        card.setAttribute('role', 'button');
-        card.setAttribute('tabindex', '0');
-        card.innerHTML = `
-          <div style="width: 56px; height: 56px;">${s.svg}</div>
-          <span>${s.label}</span>
-        `;
-        card.addEventListener('click', () => {
-          toast(`Selected sticker: "${s.label}"`, 'success');
-        });
-        stickerGrid.appendChild(card);
-      });
-
-      // 2. Toast Demo Triggers
-      document.getElementById('btn-toast-info').addEventListener('click', () => {
-        toast('Here is a gentle info message for you!', 'info');
-      });
-      document.getElementById('btn-toast-success').addEventListener('click', () => {
-        toast('Your bloom was planted successfully!', 'success');
-      });
-      document.getElementById('btn-toast-error').addEventListener('click', () => {
-        toast('Oops! That handle is already taken.', 'error');
-      });
-
-      // 3. Modal Demo Trigger
-      document.getElementById('btn-modal-demo').addEventListener('click', () => {
-        const content = document.createElement('div');
-        content.innerHTML = `
-          <p style="margin-bottom: var(--space-4); color: var(--color-text-muted);">
-            This modal supports focus trapping, Escape key closing, and backdrop dismissal.
-          </p>
-          <div class="form-group">
-            <label class="form-label">Plant a warm comment</label>
-            <input type="text" class="form-input" placeholder="Write something sweet...">
-          </div>
-          <div style="display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4);">
-            <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
-            <button class="btn btn-primary" id="modal-confirm-btn">Bloom It</button>
-          </div>
-        `;
-        const modal = openModal({
-          title: 'Plant a Moment',
-          content
-        });
-        content.querySelector('#modal-cancel-btn').addEventListener('click', () => modal.close());
-        content.querySelector('#modal-confirm-btn').addEventListener('click', () => {
-          toast('Moment planted!', 'success');
-          modal.close();
-        });
-      });
-
-      // 4. Skeletons Demo
-      const skeletonMount = document.getElementById('skeleton-mount');
-      skeletonMount.appendChild(createSkeletonPost());
-
-      // 5. Mock Components Mounting
-      const mockPostMount = document.getElementById('mock-post-mount');
-      const mockPost = buildPostCard({
-        id: 'mock_123',
-        text: 'Morning walks in the fog, warm jasmine tea, and reading by the kitchen window. Wishing you a peaceful start to your day! 🌱',
-        image: '',
-        author: {
-          id: 'user_mock',
-          username: 'lavender_breeze',
-          displayName: 'Lavender Breeze',
-          avatar: '',
-          moodSticker: 'flower'
-        },
-        likesCount: 24,
-        commentsCount: 6,
-        likedByMe: true,
-        createdAt: new Date().toISOString()
-      }, {
-        onLike: (post, btn) => {
-          const countEl = btn.querySelector('.like-count');
-          const isLiked = btn.classList.toggle('active');
-          const current = parseInt(countEl.textContent, 10);
-          countEl.textContent = isLiked ? current + 1 : current - 1;
-          toast(isLiked ? 'Liked bloom!' : 'Unliked bloom', 'info');
-        }
-      });
-      mockPostMount.appendChild(mockPost);
-
-      // User Row Mount
-      const mockUserMount = document.getElementById('mock-user-mount');
-      const mockUser = buildUserRow({
-        id: 'u_daisy',
-        username: 'daisy_bloom',
-        displayName: 'Daisy Bloom',
-        avatar: '',
-        moodSticker: 'heart',
-        isFollowing: false,
-        isMe: false
-      }, {
-        onFollow: (user, btn) => {
-          const isFollowing = btn.textContent === 'Following';
-          btn.textContent = isFollowing ? 'Follow' : 'Following';
-          btn.className = `btn btn-sm ${isFollowing ? 'btn-primary' : 'btn-secondary'}`;
-          toast(isFollowing ? 'Unfollowed @daisy_bloom' : 'Following @daisy_bloom!', 'success');
-        }
-      });
-      mockUserMount.appendChild(mockUser);
-
-      // Comment Mount
-      const mockCommentMount = document.getElementById('mock-comment-mount');
-      const mockComment = buildCommentItem({
-        id: 'c_1',
-        text: 'This made my morning so much brighter. Thank you for sharing!',
-        author: {
-          username: 'sunny_cloud',
-          displayName: 'Sunny Cloud',
-          avatar: '',
-          moodSticker: 'cloud'
-        },
-        createdAt: new Date(Date.now() - 3600000).toISOString()
-      });
-      mockCommentMount.appendChild(mockComment);
-
-      // Notification Mount
-      const mockNotifMount = document.getElementById('mock-notif-mount');
-      const mockNotif = buildNotificationItem({
-        id: 'n_1',
-        type: 'like',
-        from: {
-          username: 'rose_petal',
-          displayName: 'Rose Petal',
-          avatar: ''
-        },
-        postPreview: 'Morning walks in the fog...',
-        read: false,
-        createdAt: new Date(Date.now() - 600000).toISOString()
-      });
-      mockNotifMount.appendChild(mockNotif);
-    });
-  </script>
 </head>
-<body>
+<body class="paper-grain">
 
-  <!-- Sticky Pill Navbar -->
-  <div class="navbar-wrapper">
-    <nav class="navbar" aria-label="Main Navigation">
-      <a href="/" class="nav-brand">
-        <span style="width: 32px; height: 32px; display: inline-flex;" data-sticker="logo"></span>
-        <span class="nav-brand-text">Bloomly</span>
+  <header class="navbar">
+    <nav class="navbar-pill">
+      <a href="/" class="navbar-brand">
+        <img src="/assets/brand/mark.svg" width="28" height="28" alt="Keepsake">
+        <span>Keepsake Design System</span>
       </a>
-
-      <div class="nav-links">
-        <a href="/" class="nav-link">Home</a>
-        <a href="/feed.html" class="nav-link">Feed</a>
-        <a href="/explore.html" class="nav-link">Explore</a>
-        <a href="/styleguide.html" class="nav-link active">Styleguide</a>
-      </div>
-
-      <div class="nav-actions">
-        <a href="/" class="btn btn-secondary btn-sm">Home</a>
-      </div>
+      <ul class="navbar-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/dev/playground.html">Playground</a></li>
+      </ul>
+      <a href="/" class="btn btn-sand btn-sm">Back</a>
     </nav>
-  </div>
+  </header>
 
   <main class="sg-container">
-    <div style="text-align: center; margin-bottom: var(--space-12);">
-      <span class="badge badge-mint" style="margin-bottom: var(--space-2);">Design System</span>
-      <h1 style="font-family: var(--font-heading); font-size: clamp(2.2rem, 4vw, 3.2rem); margin-bottom: var(--space-2);">
-        Bloomly Styleguide &amp; Tokens
-      </h1>
-      <p style="font-size: var(--text-base); color: var(--color-text-muted); max-width: 600px; margin: 0 auto;">
-        Single source of truth for all colors, typography, radii, sticker assets, and reusable UI components.
-      </p>
+    <div style="margin-bottom: var(--space-3xl);">
+      <span class="section-tag">Living Spec</span>
+      <h1 style="font-size: var(--text-4xl); margin-bottom: var(--space-xs);">Design System & Styleguide</h1>
+      <p class="text-muted" style="max-width: 60ch;">A comprehensive visual catalog of tokens, color contrast, typography, neutral icons, flat stickers, UI components, interactive overlays, justified gallery, and collage renderers.</p>
     </div>
 
-    <!-- 1. COLOR TOKENS -->
-    <section class="sg-section">
-      <div class="sg-header">
-        <h2 class="sg-title">1. Color Palette Tokens</h2>
-        <p class="sg-subtitle">Defined once in tokens.css, referenced everywhere via CSS variables.</p>
+    <!-- 1. Color Palette & Contrast -->
+    <section class="sg-section" id="sg-colors">
+      <h2>1. Color Palette & WCAG AA Contrast</h2>
+      <p class="text-muted" style="margin-bottom: var(--space-lg);">Base warm editorial palette with verified contrast ratios.</p>
+      <div class="sg-grid">
+        <div class="swatch" style="background-color: var(--color-paper); color: var(--color-ink);">Paper (13.14:1)</div>
+        <div class="swatch" style="background-color: var(--color-sand); color: var(--color-ink);">Sand (11.52:1)</div>
+        <div class="swatch" style="background-color: var(--color-white); color: var(--color-ink);">White (14.54:1)</div>
+        <div class="swatch" style="background-color: var(--color-ink); color: var(--color-white);">Ink</div>
+        <div class="swatch" style="background-color: var(--color-stone); color: var(--color-white);">Stone (4.91:1)</div>
+        <div class="swatch" style="background-color: var(--color-terracotta); color: var(--color-white);">Terracotta (4.99:1)</div>
+        <div class="swatch" style="background-color: var(--color-teal); color: var(--color-white);">Teal (4.74:1)</div>
+        <div class="swatch" style="background-color: var(--color-sage); color: var(--color-ink);">Sage (6.99:1)</div>
+        <div class="swatch" style="background-color: var(--color-mustard); color: var(--color-ink);">Mustard (6.66:1)</div>
+        <div class="swatch" style="background-color: var(--color-slate); color: var(--color-white);">Slate Blue</div>
+        <div class="swatch" style="background-color: var(--color-brick); color: var(--color-white);">Brick (6.54:1)</div>
+        <div class="swatch" style="background-color: var(--color-charcoal); color: var(--color-white);">Charcoal (17.96:1)</div>
+      </div>
+    </section>
+
+    <!-- 2. Typography Scale -->
+    <section class="sg-section" id="sg-type">
+      <h2>2. Fluid Typography Scale</h2>
+      <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-lg);">
+        <h1>H1 Fraunces Display Heading (Fluid Clamp)</h1>
+        <h2>H2 Editorial Section Title</h2>
+        <h3>H3 Card & Subsection Heading</h3>
+        <h4>H4 Element Heading</h4>
+        <h5>H5 Small Header</h5>
+        <p>Body Manrope text: Clean, humanist, legible UI typography rendered with generous line-height and balanced weight.</p>
+        <p class="font-accent" style="font-size: var(--text-xl); color: var(--color-terracotta);">Caveat hand-written accent: Warm, personal touches and annotations.</p>
+      </div>
+    </section>
+
+    <!-- 3. Buttons & Interactive States -->
+    <section class="sg-section" id="sg-buttons">
+      <h2>3. Buttons & States</h2>
+      <div class="row">
+        <button class="btn btn-primary">Primary Terracotta</button>
+        <button class="btn btn-secondary">Secondary Teal</button>
+        <button class="btn btn-sand">Soft Sand</button>
+        <button class="btn btn-ghost">Ghost</button>
+        <button class="btn btn-danger">Danger Brick</button>
+        <button class="btn btn-primary" disabled>Disabled</button>
+        <button class="btn btn-primary btn-loading">Loading</button>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary btn-sm">Small</button>
+        <button class="btn btn-primary btn-md">Medium</button>
+        <button class="btn btn-primary btn-lg">Large</button>
+        <button class="btn-icon" aria-label="Heart icon" id="sg-like-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- 4. Form Controls -->
+    <section class="sg-section" id="sg-forms">
+      <h2>4. Form Controls & Floating Labels</h2>
+      <div class="sg-grid">
+        <div class="floating-field">
+          <input type="text" id="fl-sample" class="input" placeholder=" ">
+          <label for="fl-sample" class="floating-label">Moment Title</label>
+        </div>
+        <div>
+          <label class="label">Text Input with Error</label>
+          <input type="text" class="input input-error" value="Invalid input">
+          <span class="field-error">Please enter a valid title</span>
+        </div>
+        <div>
+          <label class="label">Select Menu</label>
+          <select class="select">
+            <option>Followers (Recommended)</option>
+            <option>Public</option>
+            <option>Private</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top: var(--space-md);">
+        <label class="checkbox-label">
+          <input type="checkbox" class="checkbox" checked>
+          <span>Notify followers</span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="sg-radio" class="radio" checked>
+          <span>Option A</span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="sg-radio" class="radio">
+          <span>Option B</span>
+        </label>
+        <label class="switch-label">
+          <span class="switch">
+            <input type="checkbox" checked>
+            <span class="switch-slider"></span>
+          </span>
+          <span style="font-size: var(--text-sm);">Enable Comments</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- 5. Avatars, Badges & Chips -->
+    <section class="sg-section" id="sg-avatars">
+      <h2>5. Avatars, Badges & Chips</h2>
+      <div class="row">
+        <div class="avatar avatar-xs"><span>K</span></div>
+        <div class="avatar avatar-sm"><span>K</span></div>
+        <div class="avatar avatar-md"><span>K</span></div>
+        <div class="avatar avatar-lg avatar-ring"><span>K</span></div>
+        <div class="avatar avatar-xl"><span>K</span></div>
+      </div>
+      <div class="row">
+        <span class="badge badge-terracotta">Terracotta</span>
+        <span class="badge badge-teal">Teal</span>
+        <span class="badge badge-sage">Sage</span>
+        <span class="badge badge-mustard">Mustard</span>
+        <span class="badge badge-stone">Stone</span>
+        <span class="badge badge-brick">Error</span>
+      </div>
+      <div class="row">
+        <button class="chip active">All Moments</button>
+        <button class="chip">Photos</button>
+        <button class="chip">Videos</button>
+        <button class="chip">Collages</button>
+      </div>
+    </section>
+
+    <!-- 6. Neutral Icon Set (48 Icons) -->
+    <section class="sg-section" id="sg-icons">
+      <h2>6. Neutral UI Icons (48 Icons, 24px Grid)</h2>
+      <div id="sg-icons-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: var(--space-md); text-align: center;"></div>
+    </section>
+
+    <!-- 7. Decorative Neutral Stickers (12 Stickers) -->
+    <section class="sg-section" id="sg-stickers">
+      <h2>7. Flat Decorative Stickers (12 Original SVGs)</h2>
+      <div id="sg-stickers-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: var(--space-lg); text-align: center;"></div>
+    </section>
+
+    <!-- 8. Overlays: Toast, Modal, Sheet, Confirm Dialog -->
+    <section class="sg-section" id="sg-overlays">
+      <h2>8. Overlays & Dialogs</h2>
+      <div class="row">
+        <button class="btn btn-sand" id="btn-show-toast">Trigger Toast</button>
+        <button class="btn btn-sand" id="btn-show-modal">Open Modal</button>
+        <button class="btn btn-sand" id="btn-show-sheet">Open Mobile Sheet</button>
+        <button class="btn btn-sand" id="btn-show-confirm">Open Confirm Dialog</button>
       </div>
 
-      <div class="sg-grid-colors">
-        <div class="sg-color-card">
-          <div class="sg-color-swatch" style="background-color: var(--color-bg); border-bottom: 1px solid var(--color-border);"></div>
-          <div class="sg-color-info">
-            <div class="sg-color-name">Cream (Background)</div>
-            <div class="sg-color-hex">#FFF8F3</div>
-            <div class="sg-color-var">--color-bg</div>
+      <!-- Sample Modal Markup -->
+      <div id="demo-modal" class="modal-backdrop">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Modal Dialog Title</h3>
+            <button class="btn-icon" data-close-modal aria-label="Close modal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>This modal features full keyboard focus trapping, Esc key dismissal, accessible attributes, and focus restoration upon closing.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-sand" data-close-modal>Cancel</button>
+            <button class="btn btn-primary" data-close-modal>Confirm Action</button>
           </div>
         </div>
+      </div>
 
-        <div class="sg-color-card">
-          <div class="sg-color-swatch" style="background-color: var(--color-surface); border-bottom: 1px solid var(--color-border);"></div>
-          <div class="sg-color-info">
-            <div class="sg-color-name">Milk White (Surface)</div>
-            <div class="sg-color-hex">#FFFFFF</div>
-            <div class="sg-color-var">--color-surface</div>
-          </div>
-        </div>
-
-        <div class="sg-color-card">
-          <div class="sg-color-swatch" style="background-color: var(--color-primary-strong);"></div>
-          <div class="sg-color-info">
-            <div class="sg-color-name">Berry (Primary)</div>
-            <div class="sg-color-hex">#FF6F91</div>
-            <div class="sg-color-var">--color-primary-strong</div>
-          </div>
-        </div>
-
-        <div class="sg-color-card">
-          <div class="sg-color-swatch" style="background-color: var(--color-primary);"></div>
-          <div class="sg-color-info">
-            <div class="sg-color-name">Blush Pink</div>
-            <div class="sg-color-hex">#FFB3C7</div>
-            <div class="sg-color-var">--color-primary</div>
-          </div>
-        </div>
-
-        <div class="sg-color-card">
-          <div class="sg-color-swatch" style="background-color: var(--color-secondary);"></div>
-          <div class="sg-color-info">
-            <div class="sg-color-name">Lavender</div>
-            <div class="sg-color-hex">#D9C8FF</div>
-            <div class="sg-color-var">--color-secondary</div>
-          </div>
-        </div>
-
-        <div class="sg-color-card">
-          <div class="sg-color-swatch" style="background-color: var(--color-accent-peach);"></div>
-          <div class="sg-color-info">
-            <div class="sg-color-name">Peach</div>
-            <div class="sg-color-hex">#FFCDB2</div>
-            <div class="sg-color-var">--color-accent-peach</div>
-          </div>
-        </div>
-
-        <div class="sg-color-card">
-          <div class="sg-color-swatch" style="background-color: var(--color-accent-mint);"></div>
-          <div class="sg-color-info">
-            <div class="sg-color-name">Mint</div>
-            <div class="sg-color-hex">#CDEFE2</div>
-            <div class="sg-color-var">--color-accent-mint</div>
-          </div>
-        </div>
-
-        <div class="sg-color-card">
-          <div class="sg-color-swatch" style="background-color: var(--color-accent-butter);"></div>
-          <div class="sg-color-info">
-            <div class="sg-color-name">Butter</div>
-            <div class="sg-color-hex">#FFF0B3</div>
-            <div class="sg-color-var">--color-accent-butter</div>
-          </div>
-        </div>
-
-        <div class="sg-color-card">
-          <div class="sg-color-swatch" style="background-color: var(--color-text);"></div>
-          <div class="sg-color-info">
-            <div class="sg-color-name">Deep Plum (Text)</div>
-            <div class="sg-color-hex">#4A2C4F</div>
-            <div class="sg-color-var">--color-text</div>
-          </div>
-        </div>
-
-        <div class="sg-color-card">
-          <div class="sg-color-swatch" style="background-color: var(--color-text-muted);"></div>
-          <div class="sg-color-info">
-            <div class="sg-color-name">Mauve (Muted Text)</div>
-            <div class="sg-color-hex">#8E7391</div>
-            <div class="sg-color-var">--color-text-muted</div>
-          </div>
+      <!-- Sample Sheet Markup -->
+      <div id="demo-sheet" class="sheet-backdrop">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <h3 style="margin-bottom: var(--space-sm);">Slide-Up Sheet</h3>
+          <p class="text-muted" style="margin-bottom: var(--space-lg);">Mobile-friendly bottom sheet for actions, sharing, or settings.</p>
+          <button class="btn btn-sand" id="btn-close-sheet">Close Sheet</button>
         </div>
       </div>
     </section>
 
-    <!-- 2. TYPOGRAPHY -->
-    <section class="sg-section">
-      <div class="sg-header">
-        <h2 class="sg-title">2. Typography</h2>
-        <p class="sg-subtitle">Fredoka for rounded headings, Nunito for body, Caveat for hand-drawn accents.</p>
+    <!-- 9. Skeletons & Empty States -->
+    <section class="sg-section" id="sg-skeletons">
+      <h2>9. Skeletons & Empty State</h2>
+      <div class="sg-grid" style="margin-bottom: var(--space-xl);">
+        <div class="skeleton skeleton-tile"></div>
+        <div class="skeleton skeleton-tile"></div>
+        <div class="skeleton skeleton-tile"></div>
       </div>
-
-      <div style="display: flex; flex-direction: column; gap: var(--space-4);">
-        <div>
-          <h1 style="margin: 0;">Heading 1 (Fredoka Bold)</h1>
-          <code style="font-size: var(--text-xs); color: var(--color-text-muted);">font-family: var(--font-heading); font-size: var(--text-4xl);</code>
-        </div>
-        <div>
-          <h2 style="margin: 0;">Heading 2 (Fredoka SemiBold)</h2>
-          <code style="font-size: var(--text-xs); color: var(--color-text-muted);">font-family: var(--font-heading); font-size: var(--text-3xl);</code>
-        </div>
-        <div>
-          <h3 style="margin: 0;">Heading 3 (Fredoka Medium)</h3>
-          <code style="font-size: var(--text-xs); color: var(--color-text-muted);">font-family: var(--font-heading); font-size: var(--text-2xl);</code>
-        </div>
-        <div>
-          <p style="margin: 0; font-size: var(--text-base); color: var(--color-text);">
-            Body Text (Nunito Regular): Bloomly is where little moments bloom. Every gentle interaction brings cozy peace to your daily digital space.
-          </p>
-          <code style="font-size: var(--text-xs); color: var(--color-text-muted);">font-family: var(--font-body); font-size: var(--text-base);</code>
-        </div>
-        <div>
-          <p style="margin: 0; font-family: var(--font-accent); font-size: var(--text-2xl); color: var(--color-primary-strong);">
-            Handwritten Accent (Caveat): "Take time to watch the petals open"
-          </p>
-          <code style="font-size: var(--text-xs); color: var(--color-text-muted);">font-family: var(--font-accent);</code>
-        </div>
-      </div>
+      <div id="sg-empty-state-wrap"></div>
     </section>
 
-    <!-- 3. BUTTONS -->
-    <section class="sg-section">
-      <div class="sg-header">
-        <h2 class="sg-title">3. Buttons &amp; Interactive Controls</h2>
-        <p class="sg-subtitle">Primary, secondary, ghost, icon buttons, sizes, and states.</p>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: var(--space-6);">
-        <div>
-          <h4 style="margin-bottom: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted);">Variants</h4>
-          <div class="sg-flex-wrap">
-            <button type="button" class="btn btn-primary">Primary Action</button>
-            <button type="button" class="btn btn-secondary">Secondary Action</button>
-            <button type="button" class="btn btn-ghost">Ghost Action</button>
-            <button type="button" class="btn btn-primary" disabled>Disabled State</button>
-            <button type="button" class="btn btn-primary btn-loading">Loading</button>
-          </div>
-        </div>
-
-        <div>
-          <h4 style="margin-bottom: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted);">Sizes</h4>
-          <div class="sg-flex-wrap">
-            <button type="button" class="btn btn-primary btn-sm">Small (sm)</button>
-            <button type="button" class="btn btn-primary">Regular (md)</button>
-            <button type="button" class="btn btn-primary btn-lg">Large (lg)</button>
-          </div>
-        </div>
-
-        <div>
-          <h4 style="margin-bottom: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted);">Badges &amp; Chips</h4>
-          <div class="sg-flex-wrap">
-            <span class="badge">Primary Badge</span>
-            <span class="badge badge-mint">Mint Badge</span>
-            <span class="badge badge-butter">Butter Badge</span>
-            <button type="button" class="chip active">All Moments</button>
-            <button type="button" class="chip">Photos</button>
-            <button type="button" class="chip">Garden</button>
-          </div>
-        </div>
-      </div>
+    <!-- 10. Justified Gallery & Lightbox -->
+    <section class="sg-section" id="sg-gallery">
+      <h2>10. Justified Gallery & Full-Screen Lightbox</h2>
+      <p class="text-muted" style="margin-bottom: var(--space-md);">Click any tile to launch the Charcoal-themed full-screen lightbox with zoom, keyboard navigation, and slideshow.</p>
+      <div id="sg-gallery-container" style="min-height: 280px;"></div>
     </section>
 
-    <!-- 4. AVATARS -->
-    <section class="sg-section">
-      <div class="sg-header">
-        <h2 class="sg-title">4. Avatars &amp; Mood Badges</h2>
-        <p class="sg-subtitle">Scalable avatar tokens with mood sticker attachments.</p>
-      </div>
-
-      <div class="sg-flex-wrap" style="gap: var(--space-6);">
-        <div style="text-align: center;">
-          <div class="avatar avatar-xs">XS</div>
-          <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;">26px</div>
-        </div>
-        <div style="text-align: center;">
-          <div class="avatar avatar-sm">SM</div>
-          <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;">34px</div>
-        </div>
-        <div style="text-align: center;">
-          <div class="avatar avatar-md">MD</div>
-          <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;">44px</div>
-        </div>
-        <div style="text-align: center;">
-          <div class="avatar avatar-lg">LG</div>
-          <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;">64px</div>
-        </div>
-        <div style="text-align: center;">
-          <div class="avatar avatar-xl">XL</div>
-          <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px;">96px</div>
-        </div>
-      </div>
+    <!-- 11. Collage Templates (All 12 Templates) -->
+    <section class="sg-section" id="sg-collages">
+      <h2>11. Collage Templates (All 12 Definitions)</h2>
+      <p class="text-muted" style="margin-bottom: var(--space-lg);">Visual previews of all 12 supported backend collage templates.</p>
+      <div id="sg-templates-grid" class="sg-grid"></div>
     </section>
 
-    <!-- 5. STICKER LIBRARY -->
-    <section class="sg-section">
-      <div class="sg-header">
-        <h2 class="sg-title">5. Original 12 SVG Mood Stickers</h2>
-        <p class="sg-subtitle">Hand-drawn vectors designed specifically for Bloomly mood expression.</p>
+    <!-- 12. Moment Layouts Demo -->
+    <section class="sg-section" id="sg-layouts">
+      <h2>12. Moment Layout Formats (Collage, Grid, Carousel)</h2>
+      <div class="segmented-control" id="layout-toggle" style="margin-bottom: var(--space-md);">
+        <button class="segmented-item active" data-layout="collage">Collage Layout</button>
+        <button class="segmented-item" data-layout="grid">Grid Layout</button>
+        <button class="segmented-item" data-layout="carousel">Carousel Layout</button>
       </div>
-
-      <div class="sg-sticker-grid" id="sticker-grid"></div>
+      <div id="sg-layout-demo" style="max-width: 680px; min-height: 380px;"></div>
     </section>
 
-    <!-- 6. TOASTS & MODALS -->
-    <section class="sg-section">
-      <div class="sg-header">
-        <h2 class="sg-title">6. Feedback &amp; Overlays</h2>
-        <p class="sg-subtitle">Interactive toast notifications and dialog controller.</p>
-      </div>
-
-      <div class="sg-flex-wrap" style="margin-bottom: var(--space-8);">
-        <button type="button" class="btn btn-secondary" id="btn-toast-info">Trigger Info Toast</button>
-        <button type="button" class="btn btn-secondary" id="btn-toast-success">Trigger Success Toast</button>
-        <button type="button" class="btn btn-secondary" id="btn-toast-error">Trigger Error Toast</button>
-        <button type="button" class="btn btn-primary" id="btn-modal-demo">Open Modal Demo</button>
-      </div>
-
-      <h4 style="margin-bottom: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted);">Skeleton Shimmer State</h4>
-      <div id="skeleton-mount" style="max-width: 500px;"></div>
-    </section>
-
-    <!-- 7. REAL COMPONENT MOUNTS -->
-    <section class="sg-section">
-      <div class="sg-header">
-        <h2 class="sg-title">7. Reusable Component Cards</h2>
-        <p class="sg-subtitle">Rendered using the escape-safe DOM builder functions from ui.js.</p>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-6); max-width: 580px;">
-        <div>
-          <h4 style="margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted);">Post Card Component</h4>
-          <div id="mock-post-mount"></div>
-        </div>
-
-        <div>
-          <h4 style="margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted);">User Row Component</h4>
-          <div id="mock-user-mount"></div>
-        </div>
-
-        <div>
-          <h4 style="margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted);">Comment Item Component</h4>
-          <div id="mock-comment-mount" style="background: var(--color-surface); padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg);"></div>
-        </div>
-
-        <div>
-          <h4 style="margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted);">Notification Item Component</h4>
-          <div id="mock-notif-mount"></div>
-        </div>
-      </div>
+    <!-- 13. Upload Manager UI (Mock) -->
+    <section class="sg-section" id="sg-upload">
+      <h2>13. Upload Manager & Drop Zone Component</h2>
+      <p class="text-muted" style="margin-bottom: var(--space-md);">Interactive drop zone with file validation, instant thumbnail previews, and progress indicators.</p>
+      <div id="sg-dropzone-container"></div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="footer-bottom" style="border: none;">
-      <span>&copy; 2026 Bloomly Design System. All styles tokenized.</span>
-      <a href="/" class="footer-link">Back to Home</a>
-    </div>
+  <footer class="footer">
+    <p>&copy; 2026 Keepsake Design System. Zero hard-coded colors. 100% Tokenized.</p>
   </footer>
 
+  <script type="module">
+    import { availableIcons, availableStickers, icon, sticker } from '/js/icons.js';
+    import { showToast, openModal, closeModal, openSheet, closeSheet, confirmDialog, buildEmptyState } from '/js/ui.js';
+    import { JustifiedGallery } from '/js/gallery.js';
+    import { openLightbox } from '/js/lightbox.js';
+    import { COLLAGE_TEMPLATES, renderTemplatePreview } from '/js/collage-templates.js';
+    import { renderCollage, renderLayout } from '/js/collage.js';
+    import { UploadManager, buildDropZone } from '/js/upload-manager.js';
+
+    // 1. Render all 48 icons
+    const iconsWrap = document.getElementById('sg-icons-container');
+    availableIcons.forEach(name => {
+      const card = document.createElement('div');
+      card.className = 'card card-paper';
+      card.style.padding = 'var(--space-sm)';
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.alignItems = 'center';
+      card.style.gap = '8px';
+      card.appendChild(icon(name, { size: 24 }));
+      const label = document.createElement('span');
+      label.style.fontSize = 'var(--text-xs)';
+      label.textContent = name;
+      card.appendChild(label);
+      iconsWrap.appendChild(card);
+    });
+
+    // 2. Render all 12 stickers
+    const stickersWrap = document.getElementById('sg-stickers-container');
+    availableStickers.forEach(name => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.padding = 'var(--space-md)';
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.alignItems = 'center';
+      card.style.gap = '8px';
+      card.appendChild(sticker(name, { size: 56 }));
+      const label = document.createElement('span');
+      label.style.fontSize = 'var(--text-xs)';
+      label.style.fontWeight = '600';
+      label.textContent = name;
+      card.appendChild(label);
+      stickersWrap.appendChild(card);
+    });
+
+    // 3. Overlays Triggers
+    document.getElementById('btn-show-toast').onclick = () => showToast('Changes saved successfully!', 'success');
+    document.getElementById('btn-show-modal').onclick = () => openModal(document.getElementById('demo-modal'));
+    document.getElementById('btn-show-sheet').onclick = () => openSheet(document.getElementById('demo-sheet'));
+    document.getElementById('btn-close-sheet').onclick = () => closeSheet(document.getElementById('demo-sheet'));
+    document.getElementById('btn-show-confirm').onclick = async () => {
+      const confirmed = await confirmDialog({
+        title: 'Delete this item?',
+        message: 'This will permanently remove the item from your library.',
+        confirmText: 'Delete',
+        danger: true
+      });
+      showToast(confirmed ? 'Item deleted' : 'Cancelled', confirmed ? 'error' : 'info');
+    };
+
+    // 4. Empty State
+    const emptyWrap = document.getElementById('sg-empty-state-wrap');
+    const empty = buildEmptyState({
+      iconName: 'bookmark',
+      title: 'Your library is empty',
+      description: 'Upload your first photos to begin preserving your memories.'
+    });
+    emptyWrap.appendChild(empty);
+
+    // 5. Fetch Demo Items for Gallery, Lightbox & Collages
+    fetch('/assets/demo/metadata.json').then(r => r.json()).then(demoItems => {
+      // Justified Gallery
+      const galWrap = document.getElementById('sg-gallery-container');
+      const gallery = new JustifiedGallery(galWrap, {
+        gap: 8,
+        onTileClick: ({ index }) => {
+          openLightbox({ items: demoItems, startIndex: index });
+        }
+      });
+      gallery.setItems(demoItems.slice(0, 8));
+
+      // Layout Demo
+      const layoutDemoWrap = document.getElementById('sg-layout-demo');
+      const sampleMoment = {
+        title: 'Morning in the Woods',
+        caption: 'Soft sunlight breaking through pine branches',
+        media: demoItems.slice(0, 4),
+        layout: { type: 'collage', template: 'collage-2x2', gap: 8 }
+      };
+
+      const updateLayoutDemo = (type) => {
+        sampleMoment.layout.type = type;
+        renderLayout(layoutDemoWrap, sampleMoment, {
+          onTileClick: ({ index }) => openLightbox({ items: sampleMoment.media, startIndex: index })
+        });
+      };
+      updateLayoutDemo('collage');
+
+      document.querySelectorAll('#layout-toggle button').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('#layout-toggle button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          updateLayoutDemo(btn.dataset.layout);
+        };
+      });
+    });
+
+    // 6. Collage Templates Grid
+    const tmplGrid = document.getElementById('sg-templates-grid');
+    Object.values(COLLAGE_TEMPLATES).forEach(tmpl => {
+      const card = document.createElement('div');
+      card.className = 'card card-paper';
+      card.style.padding = 'var(--space-md)';
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.alignItems = 'center';
+      card.style.gap = '8px';
+      card.appendChild(renderTemplatePreview(tmpl.id, 64));
+      const title = document.createElement('strong');
+      title.style.fontSize = 'var(--text-sm)';
+      title.textContent = tmpl.label;
+      const count = document.createElement('span');
+      count.className = 'text-muted';
+      count.style.fontSize = 'var(--text-xs)';
+      count.textContent = `${tmpl.itemCount} items`;
+      card.appendChild(title);
+      card.appendChild(count);
+      tmplGrid.appendChild(card);
+    });
+
+    // 7. Upload Manager Drop Zone
+    const dropzoneWrap = document.getElementById('sg-dropzone-container');
+    const uploader = new UploadManager();
+    buildDropZone(uploader, dropzoneWrap);
+  </script>
 </body>
 </html>
 

@@ -1,0 +1,158 @@
+[
+  {
+    "id": "demo-1",
+    "title": "Autumn Mist",
+    "width": 1200,
+    "height": 800,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-1.webp",
+      "thumb": "/assets/demo/demo-1.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRmQAAABXRUJQVlA4IFgAAABQAwCdASoYABAAPzmGulOvKSWisAgB4CcJZAC/OGlWoISZAAD+9Oqefg0K5hMC3Y2hIsSyy7qMyk/9xyX9LRLRbiIImsLYUXnlCNTGiuM/66ctwCaUAAAA"
+  },
+  {
+    "id": "demo-2",
+    "title": "Terracotta Dunes",
+    "width": 800,
+    "height": 1200,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-2.webp",
+      "thumb": "/assets/demo/demo-2.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAABwBQCdASoYACQAPzGIt1OuqaWitVgIAdAmCUAWnQLNr5ykdp6llIX+Zvalj696q/6btE+AAP7nHTJNBFzKz3qeePx9t2LC68w8cxWK4eMAhKQhLdzTeO88p+W7CsTt6w+aPg85d+x53CYUIQfMFxt7OomAAAAA"
+  },
+  {
+    "id": "demo-3",
+    "title": "Quiet Lake",
+    "width": 1000,
+    "height": 1000,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-3.webp",
+      "thumb": "/assets/demo/demo-3.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRnAAAABXRUJQVlA4IGQAAADQBACdASoYABgAPzmOuVavKaUjqA1R4CcJZACdM4CA5Ji0cmORnRB5n+glHkl0AAD9HBHfiYqSQN/LDW5twv8QZBkkVns0FHVRXGYs3+UpjCeXXTlUO8s0Zgs3wF0828yJ8AAA"
+  },
+  {
+    "id": "demo-4",
+    "title": "Morning Sage",
+    "width": 1200,
+    "height": 675,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-4.webp",
+      "thumb": "/assets/demo/demo-4.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4WAoAAAAQAAAAFwAADQAAQUxQSBIAAAABD/D5/4iIIBBIQp9/goj+B21WUDggRAAAADADAJ0BKhgADgA/OYS5U68opaKwCAHgJwlkAKwALNydncAA/uPbUQG3mCcIsQwYzQLWFSlfKiifTOJmK0/xUMoaAAAA"
+  },
+  {
+    "id": "demo-5",
+    "title": "Golden Hour",
+    "width": 900,
+    "height": 1200,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-5.webp",
+      "thumb": "/assets/demo/demo-5.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAAAwBQCdASoYACAAPzmKulQvKaWjMAgB4CcJbACdMuN1AIACaQvh0NfNcAZtiBNt5Qt/gAD+0uAB6cVVxETojwNAgUk3SW1xtdxmxSI8G9dAR9cIjS3z3RSY00TOcHcXbEG3WvIcT6EvNExC4wFSFMe3gAA="
+  },
+  {
+    "id": "demo-6",
+    "title": "Pine Forest",
+    "width": 1200,
+    "height": 900,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-6.webp",
+      "thumb": "/assets/demo/demo-6.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRoIAAABXRUJQVlA4IHYAAACwBACdASoYABIAPzmSulivKiUjqAqp4CcJZAC06A6xSWUP6qWQbVTTS4Xi1GsAAP0bPaKmKdSHLiJ2pJjBi4owAmLbU/gt1wGcZPHodZLp9bBs4gHWDffZ2aAAxxWA0LbBs1gkAyrr6YkUjTGaS1VzMuyurAAA"
+  },
+  {
+    "id": "demo-7",
+    "title": "Sand & Clay",
+    "width": 1000,
+    "height": 1000,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-7.webp",
+      "thumb": "/assets/demo/demo-7.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRqQAAABXRUJQVlA4IJgAAACwBACdASoYABgAPzmUwVmvKicjqAgB4CcJZACdM5H9uCURZ4Z+p+4YwseyEkAAAP7nCd4mK1DLDUNrNVsWyK0SK6PLe0whKNj1sIM4zloPHF6/QMcys9cxo8UY7eHJtiV2rN9+1bPAa0Cq/fVT7tHOdNSR6q3RBuWnIbwBJGWzcez+Bxc1Eis8RhYBqnPZXEKa5BKyh1HgAA=="
+  },
+  {
+    "id": "demo-8",
+    "title": "Slate Coast",
+    "width": 1200,
+    "height": 800,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-8.webp",
+      "thumb": "/assets/demo/demo-8.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAAAwBACdASoYABAAPzmGuVOvKSWisAgB4CcJZACdABokN11eT+KmlL8XYwAA/RN9umx2Lp+B37m6Ixaxf5MMheIhRlV+cecSNfsQT/G4QJTRMFT7DpqHFVvSKgDm2Wrc4j6PgIXEBJpDIUAA"
+  },
+  {
+    "id": "demo-9",
+    "title": "Mustard Sun",
+    "width": 800,
+    "height": 1200,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-9.webp",
+      "thumb": "/assets/demo/demo-9.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRqQAAABXRUJQVlA4IJgAAACwBQCdASoYACQAPyV+tFOuKKUitUgBwCSJZgC7Ob+BLIlci+OZKNxNyhR3SdhCt5cGIL32TcAA/cl+RCBTN8YRlI/OJtWxKaGyPcOTTeiLp6LDXPpytKWifFbMCvGNNcPixQTIeM8M3JUInsVEmO/N2Y+agV0YzG8Revs2hS54TIBEaR6J/l5vzaouC+/HcJrQTqEqJmgAAA=="
+  },
+  {
+    "id": "demo-10",
+    "title": "Botanical Harmony",
+    "width": 1200,
+    "height": 800,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-10.webp",
+      "thumb": "/assets/demo/demo-10.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRlAAAABXRUJQVlA4IEQAAADQAwCdASoYABAAPzmEuVOvKKWisAgB4CcJQBdmUABp1Dns22Ud6AAA/cl+U4uLFnL0zjUzcpDo8vb2H/FCkNJ9Z1AAAA=="
+  },
+  {
+    "id": "demo-11",
+    "title": "Stone Garden",
+    "width": 1000,
+    "height": 1000,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-11.webp",
+      "thumb": "/assets/demo/demo-11.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRoAAAABXRUJQVlA4IHQAAABwBACdASoYABgAPzmUv1mvKiajqAgB4CcJQBe6AVn4fFkO1Kl90AC0A7vcAAD51oc5CJQOuST1CvUiOYSvRT3IfFVroaipc5Hq5BZ/ZxYasZjXvW7v4Lka7JOQbbp4aeXKaPSjlg67j0hmEnnVZ0ABAUAAAA=="
+  },
+  {
+    "id": "demo-12",
+    "title": "Horizon Glow",
+    "width": 1200,
+    "height": 675,
+    "type": "image",
+    "status": "ready",
+    "urls": {
+      "display": "/assets/demo/demo-12.webp",
+      "thumb": "/assets/demo/demo-12.webp"
+    },
+    "blurDataUrl": "data:image/webp;base64,UklGRowAAABXRUJQVlA4WAoAAAAQAAAAFwAADQAAQUxQSBgAAAABF3D6/4iIgkDSxmiP9vjnCSL6H6D3gO5WUDggTgAAAPADAJ0BKhgADgA/OYa5U68pJaKwCAHgJwloAJ0ygANN80A/VXFm9iAA91nsiqUBC6XIpAVW81PfkPrz6X+dfMq/uDakRhZEQTRQKX8AAA=="
+  }
+]

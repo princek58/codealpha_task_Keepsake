@@ -1,24 +1,2 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-  <defs>
-    <filter id="star-shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#FF6F91" flood-opacity="0.15"/>
-    </filter>
-  </defs>
-  <g filter="url(#star-shadow)">
-    <!-- White Sticker Border -->
-    <path d="M50 12 L59 36 L85 36 L64 52 L72 76 L50 61 L28 76 L36 52 L15 36 L41 36 Z"
-          fill="#FFFFFF" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round"/>
-    <!-- Star Body -->
-    <path d="M50 14 L58 36 L83 36 L63 52 L70 74 L50 60 L30 74 L37 52 L17 36 L42 36 Z"
-          fill="#FFF0B3" stroke="#4A2C4F" stroke-width="3.5" stroke-linejoin="round"/>
-    <!-- Cheeks & Happy Face -->
-    <circle cx="40" cy="48" r="3.5" fill="#FFCDB2"/>
-    <circle cx="60" cy="48" r="3.5" fill="#FFCDB2"/>
-    <circle cx="43" cy="44" r="2.5" fill="#4A2C4F"/>
-    <circle cx="57" cy="44" r="2.5" fill="#4A2C4F"/>
-    <path d="M47 48 Q50 52 53 48" fill="none" stroke="#4A2C4F" stroke-width="2" stroke-linecap="round"/>
-    <!-- Sparkle Highlight -->
-    <circle cx="34" cy="30" r="2.5" fill="#FFFFFF"/>
-  </g>
-</svg>
-
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><polygon points="32 6 39 23 58 24 43 36 48 54 32 43 16 54 21 36 6 24 25 23" fill="#E0A53B" stroke="#1F2A37" stroke-width="2.5" stroke-linejoin="round"/>
+    <polygon points="32 14 36 25 48 26 39 34 42 46 32 39 22 46 25 34 16 26 28 25" fill="#FFFFFF" opacity="0.3"/></svg>

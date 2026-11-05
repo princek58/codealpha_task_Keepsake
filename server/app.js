@@ -88,6 +88,12 @@ app.use('/api/comments', commentsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/stats', statsRoutes);
 
+if (process.env.NODE_ENV === 'production') {
+  app.use('/dev', (req, res) => {
+    res.status(404).sendFile(path.join(__dirname, '../client/404.html'));
+  });
+}
+
 app.use(express.static(path.join(__dirname, '../client')));
 
 app.all('/api/*', (req, res) => {
