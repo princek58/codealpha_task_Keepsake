@@ -170,7 +170,7 @@ async function initStats() {
 
   try {
     const data = await getStats();
-    if (!data || (data.users === 0 && data.moments === 0)) {
+    if (!data || typeof data.users !== 'number' || typeof data.moments !== 'number' || data.users < 5 || data.moments < 5) {
       statsSection.style.display = 'none';
       return;
     }
@@ -178,10 +178,10 @@ async function initStats() {
     const usersEl = document.getElementById('stat-users');
     const momentsEl = document.getElementById('stat-moments');
 
-    if (usersEl && typeof data.users === 'number') {
+    if (usersEl) {
       countUp(usersEl, data.users);
     }
-    if (momentsEl && typeof data.moments === 'number') {
+    if (momentsEl) {
       countUp(momentsEl, data.moments);
     }
   } catch {

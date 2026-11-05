@@ -410,8 +410,17 @@ export function buildDropZone(uploader, container, options = {}) {
   subtitle.style.fontSize = 'var(--text-sm)';
   subtitle.textContent = 'or click to browse from your device';
   zone.appendChild(subtitle);
-
   zone.appendChild(fileInput);
+
+  zone.tabIndex = 0;
+  zone.setAttribute('role', 'button');
+  zone.setAttribute('aria-label', 'Upload photos and videos');
+  zone.onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInput.click();
+    }
+  };
 
   zone.onclick = () => fileInput.click();
 
