@@ -3,11 +3,13 @@ const formatMedia = (media, isOwner = false, token = null) => {
   const id = (media._id || media.id).toString();
   const tokenQuery = token ? `&token=${encodeURIComponent(token)}` : '';
 
+  const posterUrl = media.paths?.poster ? `/api/media/${id}/file?variant=poster${tokenQuery}` : null;
+
   const urls = {
-    thumb: media.paths?.thumb ? `/api/media/${id}/file?variant=thumb${tokenQuery}` : null,
-    display: media.paths?.display ? `/api/media/${id}/file?variant=display${tokenQuery}` : null,
+    thumb: media.paths?.thumb ? `/api/media/${id}/file?variant=thumb${tokenQuery}` : posterUrl,
+    display: media.paths?.display ? `/api/media/${id}/file?variant=display${tokenQuery}` : posterUrl,
     video: media.paths?.video ? `/api/media/${id}/file?variant=video${tokenQuery}` : null,
-    poster: media.paths?.poster ? `/api/media/${id}/file?variant=poster${tokenQuery}` : null
+    poster: posterUrl
   };
 
   if (isOwner) {

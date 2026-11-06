@@ -87,29 +87,60 @@ export function renderCollage(container, {
 /**
  * Universal layout renderer handling collage, grid, and carousel
  */
-export function renderLayout(container, moment, options = {}) {
-  if (!container || !moment || !Array.isArray(moment.media)) return;
+export function renderLayout(firstArg, secondArg, thirdArg = {}, fourthArg = {}) {
+  let container;
+  let items = [];
+  let layout = { type: 'grid' };
+  let options = {};
 
-  const layoutType = moment.layout?.type || 'grid';
-  const items = moment.media;
+  if (firstArg instanceof HTMLElement) {
+    container = firstArg;
+    if (Array.isArray(secondArg)) {
+      items = secondArg;
+      layout = (thirdArg && thirdArg.type) ? thirdArg : { type: 'grid' };
+      options = fourthArg || {};
+    } else if (secondArg && typeof secondArg === 'object') {
+      items = Array.isArray(secondArg.media) ? secondArg.media : [];
+      layout = secondArg.layout || { type: 'grid' };
+      options = thirdArg || {};
+    }
+  } else {
+    // Called as: renderLayout(layout, items, options) -> returns created container
+    container = document.createElement('div');
+    layout = firstArg || { type: 'grid' };
+    items = Array.isArray(secondArg) ? secondArg : (secondArg?.media || []);
+    options = thirdArg || {};
+  }
+
+  if (!container || !Array.isArray(items)) return container;
+
+  const layoutType = layout?.type || 'grid';
+  const gap = layout?.gap ?? 8;
 
   if (layoutType === 'collage' && items.length >= 2) {
-    return renderCollage(container, {
+    renderCollage(container, {
       items,
-      template: moment.layout.template || 'collage-1-2',
-      gap: moment.layout.gap ?? 8,
-      background: moment.layout.background || 'var(--color-white)',
+      template: layout.template || 'collage-1-2',
+      gap,
+      background: layout.background || 'var(--color-white)',
       token: options.token,
-      onTileClick: options.onTileClick
+      onTileClick: options.onTileClick || options.onMediaClick
     });
+    return container;
   }
 
   if (layoutType === 'carousel' && items.length > 1) {
-    return renderCarousel(container, items, options);
+    return renderCarousel(container, items, {
+      ...options,
+      onTileClick: options.onTileClick || options.onMediaClick
+    });
   }
 
   // Default: Grid
-  return renderUniformGrid(container, items, moment.layout?.gap ?? 8, options);
+  return renderUniformGrid(container, items, gap, {
+    ...options,
+    onTileClick: options.onTileClick || options.onMediaClick
+  });
 }
 
 function renderUniformGrid(container, items, gap = 8, options = {}) {
@@ -170,7 +201,7 @@ function renderCarousel(container, items, options = {}) {
     slide.style.borderRadius = 'var(--radius-lg)';
     slide.style.overflow = 'hidden';
 
-    const tile = buildMediaTile(item, { token: options.token });
+    const tile = buildMediaTile(item, { token: options.token, lazy: false });
     tile.style.width = '100%';
     tile.style.height = '100%';
     tile.onclick = () => {

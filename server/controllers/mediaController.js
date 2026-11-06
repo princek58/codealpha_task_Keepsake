@@ -439,7 +439,10 @@ const streamMediaFile = async (req, res, next) => {
       }
     }
 
-    const relPath = media.paths?.[variant];
+    let relPath = media.paths?.[variant];
+    if (!relPath && media.type === 'video' && (variant === 'thumb' || variant === 'display')) {
+      relPath = media.paths?.poster;
+    }
     if (!relPath) {
       return res.status(404).json({ message: 'File not found' });
     }
@@ -460,7 +463,9 @@ const streamMediaFile = async (req, res, next) => {
 
     let contentType = 'application/octet-stream';
     if (variant === 'original') contentType = media.mime;
-    else if (variant === 'display' || variant === 'thumb') contentType = 'image/webp';
+    else if (variant === 'display' || variant === 'thumb') {
+      contentType = (media.type === 'video' && !media.paths?.thumb) ? 'image/jpeg' : 'image/webp';
+    }
     else if (variant === 'poster') contentType = 'image/jpeg';
     else if (variant === 'video') contentType = 'video/mp4';
 

@@ -113,7 +113,7 @@ function renderDetails() {
     slideBtn.style.display = mediaList.length > 0 ? 'inline-block' : 'none';
     slideBtn.onclick = () => {
       if (mediaList.length > 0) {
-        openLightbox({ items: mediaList, startIndex: 0 });
+        openLightbox({ items: mediaList, startIndex: 0, token: shareToken });
       }
     };
   }
@@ -127,8 +127,8 @@ function renderGallery() {
     gap: 8,
     selectable: false,
     token: shareToken,
-    onTileClick: (index) => {
-      openLightbox({ items: mediaList, startIndex: index });
+    onTileClick: ({ index }) => {
+      openLightbox({ items: mediaList, startIndex: index, token: shareToken });
     }
   });
 

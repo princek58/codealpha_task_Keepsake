@@ -8,6 +8,7 @@ const steps = [
   { name: 'Automated Backend & Integration Tests', cmd: 'npm test' },
   { name: 'Visibility & Privacy Multi-Persona Audit', cmd: 'node scripts/privacy-audit.js' },
   { name: 'WCAG 2.1 AA axe-core Accessibility Audit', cmd: 'node scripts/a11y.js' },
+  { name: 'Media Image & Tile Audit', cmd: 'node scripts/check-images.js' },
   { name: 'End-to-End Headless Chrome Test Suite', cmd: 'node scripts/e2e.js' }
 ];
 

@@ -98,7 +98,7 @@ router.post(
 
 router.get(
   '/:username/avatar',
-  protect,
+  optionalAuth,
   [param('username').trim().notEmpty().withMessage('Username is required')],
   validate,
   getAvatar

@@ -12,6 +12,7 @@
     "test:e2e": "node scripts/e2e.js",
     "test:privacy": "node scripts/privacy-audit.js",
     "test:a11y": "node scripts/a11y.js",
+    "test:images": "node scripts/check-images.js",
     "audit:tokens": "node scripts/audit-tokens.js",
     "audit:contrast": "node scripts/audit-contrast.js",
     "verify:responsive": "node scripts/verify-responsive.js",

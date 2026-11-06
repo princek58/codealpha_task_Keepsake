@@ -296,14 +296,27 @@ export function buildMediaTile(media, options = {}) {
 
   const thumbUrl = getMediaUrl(media, 'thumb', options.token);
   const img = document.createElement('img');
-  img.src = thumbUrl;
   img.alt = media.caption || 'Media';
-  img.loading = 'lazy';
+  img.loading = options.lazy !== false ? 'lazy' : 'eager';
   img.style.opacity = '0';
   img.style.transition = 'opacity 300ms ease';
-  img.onload = () => {
+
+  const markLoaded = () => {
     img.style.opacity = '1';
+    tile.classList.add('media-loaded');
   };
+
+  img.onload = markLoaded;
+  img.onerror = () => {
+    tile.classList.add('media-error');
+    tile.style.backgroundImage = 'none';
+  };
+
+  img.src = thumbUrl;
+  if (img.complete && img.naturalWidth > 0) {
+    markLoaded();
+  }
+
   tile.appendChild(img);
 
   if (media.type === 'video') {

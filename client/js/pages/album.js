@@ -185,7 +185,7 @@ function renderAlbumDetails() {
     slideBtn.style.display = albumMedia.length > 0 ? 'inline-block' : 'none';
     slideBtn.onclick = () => {
       if (albumMedia.length > 0) {
-        openLightbox({ items: albumMedia, startIndex: 0 });
+        openLightbox({ items: albumMedia, startIndex: 0, token: albumData?.shareToken || null });
       }
     };
   }
@@ -208,9 +208,10 @@ function renderGallery() {
     galleryInstance = new JustifiedGallery(mount, {
       gap: 8,
       selectable: isSelectMode,
-      onTileClick: (index) => {
+      token: albumData?.shareToken || null,
+      onTileClick: ({ index }) => {
         if (!isSelectMode) {
-          openLightbox({ items: albumMedia, startIndex: index });
+          openLightbox({ items: albumMedia, startIndex: index, token: albumData?.shareToken || null });
         }
       },
       onSelectionChange: (selectedIds) => {
