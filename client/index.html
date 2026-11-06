@@ -13,6 +13,9 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" href="/favicon.png">
 
+  <!-- Preload Hero Image -->
+  <link rel="preload" as="image" href="/assets/demo/hero.webp" type="image/webp">
+
   <!-- Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -77,12 +80,19 @@
           <div id="hero-collage" class="showcase-collage"></div>
         </div>
 
-        <div class="polaroid-tilt polaroid-1">
-          <img id="polaroid-img-1" src="/assets/demo/demo-4.webp" alt="Polaroid photo">
+        <div class="polaroid-tilt polaroid-1" id="polaroid-btn-1" role="button" tabindex="0" aria-label="View photo: Goa, Dec 2024">
+          <img id="polaroid-img-1" src="/assets/demo/showcase-travel.webp" width="140" height="140" alt="Golden sunset waves washing over the warm ocean shoreline">
+          <span class="polaroid-caption">Goa, Dec 2024</span>
         </div>
 
-        <div class="polaroid-tilt polaroid-2">
-          <img id="polaroid-img-2" src="/assets/demo/demo-5.webp" alt="Polaroid photo">
+        <div class="polaroid-tilt polaroid-2" id="polaroid-btn-2" role="button" tabindex="0" aria-label="View photo: Sunday at home">
+          <img id="polaroid-img-2" src="/assets/demo/showcase-home.webp" width="140" height="140" alt="Warm morning sun streaming through sheer linen curtains onto wooden floor">
+          <span class="polaroid-caption">Sunday at home</span>
+        </div>
+
+        <div class="polaroid-tilt polaroid-3" id="polaroid-btn-3" role="button" tabindex="0" aria-label="View photo: First sourdough loaf">
+          <img id="polaroid-img-3" src="/assets/demo/showcase-food.webp" width="140" height="140" alt="Fresh artisanal sourdough bread and butter on rustic wooden board">
+          <span class="polaroid-caption">First sourdough loaf</span>
         </div>
 
         <img src="/assets/stickers/camera.svg" width="48" height="48" class="hero-sticker-float hero-sticker-1" alt="Sticker Camera">
@@ -164,8 +174,25 @@
         </div>
       </div>
 
-      <!-- Feature 3: On This Day & Privacy -->
+      <!-- Feature 3: Video Moments in Motion -->
       <div class="feature-row">
+        <div class="feature-info">
+          <h3>Living Moments in Motion</h3>
+          <p>Preserve quiet videos of the moments you love. Short clips play effortlessly inline or full-screen in our charcoal lightbox with zero compression artifacts.</p>
+        </div>
+        <div class="feature-demo-box">
+          <div class="video-mockup-frame" id="demo-video-box" role="button" tabindex="0" aria-label="Watch video: Golden Ocean Waves">
+            <video class="demo-video-player" src="/assets/demo/showcase-video.mp4" poster="/assets/demo/showcase-video-poster.jpg" autoplay loop muted playsinline width="640" height="360" aria-label="Demo video: Golden Ocean Waves"></video>
+            <div class="video-mockup-overlay">
+              <span class="video-badge">0:08</span>
+              <span class="video-caption">Golden Ocean Waves · Tom Fisk</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 4: On This Day & Privacy -->
+      <div class="feature-row reverse">
         <div class="feature-info">
           <h3>Relive "On This Day"</h3>
           <p>Rediscover memories captured on today's month and day from previous years. Your moments resurface naturally without algorithmic pressure.</p>
@@ -176,14 +203,14 @@
               <span class="on-this-day-year">2 Years Ago</span>
               <span class="text-muted">· November 5, 2024</span>
             </div>
-            <img src="/assets/demo/demo-1.webp" style="border-radius: var(--radius-md); width: 100%; aspect-ratio: 16/9; object-fit: cover;" alt="Memory photo">
-            <p style="margin-top: var(--space-sm); font-size: var(--text-sm); margin-bottom: 0;">Autumn walk around the quiet park with warm cider.</p>
+            <img src="/assets/demo/showcase-travel.webp" width="480" height="270" loading="lazy" style="border-radius: var(--radius-md); width: 100%; aspect-ratio: 16/9; object-fit: cover;" alt="Golden sunset waves washing over the warm ocean shoreline">
+            <p style="margin-top: var(--space-sm); font-size: var(--text-sm); margin-bottom: 0;">Golden sunset waves washing over the warm ocean shoreline.</p>
           </div>
         </div>
       </div>
 
-      <!-- Feature 4: Privacy Matrix -->
-      <div class="feature-row reverse">
+      <!-- Feature 5: Privacy Matrix -->
+      <div class="feature-row">
         <div class="feature-info">
           <h3>Privacy at the Core</h3>
           <p>Every moment and album gives you crystal clear control over who can view it. Toggle the options below to inspect how Keepsake guards your space.</p>
@@ -238,9 +265,32 @@
       <li><a href="/styleguide.html">Design System</a></li>
       <li><a href="#how-it-works">How It Works</a></li>
       <li><a href="/auth.html">Sign In</a></li>
+      <li><a href="#credits" id="open-credits-btn">Media Credits</a></li>
     </ul>
-    <p>&copy; 2026 Keepsake. All rights reserved. Crafted for calm memory keeping.</p>
+    <p>&copy; 2026 Keepsake. All rights reserved. Photos and videos from <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Pexels</a> under the <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels License</a>.</p>
   </footer>
+
+  <!-- Credits Modal Dialog -->
+  <dialog id="credits-dialog" class="credits-dialog" aria-labelledby="credits-title">
+    <h3 id="credits-title" style="margin-bottom: var(--space-xs); font-size: var(--text-xl);">Media Credits</h3>
+    <p class="text-muted" style="font-size: var(--text-sm);">All photographs and videos used in this demo are from <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Pexels</a> creators under the <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels License</a>.</p>
+    <ul class="credits-list">
+      <li><strong>Eberhard Grossgasteiger</strong> — Mountain vistas & botanicals (<a href="https://www.pexels.com/@eberhardgross" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+      <li><strong>Asad Photo Maldives</strong> — Coastal ocean waves (<a href="https://www.pexels.com/@asadphotography" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+      <li><strong>Rachel Claire</strong> — Warm home interiors & artisanal bread (<a href="https://www.pexels.com/@rachel-claire" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+      <li><strong>Taryn Elliott</strong> — Campfire gatherings (<a href="https://www.pexels.com/@taryn-elliott" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+      <li><strong>Blue Bird</strong> — Golden retriever pet moments (<a href="https://www.pexels.com/@blue-bird" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+      <li><strong>Roman Odintsov</strong> — Pottery & wheel ceramics (<a href="https://www.pexels.com/@roman-odintsov" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+      <li><strong>Daria Shevtsova</strong> — Old town alleys & morning coffee (<a href="https://www.pexels.com/@daria" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+      <li><strong>Valiphotos</strong> — Sunbeams in the woods (<a href="https://www.pexels.com/@valiphotos" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+      <li><strong>Sam Lion</strong> — Sleeping cats in sunlight (<a href="https://www.pexels.com/@sam-lion" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+      <li><strong>Anastasia Shuraeva</strong> — Handcrafted ceramics on studio shelves (<a href="https://www.pexels.com/@anastasia-shuraeva" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+      <li><strong>Tom Fisk</strong> — Coastal waves video (<a href="https://www.pexels.com/@tomfisk" target="_blank" rel="noopener noreferrer">Pexels profile</a>)</li>
+    </ul>
+    <div style="display: flex; justify-content: flex-end; margin-top: var(--space-md);">
+      <button type="button" class="btn btn-sand btn-sm" id="close-credits-btn">Close</button>
+    </div>
+  </dialog>
 
   <script type="module" src="/js/pages/landing.js"></script>
 </body>

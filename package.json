@@ -1,6 +1,6 @@
 {
   "name": "keepsake",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A memory-keeping social web app",
   "main": "server/server.js",
   "scripts": {
@@ -13,6 +13,8 @@
     "test:privacy": "node scripts/privacy-audit.js",
     "test:a11y": "node scripts/a11y.js",
     "test:images": "node scripts/check-images.js",
+    "fetch-demo-media": "node scripts/fetch-demo-media.js",
+    "build:landing-assets": "node scripts/build-landing-assets.js",
     "audit:tokens": "node scripts/audit-tokens.js",
     "audit:contrast": "node scripts/audit-contrast.js",
     "verify:responsive": "node scripts/verify-responsive.js",

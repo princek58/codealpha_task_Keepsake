@@ -39,6 +39,11 @@
   --color-charcoal-muted: rgba(255, 255, 255, 0.65);
   --color-charcoal-faint: rgba(255, 255, 255, 0.2);
 
+  /* Scrim & Overlay Colors */
+  --scrim-heavy: rgba(0, 0, 0, 0.7);
+  --scrim-medium: rgba(0, 0, 0, 0.5);
+  --scrim-backdrop: rgba(43, 38, 35, 0.45);
+
   /* Typography Families */
   --font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

@@ -215,19 +215,23 @@ async function run() {
       const startFails = client.failingRequests.length;
       await client.navigate(p.url);
 
-      // Wait for network content to settle, then scroll down to trigger lazy loading
+      // Wait for network content to settle, then ensure images are eager and scroll through
       await wait(800);
       await client.eval(`
         (async () => {
+          document.querySelectorAll('img').forEach(img => {
+            img.loading = 'eager';
+          });
           const totalH = Math.max(document.body.scrollHeight, 1200);
           for (let y = 0; y <= totalH; y += 400) {
             window.scrollTo(0, y);
-            await new Promise(r => setTimeout(r, 80));
+            await new Promise(r => setTimeout(r, 60));
           }
           // Also trigger any horizontal carousels or strips
           document.querySelectorAll('.carousel-track, .otd-strip, .segmented').forEach(el => {
             el.scrollLeft = el.scrollWidth;
           });
+          window.scrollTo(0, 0);
           await new Promise(r => setTimeout(r, 100));
         })()
       `);

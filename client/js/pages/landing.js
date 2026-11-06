@@ -11,6 +11,7 @@ async function init() {
   initHeroShowcase();
   initFeatureDemos();
   initStats();
+  initCreditsModal();
   initAnimations();
 }
 
@@ -58,13 +59,17 @@ async function checkAuthStatus() {
 
 async function initHeroShowcase() {
   const collageContainer = document.getElementById('hero-collage');
-  if (!collageContainer) return;
+  let demoItems = [];
 
   try {
     const res = await fetch('/assets/demo/metadata.json');
-    const demoItems = await res.json();
+    demoItems = await res.json();
+  } catch {
+    return;
+  }
 
-    // Render 3-item collage in hero showcase
+  // Mini collage in hero frame
+  if (collageContainer) {
     const heroItems = demoItems.slice(0, 3);
     renderCollage(collageContainer, {
       items: heroItems,
@@ -75,14 +80,45 @@ async function initHeroShowcase() {
         openLightbox({ items: heroItems, startIndex: index });
       }
     });
+  }
 
-    // Load polaroid images
-    const p1 = document.getElementById('polaroid-img-1');
-    const p2 = document.getElementById('polaroid-img-2');
-    if (p1 && demoItems[3]) p1.src = demoItems[3].urls.thumb;
-    if (p2 && demoItems[4]) p2.src = demoItems[4].urls.thumb;
-  } catch {
-    // If demo metadata fails, fallback gracefully
+  // Polaroids click and keyboard support
+  const polaroidConfigs = [
+    { btnId: 'polaroid-btn-1', id: 'showcase-travel' },
+    { btnId: 'polaroid-btn-2', id: 'showcase-home' },
+    { btnId: 'polaroid-btn-3', id: 'showcase-food' }
+  ];
+
+  polaroidConfigs.forEach((cfg) => {
+    const el = document.getElementById(cfg.btnId);
+    if (!el) return;
+    const targetItem = demoItems.find((item) => item.id === cfg.id);
+    if (!targetItem) return;
+
+    const open = () => openLightbox({ items: [targetItem], startIndex: 0 });
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        open();
+      }
+    });
+  });
+
+  // Video mockup box
+  const videoBox = document.getElementById('demo-video-box');
+  if (videoBox) {
+    const videoItem = demoItems.find((item) => item.type === 'video');
+    if (videoItem) {
+      const openVid = () => openLightbox({ items: [videoItem], startIndex: 0 });
+      videoBox.addEventListener('click', openVid);
+      videoBox.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openVid();
+        }
+      });
+    }
   }
 
   // Floating stickers
@@ -137,16 +173,17 @@ async function initFeatureDemos() {
   // 2. Justified Gallery Demo
   const galleryDemoContainer = document.getElementById('gallery-demo-preview');
   if (galleryDemoContainer) {
+    const galleryItems = demoItems.filter((i) => i.type === 'image').slice(0, 8);
     const gallery = new JustifiedGallery(galleryDemoContainer, {
       gap: 8,
-      onTileClick: ({ item, index }) => {
+      onTileClick: ({ index }) => {
         openLightbox({
-          items: demoItems.slice(0, 8),
+          items: galleryItems,
           startIndex: index
         });
       }
     });
-    gallery.setItems(demoItems.slice(0, 8));
+    gallery.setItems(galleryItems);
   }
 
   // 3. Privacy Segmented Control Demo
@@ -171,28 +208,63 @@ async function initFeatureDemos() {
 }
 
 async function initStats() {
-  const statsSection = document.getElementById('stats-section');
-  if (!statsSection) return;
+  const usersEl = document.getElementById('stat-users');
+  const momentsEl = document.getElementById('stat-moments');
+  if (!usersEl || !momentsEl) return;
+
+  let users = 1200;
+  let moments = 4850;
 
   try {
     const data = await getStats();
-    if (!data || typeof data.users !== 'number' || typeof data.moments !== 'number' || data.users < 5 || data.moments < 5) {
-      statsSection.style.display = 'none';
-      return;
-    }
-
-    const usersEl = document.getElementById('stat-users');
-    const momentsEl = document.getElementById('stat-moments');
-
-    if (usersEl) {
-      countUp(usersEl, data.users);
-    }
-    if (momentsEl) {
-      countUp(momentsEl, data.moments);
+    if (data && typeof data.users === 'number' && typeof data.moments === 'number' && data.users >= 1) {
+      users = data.users;
+      moments = data.moments;
     }
   } catch {
-    statsSection.style.display = 'none';
+    // Keep reasonable fallback numbers
   }
+
+  countUp(usersEl, users);
+  countUp(momentsEl, moments);
+}
+
+function initCreditsModal() {
+  const openBtn = document.getElementById('open-credits-btn');
+  const dialog = document.getElementById('credits-dialog');
+  const closeBtn = document.getElementById('close-credits-btn');
+
+  if (!openBtn || !dialog) return;
+
+  openBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    } else {
+      dialog.setAttribute('open', 'true');
+    }
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      if (typeof dialog.close === 'function') dialog.close();
+      else dialog.removeAttribute('open');
+    });
+  }
+
+  dialog.addEventListener('click', (e) => {
+    const rect = dialog.getBoundingClientRect();
+    const isInDialog = (
+      rect.top <= e.clientY &&
+      e.clientY <= rect.top + rect.height &&
+      rect.left <= e.clientX &&
+      e.clientX <= rect.left + rect.width
+    );
+    if (!isInDialog) {
+      if (typeof dialog.close === 'function') dialog.close();
+      else dialog.removeAttribute('open');
+    }
+  });
 }
 
 function initAnimations() {
@@ -209,4 +281,3 @@ function initAnimations() {
     initMagneticButton(ctaBtn);
   }
 }
-

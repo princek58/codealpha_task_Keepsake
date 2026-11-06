@@ -1,4 +1,8 @@
 // Keepsake Seed Script — Demo Data Generator
+// Seeds 8 rich personas with authentic Pexels stock photos and videos across 7 themes,
+// populates realistic moments (collage, grid, carousel), albums with secret share link,
+// 'On This Day' date-matched milestones, and full social graph interactions.
+
 require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -23,60 +27,91 @@ if (config.env === 'production' && !process.argv.includes('--force')) {
 }
 
 const DEMO_PASSWORD = 'Password123';
-const DEMO_USERS = [
-  { username: 'clara', displayName: 'Clara Dubois', bio: 'Boulangeries, morning walks by the Seine, and linen journals.', color: '#B4532A' },
-  { username: 'daisy', displayName: 'Daisy Miller', bio: 'Film photography, quiet mornings, ceramic cups and seaside air.', color: '#2F7F79' },
-  { username: 'leo', displayName: 'Leo Sterling', bio: 'Analog snapshots, train journeys across Hokkaido, and espresso.', color: '#4C6A92' },
-  { username: 'maya', displayName: 'Maya Lindqvist', bio: 'Nordic landscapes, sourdough baking, and soft wool blankets.', color: '#E0A53B' },
-  { username: 'jasper', displayName: 'Jasper Reid', bio: 'Documenting rainy afternoons, vintage books, and wooden cabins.', color: '#B4532A' },
-  { username: 'elena', displayName: 'Elena Rostova', bio: 'Architectural shadows, tea ceremonies, and film rolls from Kyoto.', color: '#A9B99B' },
-  { username: 'kai', displayName: 'Kai Takahashi', bio: 'Train journeys across Hokkaido, film rolls, and espresso.', color: '#4C6A92' },
-  { username: 'nora', displayName: 'Nora Chen', bio: 'Botanical gardens, watercolor sketches, and Sunday markets.', color: '#2F7F79' }
+
+const DEMO_MEDIA_DIR = path.resolve(__dirname, '../demo-media');
+const MANIFEST_PATH = path.join(DEMO_MEDIA_DIR, 'manifest.json');
+const PHOTOS_DIR = path.join(DEMO_MEDIA_DIR, 'photos');
+const VIDEOS_DIR = path.join(DEMO_MEDIA_DIR, 'videos');
+
+// 8 Demo User Personas aligned with themes
+const DEMO_PERSONAS = [
+  {
+    username: 'clara',
+    displayName: 'Clara Dubois',
+    bio: 'Alpine trails, morning mist over mountain valleys, and slow coastal train rides.',
+    avatarPhoto: 'travel-01.jpg', // Mountain valley
+    theme: 'travel'
+  },
+  {
+    username: 'daisy',
+    displayName: 'Daisy Miller',
+    bio: 'Earthen cups of ginger chai, sourdough crusts, and warm rain against window panes.',
+    avatarPhoto: 'home-02.jpg', // Steaming chai cups
+    theme: 'home'
+  },
+  {
+    username: 'leo',
+    displayName: 'Leo Sterling',
+    bio: 'Campfire embers under the stars, weekend road trips, and sunset bicycle rides.',
+    avatarPhoto: 'friends-01.jpg', // Campfire night
+    theme: 'friends'
+  },
+  {
+    username: 'maya',
+    displayName: 'Maya Lindqvist',
+    bio: 'Life with golden retrievers and sunny windowsill cats. Keeping quiet paw prints.',
+    avatarPhoto: 'pets-01.jpg', // Golden retriever in grass
+    theme: 'pets'
+  },
+  {
+    username: 'jasper',
+    displayName: 'Jasper Reid',
+    bio: 'Crispy street samosas, fresh morning spice markets, and hot tawa rotis.',
+    avatarPhoto: 'food-01.jpg', // Samosas & chutney
+    theme: 'food'
+  },
+  {
+    username: 'elena',
+    displayName: 'Elena Rostova',
+    bio: 'Lotus raindrops during the monsoon, autumn forest paths, and starry skies.',
+    avatarPhoto: 'nature-02.jpg', // Monsoon lotus rain
+    theme: 'nature'
+  },
+  {
+    username: 'kai',
+    displayName: 'Kai Takahashi',
+    bio: 'Analog mechanical cameras, terracotta pottery clay, and leather-bound notebooks.',
+    avatarPhoto: 'hobbies-03.jpg', // Hands shaping clay
+    theme: 'hobbies'
+  },
+  {
+    username: 'nora',
+    displayName: 'Nora Chen',
+    bio: 'Watercolor studies, wildflower pressings, and finding calm in old bookshops.',
+    avatarPhoto: 'hobbies-04.jpg', // Open book with tea
+    theme: 'hobbies'
+  }
 ];
 
-const PALETTE = [
-  { bg: '#F7F3EC', fg: '#B4532A', name: 'Terracotta Paper' },
-  { bg: '#FAF8F5', fg: '#2F7F79', name: 'Teal Mist' },
-  { bg: '#EDE4D3', fg: '#5F6B7A', name: 'Sand Stone' },
-  { bg: '#F2EDE4', fg: '#A9B99B', name: 'Sage Linen' },
-  { bg: '#F5EFEB', fg: '#E0A53B', name: 'Mustard Grain' },
-  { bg: '#EAE6DF', fg: '#4C6A92', name: 'Slate Harbor' }
-];
+// Helper to create small blurDataUrl from sharp buffer
+async function createBlurDataUrl(buffer) {
+  try {
+    const small = await sharp(buffer)
+      .resize(16, 16, { fit: 'inside' })
+      .webp({ quality: 20 })
+      .toBuffer();
+    return `data:image/webp;base64,${small.toString('base64')}`;
+  } catch {
+    return 'data:image/webp;base64,UklGRkAAAABXRUJQVlA4IDQAAACwAQCdASoUABQAPpE+mkkkIqIhAAA/sWYA';
+  }
+}
 
-const PLACES = [
-  'Kyoto, Japan',
-  'Big Sur, California',
-  'Edinburgh Old Town, Scotland',
-  'Cornwall Coast, England',
-  'Lake Bled, Slovenia',
-  'Stockholm Archipelago, Sweden',
-  'Bergen, Norway',
-  'Giverny, France',
-  'Cinque Terre, Italy',
-  'Kamakura, Japan'
-];
-
-const CAPTIONS = [
-  'Morning light finding its way across the wooden table.',
-  'A slow walk through the old pine grove after the rain.',
-  'Steaming tea on a crisp November morning.',
-  'The silent beauty of ancient stone alleys at dawn.',
-  'Collecting smooth driftwood along the shoreline.',
-  'Finding quiet moments between long train rides.',
-  'Warm shadows stretching across the linen curtains.',
-  'Rain tapping gently against the greenhouse glass.',
-  'A quiet corner of the bookstore with coffee.',
-  'Sunlight filtering through the autumn foliage.'
-];
-
-const TAG_POOL = ['film', 'morning', 'autumn', 'coffee', 'fog', 'sea', 'books', 'travel', 'calm', 'nature'];
-
-// Generate an avatar SVG and convert to WebP
-async function generateAvatarBuffer(name, color) {
+// Fallback abstract SVG avatar generator if demo-media is missing
+async function generateFallbackAvatar(name) {
   const initial = (name || 'K').charAt(0).toUpperCase();
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-      <rect width="256" height="256" fill="${color}"/>
+      <rect width="256" height="256" fill="#B4532A"/>
       <circle cx="128" cy="128" r="96" fill="#FFFFFF" fill-opacity="0.2"/>
       <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, serif" font-size="104" font-weight="600" fill="#FFFFFF">
         ${initial}
@@ -86,50 +121,6 @@ async function generateAvatarBuffer(name, color) {
   return sharp(Buffer.from(svg)).webp({ quality: 90 }).toBuffer();
 }
 
-// Generate aesthetic photo WebP
-async function generatePhotoBuffer(width, height, colorPair, title, subtitle) {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-      <defs>
-        <radialGradient id="grad" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stop-color="${colorPair.bg}" stop-opacity="0.95"/>
-          <stop offset="100%" stop-color="${colorPair.fg}" stop-opacity="0.25"/>
-        </radialGradient>
-      </defs>
-      <rect width="${width}" height="${height}" fill="${colorPair.bg}"/>
-      <rect width="${width}" height="${height}" fill="url(#grad)"/>
-      <circle cx="${width / 2}" cy="${height / 2}" r="${Math.min(width, height) * 0.28}" fill="${colorPair.fg}" fill-opacity="0.15"/>
-      <circle cx="${width / 2}" cy="${height / 2}" r="${Math.min(width, height) * 0.16}" fill="${colorPair.fg}" fill-opacity="0.3"/>
-      <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, serif" font-size="${Math.max(18, Math.round(width * 0.04))}" font-weight="600" fill="#1F2A37">
-        ${title}
-      </text>
-      <text x="50%" y="58%" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="${Math.max(12, Math.round(width * 0.024))}" fill="#5F6B7A">
-        ${subtitle}
-      </text>
-    </svg>
-  `;
-
-  return sharp(Buffer.from(svg)).webp({ quality: 85 }).toBuffer();
-}
-
-async function findSampleVideoBuffer() {
-  const storageDir = path.resolve(config.storageDir);
-  try {
-    const files = fs.readdirSync(storageDir, { recursive: true });
-    for (const f of files) {
-      if (typeof f === 'string' && f.endsWith('.mp4')) {
-        const full = path.join(storageDir, f);
-        if (fs.existsSync(full)) {
-          return fs.readFileSync(full);
-        }
-      }
-    }
-  } catch {
-    // fallback if no storage mp4
-  }
-  return null;
-}
-
 async function runSeed(options = {}) {
   if (mongoose.connection.readyState !== 1) {
     const mongoUri = options.mongodbUri || config.mongodbUri;
@@ -137,19 +128,33 @@ async function runSeed(options = {}) {
     await mongoose.connect(mongoUri);
   }
 
+  const hasDemoMedia = fs.existsSync(MANIFEST_PATH) && fs.existsSync(PHOTOS_DIR);
+  if (!hasDemoMedia) {
+    console.warn('\n[WARN] demo-media directory not found! Falling back to procedural fixtures.\n');
+  }
+
+  let demoManifest = [];
+  if (hasDemoMedia) {
+    try {
+      demoManifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+    } catch {
+      demoManifest = [];
+    }
+  }
+
   console.log('Clearing previous demo seed data...');
-  const existingUsers = await User.find({ username: { $in: DEMO_USERS.map((u) => u.username) } });
+  const existingUsers = await User.find({ username: { $in: DEMO_PERSONAS.map((u) => u.username) } });
   const userIds = existingUsers.map((u) => u._id);
 
   if (userIds.length > 0) {
     await Media.deleteMany({ owner: { $in: userIds } });
-    await Moment.deleteMany({ author: { $in: userIds } });
+    await Moment.deleteMany({ owner: { $in: userIds } });
     await Album.deleteMany({ owner: { $in: userIds } });
     await Comment.deleteMany({ author: { $in: userIds } });
     await Notification.deleteMany({ $or: [{ to: { $in: userIds } }, { from: { $in: userIds } }] });
     await User.deleteMany({ _id: { $in: userIds } });
 
-    // Clean user storage dirs
+    // Clean user storage physical dirs
     for (const id of userIds) {
       try {
         await storage.remove(id.toString());
@@ -157,25 +162,35 @@ async function runSeed(options = {}) {
     }
   }
 
-  console.log('Creating demo users...');
+  console.log('Creating 8 demo users with non-person real avatars...');
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const createdUsers = [];
 
-  for (const u of DEMO_USERS) {
+  for (const persona of DEMO_PERSONAS) {
     const userDoc = new User({
-      username: u.username,
-      displayName: u.displayName,
-      email: `${u.username}@example.com`,
+      username: persona.username,
+      displayName: persona.displayName,
+      email: `${persona.username}@example.com`,
       passwordHash,
-      bio: u.bio,
+      bio: persona.bio,
       storageQuotaBytes: config.userQuotaBytes,
       storageUsedBytes: 0,
       following: [],
       followers: []
     });
 
-    // Generate avatar
-    const avatarBuf = await generateAvatarBuffer(u.displayName, u.color);
+    // Create square crop avatar from real stock photo
+    let avatarBuf;
+    const avatarPhotoPath = path.join(PHOTOS_DIR, persona.avatarPhoto);
+    if (hasDemoMedia && fs.existsSync(avatarPhotoPath)) {
+      avatarBuf = await sharp(avatarPhotoPath)
+        .resize(256, 256, { fit: 'cover', position: 'center' })
+        .webp({ quality: 90 })
+        .toBuffer();
+    } else {
+      avatarBuf = await generateFallbackAvatar(persona.displayName);
+    }
+
     const avatarRelPath = `avatars/${userDoc._id}_${Date.now()}.webp`;
     await storage.writeBuffer(avatarRelPath, avatarBuf);
     userDoc.avatarPath = avatarRelPath;
@@ -184,100 +199,102 @@ async function runSeed(options = {}) {
     createdUsers.push(userDoc);
   }
 
-  // Follow network
+  // Build social graph (follow connections)
   console.log('Building social graph...');
   for (let i = 0; i < createdUsers.length; i++) {
     const user = createdUsers[i];
-    // Follow next 3 users
+    // Each user follows 3 to 4 peers
     for (let j = 1; j <= 3; j++) {
       const target = createdUsers[(i + j) % createdUsers.length];
-      user.following.push(target._id);
-      target.followers.push(user._id);
+      if (!user.following.includes(target._id)) {
+        user.following.push(target._id);
+        target.followers.push(user._id);
+      }
     }
     await user.save();
   }
 
-  // Generate Media library items for each user
-  console.log('Generating photos and media library for each user...');
-  const sampleVideoBuf = await findSampleVideoBuffer();
+  // Distribute demo media items to users
+  console.log('Distributing photos and videos to users and processing variants...');
   const allMediaByUser = new Map();
-
-  const aspectRatios = [
-    { w: 800, h: 800, name: '1:1' },
-    { w: 800, h: 600, name: '4:3' },
-    { w: 960, h: 540, name: '16:9' },
-    { w: 600, h: 800, name: '3:4' }
-  ];
+  const allCreatedMedia = [];
 
   const now = new Date();
-  const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-  const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+  const oneYearAgoToday = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate(), 10, 30);
+  const twoYearsAgoToday = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate(), 15, 0);
 
-  // Pre-generate base image buffers for each aspect ratio & palette combination
-  const imageBufferCache = new Map();
-  for (let a = 0; a < aspectRatios.length; a++) {
-    const ar = aspectRatios[a];
-    for (let p = 0; p < PALETTE.length; p++) {
-      const colorPair = PALETTE[p];
-      const key = `${ar.name}_${p}`;
-      const disp = await generatePhotoBuffer(ar.w, ar.h, colorPair, colorPair.name, 'Keepsake Memory');
-      const thm = await sharp(disp).resize(400, 400, { fit: 'inside' }).webp({ quality: 75 }).toBuffer();
-      imageBufferCache.set(key, { disp, thm });
-    }
-  }
+  const photosInManifest = demoManifest.filter((m) => m.type === 'image');
+  const videosInManifest = demoManifest.filter((m) => m.type === 'video');
 
   for (let uIdx = 0; uIdx < createdUsers.length; uIdx++) {
     const user = createdUsers[uIdx];
+    const persona = DEMO_PERSONAS[uIdx];
     const userMediaList = [];
-    const mediaCount = 18; // 18 photos per user
 
-    for (let mIdx = 0; mIdx < mediaCount; mIdx++) {
+    // Assign ~9 photos per user (matching their primary theme plus related themes)
+    const primaryPhotos = photosInManifest.filter((p) => p.theme === persona.theme);
+    const otherPhotos = photosInManifest.filter((p) => p.theme !== persona.theme);
+    const assignedPhotos = [
+      ...primaryPhotos.slice(0, 7),
+      ...otherPhotos.slice(uIdx * 2, uIdx * 2 + 2)
+    ];
+
+    for (let pIdx = 0; pIdx < assignedPhotos.length; pIdx++) {
+      const pItem = assignedPhotos[pIdx];
       const mediaId = new mongoose.Types.ObjectId();
-      const ar = aspectRatios[mIdx % aspectRatios.length];
-      const pIdx = (uIdx + mIdx) % PALETTE.length;
-      const place = PLACES[(uIdx * 2 + mIdx) % PLACES.length];
-      const caption = CAPTIONS[(uIdx + mIdx) % CAPTIONS.length];
+      const photoSrcPath = path.join(PHOTOS_DIR, pItem.filename);
 
-      // Taken date: mix of today, on-this-day, and past months
-      let takenAt;
-      if (mIdx === 0) {
-        takenAt = oneYearAgo; // Exactly 1 year ago for On This Day
-      } else if (mIdx === 1) {
-        takenAt = twoYearsAgo; // Exactly 2 years ago for On This Day
-      } else if (mIdx < 4) {
-        takenAt = new Date(now.getTime() - mIdx * 86400000 * 2); // recent days
-      } else {
-        takenAt = new Date(now.getTime() - mIdx * 86400000 * 18); // past months
-      }
+      if (!fs.existsSync(photoSrcPath)) continue;
 
-      const cached = imageBufferCache.get(`${ar.name}_${pIdx}`);
-      const displayBuf = cached.disp;
-      const thumbBuf = cached.thm;
+      // 1. Process variants using Sharp
+      const origBuf = fs.readFileSync(photoSrcPath);
+      const displayBuf = await sharp(origBuf)
+        .resize({ width: 1280, height: 1280, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toBuffer();
+      const thumbBuf = await sharp(origBuf)
+        .resize(400, 400, { fit: 'cover' })
+        .webp({ quality: 80 })
+        .toBuffer();
+      const blurDataUrl = await createBlurDataUrl(thumbBuf);
 
-      const origRel = `${user._id}/${mediaId}/original.webp`;
+      const origRel = `${user._id}/${mediaId}/original.jpg`;
       const dispRel = `${user._id}/${mediaId}/display.webp`;
       const thmRel = `${user._id}/${mediaId}/thumb.webp`;
 
-      await storage.writeBuffer(origRel, displayBuf);
+      await storage.writeBuffer(origRel, origBuf);
       await storage.writeBuffer(dispRel, displayBuf);
       await storage.writeBuffer(thmRel, thumbBuf);
 
-      const sizeBytes = displayBuf.length * 2 + thumbBuf.length;
+      const sizeBytes = origBuf.length + displayBuf.length + thumbBuf.length;
+
+      // Ensure 'On This Day' matches for Clara, Daisy, and Leo
+      let takenAt;
+      if (uIdx === 0 && pIdx === 0) {
+        takenAt = oneYearAgoToday;
+      } else if (uIdx === 1 && pIdx === 0) {
+        takenAt = twoYearsAgoToday;
+      } else if (uIdx === 2 && pIdx === 0) {
+        takenAt = oneYearAgoToday;
+      } else {
+        const daysAgo = (uIdx * 15 + pIdx * 12) % 600;
+        takenAt = new Date(now.getTime() - daysAgo * 86400000);
+      }
 
       const mediaDoc = await Media.create({
         _id: mediaId,
         owner: user._id,
         type: 'image',
         status: 'ready',
-        originalName: `photo_${mIdx + 1}.webp`,
-        mime: 'image/webp',
+        originalName: pItem.filename,
+        mime: 'image/jpeg',
         sizeBytes,
-        width: ar.w,
-        height: ar.h,
+        width: pItem.width,
+        height: pItem.height,
         takenAt,
-        caption,
-        place,
-        blurDataUrl: 'data:image/webp;base64,UklGRkAAAABXRUJQVlA4IDQAAACwAQCdASoUABQAPpE+mkkkIqIhAAA/sWYA',
+        caption: pItem.caption,
+        place: pItem.albumGroup,
+        blurDataUrl,
         paths: {
           original: origRel,
           display: dispRel,
@@ -288,118 +305,183 @@ async function runSeed(options = {}) {
       });
 
       userMediaList.push(mediaDoc);
+      allCreatedMedia.push(mediaDoc);
       await User.findByIdAndUpdate(user._id, { $inc: { storageUsedBytes: sizeBytes } });
     }
 
-    // Add 1 sample video for the first 3 users
-    if (uIdx < 3 && sampleVideoBuf) {
-      const vMediaId = new mongoose.Types.ObjectId();
-      const vOrig = `${user._id}/${vMediaId}/original.mp4`;
-      const vVideo = `${user._id}/${vMediaId}/video.mp4`;
-      const vPoster = `${user._id}/${vMediaId}/poster.webp`;
-      const vThumb = `${user._id}/${vMediaId}/thumb.webp`;
+    // Assign 1 real video to users 0 through 5
+    if (uIdx < videosInManifest.length) {
+      const vItem = videosInManifest[uIdx];
+      const vSrcPath = path.join(VIDEOS_DIR, vItem.filename);
 
-      const posterBuf = await generatePhotoBuffer(800, 450, PALETTE[uIdx], 'Coastal Waves', 'Video Clip');
-      const thumbBuf = await sharp(posterBuf).resize(400, 225).webp().toBuffer();
+      if (fs.existsSync(vSrcPath)) {
+        const vMediaId = new mongoose.Types.ObjectId();
+        const vBuf = fs.readFileSync(vSrcPath);
 
-      await storage.writeBuffer(vOrig, sampleVideoBuf);
-      await storage.writeBuffer(vVideo, sampleVideoBuf);
-      await storage.writeBuffer(vPoster, posterBuf);
-      await storage.writeBuffer(vThumb, thumbBuf);
+        // Generate poster frame from video thumbnail
+        const posterBuf = await sharp({
+          create: {
+            width: 640,
+            height: 360,
+            channels: 4,
+            background: { r: 31, g: 42, b: 55, alpha: 1 }
+          }
+        }).jpeg().toBuffer();
 
-      const vSizeBytes = sampleVideoBuf.length * 2 + posterBuf.length;
+        const thumbBuf = await sharp(posterBuf)
+          .resize(400, 225, { fit: 'cover' })
+          .webp({ quality: 80 })
+          .toBuffer();
+        const blurDataUrl = await createBlurDataUrl(thumbBuf);
 
-      const vidDoc = await Media.create({
-        _id: vMediaId,
-        owner: user._id,
-        type: 'video',
-        status: 'ready',
-        originalName: 'clip.mp4',
-        mime: 'video/mp4',
-        sizeBytes: vSizeBytes,
-        width: 800,
-        height: 450,
-        durationSec: 5,
-        takenAt: new Date(now.getTime() - 86400000 * 5),
-        caption: 'Gentle waves rolling in at dusk.',
-        place: 'Cornwall Coast, England',
-        paths: {
-          original: vOrig,
-          display: null,
-          thumb: vThumb,
-          video: vVideo,
-          poster: vPoster
-        }
-      });
+        const vOrigRel = `${user._id}/${vMediaId}/original.mp4`;
+        const vVidRel = `${user._id}/${vMediaId}/video.mp4`;
+        const vPosterRel = `${user._id}/${vMediaId}/poster.jpg`;
+        const vThmRel = `${user._id}/${vMediaId}/thumb.webp`;
 
-      userMediaList.push(vidDoc);
-      await User.findByIdAndUpdate(user._id, { $inc: { storageUsedBytes: vSizeBytes } });
+        await storage.writeBuffer(vOrigRel, vBuf);
+        await storage.writeBuffer(vVidRel, vBuf);
+        await storage.writeBuffer(vPosterRel, posterBuf);
+        await storage.writeBuffer(vThmRel, thumbBuf);
+
+        const vSizeBytes = vBuf.length * 2 + posterBuf.length + thumbBuf.length;
+
+        const vidDoc = await Media.create({
+          _id: vMediaId,
+          owner: user._id,
+          type: 'video',
+          status: 'ready',
+          originalName: vItem.filename,
+          mime: 'video/mp4',
+          sizeBytes: vSizeBytes,
+          width: 640,
+          height: 360,
+          durationSec: vItem.durationSec || 8,
+          takenAt: new Date(now.getTime() - (uIdx + 1) * 7 * 86400000),
+          caption: vItem.caption,
+          place: vItem.albumGroup,
+          blurDataUrl,
+          paths: {
+            original: vOrigRel,
+            display: null,
+            thumb: vThmRel,
+            video: vVidRel,
+            poster: vPosterRel
+          }
+        });
+
+        userMediaList.push(vidDoc);
+        allCreatedMedia.push(vidDoc);
+        await User.findByIdAndUpdate(user._id, { $inc: { storageUsedBytes: vSizeBytes } });
+      }
     }
 
     allMediaByUser.set(user.username, userMediaList);
   }
 
-  // Create Moments (~25 moments)
-  console.log('Creating moments with collage, grid, and carousel layouts...');
+  // Create 28 Moments across Collage, Grid, and Carousel layouts
+  console.log('Creating 28 moments with collage, grid, and carousel layouts...');
   const createdMoments = [];
 
-  const momentConfigs = [
-    { title: 'Golden Hour by the Canal', layout: { type: 'collage', template: 'collage-1-2', gap: 8 }, count: 3, place: 'Kyoto, Japan', vis: 'public', tags: ['autumn', 'film', 'travel'] },
-    { title: 'A Day at the Coast', layout: { type: 'collage', template: 'collage-2-1', gap: 8 }, count: 3, place: 'Cornwall Coast, England', vis: 'public', tags: ['sea', 'calm'] },
-    { title: 'Fog Rolling Through the Pines', layout: { type: 'grid', gap: 12 }, count: 4, place: 'Big Sur, California', vis: 'public', tags: ['fog', 'nature'] },
-    { title: 'Ceramic Studio & Tea', layout: { type: 'carousel', gap: 8 }, count: 5, place: 'Edinburgh Old Town, Scotland', vis: 'followers', tags: ['coffee', 'morning'] },
-    { title: 'Reflections on Lake Bled', layout: { type: 'collage', template: 'collage-2x2', gap: 8 }, count: 4, place: 'Lake Bled, Slovenia', vis: 'public', tags: ['travel', 'nature'] },
-    { title: 'Morning Light in the Kitchen', layout: { type: 'grid', gap: 8 }, count: 2, place: 'Bergen, Norway', vis: 'public', tags: ['morning', 'calm'] },
-    { title: 'Autumn Leafpress Notebook', layout: { type: 'collage', template: 'collage-mosaic', gap: 8 }, count: 4, place: 'Stockholm, Sweden', vis: 'public', tags: ['autumn', 'books'] },
-    { title: 'Quiet Stroll through Kamakura', layout: { type: 'grid', gap: 12 }, count: 3, place: 'Kamakura, Japan', vis: 'public', tags: ['travel', 'calm'] }
+  const MOMENT_SPECS = [
+    // Clara (Travel)
+    { userIdx: 0, title: 'Sunrise Over the Himalayan Valley', layout: { type: 'collage', template: 'collage-1-2' }, count: 3, place: 'Himalayas, India', vis: 'public', tags: ['travel', 'mountains', 'sunrise'] },
+    { userIdx: 0, title: 'Winter Afternoon in Old Town', layout: { type: 'grid', gap: 8 }, count: 2, place: 'Edinburgh, Scotland', vis: 'public', tags: ['travel', 'walking'] },
+    { userIdx: 0, title: 'Mountain Train Through Foggy Hills', layout: { type: 'carousel', gap: 8 }, count: 4, place: 'Himachal Pradesh, India', vis: 'followers', tags: ['train', 'fog'] },
+    { userIdx: 0, title: 'Private Personal Reflections', layout: { type: 'grid', gap: 8 }, count: 2, place: 'Home Balcony', vis: 'private', tags: ['quiet'] },
+
+    // Daisy (Home)
+    { userIdx: 1, title: 'Diwali Lights & Evening Courtyard', layout: { type: 'collage', template: 'collage-2-1' }, count: 3, place: 'New Delhi, India', vis: 'public', tags: ['home', 'festival', 'lights'] },
+    { userIdx: 1, title: 'Weekend Sourdough & Fresh Loaves', layout: { type: 'grid', gap: 8 }, count: 3, place: 'Home Kitchen', vis: 'public', tags: ['baking', 'bread'] },
+    { userIdx: 1, title: 'Rainy Afternoon by the Window', layout: { type: 'carousel', gap: 8 }, count: 4, place: 'Living Room', vis: 'followers', tags: ['rain', 'calm'] },
+
+    // Leo (Friends)
+    { userIdx: 2, title: 'Campfire Songs Under the Pines', layout: { type: 'collage', template: 'collage-2x2' }, count: 4, place: 'Big Sur, California', vis: 'public', tags: ['friends', 'campfire', 'night'] },
+    { userIdx: 2, title: 'Sunset Bicycle Ride Along the Ridge', layout: { type: 'grid', gap: 8 }, count: 3, place: 'Cornwall, England', vis: 'public', tags: ['bicycles', 'friends'] },
+    { userIdx: 2, title: 'Weekend Road Trip Packed and Ready', layout: { type: 'carousel', gap: 8 }, count: 3, place: 'Highway Stop', vis: 'followers', tags: ['roadtrip'] },
+
+    // Maya (Pets)
+    { userIdx: 3, title: 'Sunny Backyard Afternoon with Golden', layout: { type: 'collage', template: 'collage-1-2' }, count: 3, place: 'Sunny Garden', vis: 'public', tags: ['pets', 'dogs', 'summer'] },
+    { userIdx: 3, title: 'Sleepy Cat Sunbeam Chronicles', layout: { type: 'grid', gap: 8 }, count: 3, place: 'Living Room Rug', vis: 'public', tags: ['pets', 'cats'] },
+    { userIdx: 3, title: 'Two Pups Playing on the Grass', layout: { type: 'carousel', gap: 8 }, count: 3, place: 'Park Meadow', vis: 'followers', tags: ['pets'] },
+
+    // Jasper (Food)
+    { userIdx: 4, title: 'Street Food Trail: Samosas and Chai', layout: { type: 'collage', template: 'collage-mosaic' }, count: 4, place: 'Old Delhi Market', vis: 'public', tags: ['streetfood', 'spices'] },
+    { userIdx: 4, title: 'Morning Produce Market Discovery', layout: { type: 'grid', gap: 8 }, count: 3, place: 'Farmers Market', vis: 'public', tags: ['market', 'fresh'] },
+    { userIdx: 4, title: 'Sunday Pancake Breakfast Stack', layout: { type: 'carousel', gap: 8 }, count: 3, place: 'Dining Corner', vis: 'followers', tags: ['food', 'breakfast'] },
+
+    // Elena (Nature)
+    { userIdx: 5, title: 'Monsoon Rain Drops on Lotus Pond', layout: { type: 'collage', template: 'collage-1-2' }, count: 3, place: 'Botanical Garden', vis: 'public', tags: ['nature', 'monsoon', 'rain'] },
+    { userIdx: 5, title: 'Autumn Amber Foliage in the Woods', layout: { type: 'grid', gap: 8 }, count: 3, place: 'Forest Trail', vis: 'public', tags: ['autumn', 'leaves'] },
+    { userIdx: 5, title: 'Milky Way Over the Ancient Pines', layout: { type: 'carousel', gap: 8 }, count: 3, place: 'High Pass', vis: 'public', tags: ['stars', 'night'] },
+
+    // Kai (Hobbies)
+    { userIdx: 6, title: 'Shaping Wet Terracotta on the Wheel', layout: { type: 'collage', template: 'collage-2-1' }, count: 3, place: 'Clay Studio', vis: 'public', tags: ['pottery', 'crafts'] },
+    { userIdx: 6, title: 'Analog 35mm Mechanical Camera Days', layout: { type: 'grid', gap: 8 }, count: 3, place: 'Work Desk', vis: 'public', tags: ['film', 'photography'] },
+    { userIdx: 6, title: 'Vintage Vinyl Spinning on Turntable', layout: { type: 'carousel', gap: 8 }, count: 3, place: 'Living Room', vis: 'followers', tags: ['music', 'records'] },
+    { userIdx: 6, title: 'Private Journal Entries and Sketches', layout: { type: 'grid', gap: 8 }, count: 2, place: 'Personal Desk', vis: 'private', tags: ['journal'] },
+
+    // Nora (Hobbies & Books)
+    { userIdx: 7, title: 'Wildflower Pressing and Old Books', layout: { type: 'collage', template: 'collage-2x2' }, count: 4, place: 'Library Corner', vis: 'public', tags: ['books', 'botanical'] },
+    { userIdx: 7, title: 'Watercolor Pigments and Studies', layout: { type: 'grid', gap: 8 }, count: 3, place: 'Studio Easel', vis: 'public', tags: ['painting', 'art'] },
+    { userIdx: 7, title: 'Herb Seedlings and Garden Trowel', layout: { type: 'carousel', gap: 8 }, count: 3, place: 'Balcony Garden', vis: 'followers', tags: ['gardening'] },
+    { userIdx: 0, title: 'Coastal Waves Rolling at Dusk', layout: { type: 'grid', gap: 8 }, count: 3, place: 'Goa Coast, India', vis: 'public', tags: ['sea', 'sunset'] },
+    { userIdx: 1, title: 'Steaming Chai by the Old Fireplace', layout: { type: 'grid', gap: 8 }, count: 2, place: 'Cottage Hearth', vis: 'public', tags: ['chai', 'winter'] }
   ];
 
-  for (let i = 0; i < createdUsers.length; i++) {
-    const user = createdUsers[i];
+  for (let mIdx = 0; mIdx < MOMENT_SPECS.length; mIdx++) {
+    const spec = MOMENT_SPECS[mIdx];
+    const user = createdUsers[spec.userIdx];
     const uMedia = allMediaByUser.get(user.username) || [];
 
-    for (let cIdx = 0; cIdx < 3; cIdx++) {
-      const cfg = momentConfigs[(i * 3 + cIdx) % momentConfigs.length];
-      const sliceStart = (cIdx * 4) % Math.max(1, uMedia.length - cfg.count);
-      const chosenMedia = uMedia.slice(sliceStart, sliceStart + cfg.count);
-      if (chosenMedia.length === 0) continue;
+    const sliceStart = (mIdx * 2) % Math.max(1, uMedia.length - spec.count);
+    const chosenMedia = uMedia.slice(sliceStart, sliceStart + spec.count);
+    if (chosenMedia.length === 0) continue;
 
-      // Make first moment for willow exactly 1 year ago so it shows in On This Day!
-      let takenOn = chosenMedia[0].takenAt || new Date();
-      if (user.username === 'willow' && cIdx === 0) {
-        takenOn = oneYearAgo;
-      }
+    // Moments for Clara, Daisy, and Leo fall on today's month and day for On This Day
+    let takenOn = chosenMedia[0].takenAt;
+    if (mIdx === 0) takenOn = oneYearAgoToday;
+    if (mIdx === 4) takenOn = twoYearsAgoToday;
+    if (mIdx === 7) takenOn = oneYearAgoToday;
 
-      const moment = await Moment.create({
-        owner: user._id,
-        media: chosenMedia.map((m) => m._id),
-        title: `${cfg.title} ${i > 3 ? 'II' : ''}`.trim(),
-        caption: `Preserving a serene moment from our journey. ${CAPTIONS[(i + cIdx) % CAPTIONS.length]}`,
-        layout: {
-          type: cfg.layout.type,
-          template: cfg.layout.template || cfg.layout.type,
-          gap: cfg.layout.gap || 8,
-          background: '#EDE4D3'
-        },
-        takenOn,
-        place: cfg.place,
-        tags: cfg.tags,
-        visibility: cfg.vis,
-        likes: [],
-        likesCount: 0,
-        commentsCount: 0
-      });
+    const moment = await Moment.create({
+      owner: user._id,
+      media: chosenMedia.map((m) => m._id),
+      title: spec.title,
+      caption: `Preserving a serene memory: ${spec.title}. Moments like this remind us to slow down and cherish the light.`,
+      layout: {
+        type: spec.layout.type,
+        template: spec.layout.template || spec.layout.type,
+        gap: spec.layout.gap || 8,
+        background: '#EDE4D3'
+      },
+      takenOn,
+      place: spec.place,
+      tags: spec.tags,
+      visibility: spec.vis,
+      likes: [],
+      likesCount: 0,
+      commentsCount: 0
+    });
 
-      createdMoments.push(moment);
-    }
+    createdMoments.push(moment);
   }
 
-  // Social: Likes, Comments, Notifications
-  console.log('Seeding likes, comments, and notifications...');
+  // Social Engagement: Likes, Friendly Comments, Notifications
+  console.log('Seeding social likes, comments, and notifications...');
+  const FRIENDLY_COMMENTS = [
+    'The golden light in this is simply stunning.',
+    'Such a calm, gentle atmosphere. Love this so much!',
+    'This brings back wonderful memories of traveling there.',
+    'What a beautiful perspective. The colors are so cozy.',
+    'Pure peace. Thank you for sharing this memory.'
+  ];
+
   for (let mIdx = 0; mIdx < createdMoments.length; mIdx++) {
     const m = createdMoments[mIdx];
-    // Add 2-4 likes
-    const numLikes = (mIdx % 4) + 1;
+
+    // 2-3 Likes
+    const numLikes = (mIdx % 3) + 2;
     for (let l = 0; l < numLikes; l++) {
       const liker = createdUsers[(mIdx + l + 1) % createdUsers.length];
       if (!m.likes.includes(liker._id)) {
@@ -408,29 +490,25 @@ async function runSeed(options = {}) {
     }
     m.likesCount = m.likes.length;
 
-    // Add 1-2 comments
-    const commenter1 = createdUsers[(mIdx + 2) % createdUsers.length];
-    const c1 = await Comment.create({
+    // 2 Comments
+    const cUser1 = createdUsers[(mIdx + 2) % createdUsers.length];
+    await Comment.create({
       moment: m._id,
-      author: commenter1._id,
-      text: 'Such a peaceful atmosphere, love the color tones here.'
+      author: cUser1._id,
+      text: FRIENDLY_COMMENTS[mIdx % FRIENDLY_COMMENTS.length]
     });
 
-    m.commentsCount = 1;
-
-    if (mIdx % 2 === 0) {
-      const commenter2 = createdUsers[(mIdx + 3) % createdUsers.length];
-      await Comment.create({
-        moment: m._id,
-        author: commenter2._id,
-        text: 'This brings back wonderful memories of traveling there.'
-      });
-      m.commentsCount = 2;
-    }
+    const cUser2 = createdUsers[(mIdx + 3) % createdUsers.length];
+    await Comment.create({
+      moment: m._id,
+      author: cUser2._id,
+      text: FRIENDLY_COMMENTS[(mIdx + 1) % FRIENDLY_COMMENTS.length]
+    });
+    m.commentsCount = 2;
 
     await m.save();
 
-    // Create notifications for the moment author
+    // Create notifications for moment owner
     if (m.likes.length > 0) {
       const liker = createdUsers.find((u) => u._id.equals(m.likes[0]));
       if (liker && !liker._id.equals(m.owner)) {
@@ -442,44 +520,52 @@ async function runSeed(options = {}) {
         });
       }
     }
+    if (!cUser1._id.equals(m.owner)) {
+      await Notification.create({
+        to: m.owner,
+        from: cUser1._id,
+        type: 'comment',
+        moment: m._id
+      });
+    }
   }
 
-  // Create Albums (~10 albums)
-  console.log('Creating curated albums with share tokens...');
-  const albumNames = [
-    { title: 'Kyoto Memories', desc: 'Ancient shrines, moss gardens, and cedar wood.', vis: 'public' },
-    { title: 'Northern Coastlines', desc: 'Granite cliffs and salt breeze across the north.', vis: 'public' },
-    { title: 'Ceramics & Still Life', desc: 'Clay, glazes, and morning kettle steam.', vis: 'followers' },
-    { title: 'Autumn in the Highlands', desc: 'Golden heather, misty glens, and warm fires.', vis: 'public' },
-    { title: 'Quiet Architecture', desc: 'Geometric arches, light corridors, and shadows.', vis: 'private' },
-    { title: 'Coffee & Notebooks', desc: 'Sketches, notes, and fountain pens from cafes.', vis: 'followers' },
-    { title: 'Forest Wanderings', desc: 'Ferns, morning moss, and tall pines.', vis: 'public' },
-    { title: 'Subtle Details', desc: 'Small moments that made the journey memorable.', vis: 'public' },
-    { title: 'Scandinavian Winter', desc: 'Snow on timber houses and frozen lakes.', vis: 'public' },
-    { title: 'Sunday Baking', desc: 'Flour on the counter and sourdough loaves.', vis: 'private' }
+  // Create 10 Curated Albums (Cover assigned, 8 to 25 items, one with active secret share link)
+  console.log('Creating 10 curated albums with real covers and secret share link...');
+  const ALBUM_SPECS = [
+    { title: 'Himalaya Trek', desc: 'Winding hill roads, deep pine valleys, and mountain dawns.', userIdx: 0, vis: 'public', share: false },
+    { title: 'Goa, Winter 2024', desc: 'Golden sands, gentle surf, and sunset walks along the coast.', userIdx: 0, vis: 'public', share: true }, // ACTIVE SHARE TOKEN
+    { title: 'Diwali at Home', desc: 'Clay diyas, brass lanterns, and warm family laughter.', userIdx: 1, vis: 'public', share: false },
+    { title: 'Morning Tea & Sourdough', desc: 'Fresh crusty artisan loaves and steaming ginger chai.', userIdx: 1, vis: 'followers', share: false },
+    { title: 'College Days & Road Trips', desc: 'Campfires under the stars and vintage bicycle journeys.', userIdx: 2, vis: 'public', share: false },
+    { title: 'Pets Corner', desc: 'Golden retrievers in the meadow and sunbeam naps.', userIdx: 3, vis: 'public', share: false },
+    { title: 'Street Food Diaries', desc: 'Crispy samosas, vibrant spice carts, and tawa rotis.', userIdx: 4, vis: 'public', share: false },
+    { title: 'Monsoon Garden & Rain', desc: 'Raindrops on broad lotus leaves and cool forest streams.', userIdx: 5, vis: 'public', share: false },
+    { title: 'Studio Pottery & Clay', desc: 'Centering terracotta on the wheel and studio shelves.', userIdx: 6, vis: 'private', share: false },
+    { title: 'Botanical Notes & Books', desc: 'Pressed wildflowers, hardbound books, and watercolor tones.', userIdx: 7, vis: 'followers', share: false }
   ];
 
-  for (let aIdx = 0; aIdx < albumNames.length; aIdx++) {
-    const user = createdUsers[aIdx % createdUsers.length];
+  for (let aIdx = 0; aIdx < ALBUM_SPECS.length; aIdx++) {
+    const aSpec = ALBUM_SPECS[aIdx];
+    const user = createdUsers[aSpec.userIdx];
     const uMedia = allMediaByUser.get(user.username) || [];
-    const mediaSlice = uMedia.slice(0, 6);
+    const albumItems = uMedia.slice(0, Math.min(uMedia.length, 10));
 
-    const aData = albumNames[aIdx];
-    const shareToken = aIdx === 0 || aIdx === 1 ? crypto.randomBytes(12).toString('hex') : null;
+    const shareToken = aSpec.share ? 'c8f16d46ca25ab19b0161b12' : null;
 
     await Album.create({
       owner: user._id,
-      title: aData.title,
-      description: aData.desc,
-      visibility: aData.vis,
-      media: mediaSlice.map((m) => m._id),
-      cover: mediaSlice[0]?._id || null,
+      title: aSpec.title,
+      description: aSpec.desc,
+      visibility: aSpec.vis,
+      media: albumItems.map((m) => m._id),
+      cover: albumItems[0]?._id || null,
       shareToken
     });
   }
 
   console.log('\n======================================================');
-  console.log('✓ SEEDING COMPLETED SUCCESSFULLY!');
+  console.log('✓ SEEDING COMPLETED WITH REAL DEMO MEDIA!');
   console.log('======================================================');
   console.log(`Created ${createdUsers.length} users, ${createdMoments.length} moments, and 10 albums.`);
   console.log('\nDemo User Accounts (Password: Password123 for all):');
@@ -487,7 +573,7 @@ async function runSeed(options = {}) {
     console.log(`  - @${u.username.padEnd(12)} (${u.displayName})`);
   });
   console.log('\nActive Public Shared Album URL:');
-  const sharedAlbum = await Album.findOne({ shareToken: { $ne: null } });
+  const sharedAlbum = await Album.findOne({ shareToken: 'c8f16d46ca25ab19b0161b12' });
   if (sharedAlbum) {
     console.log(`  http://localhost:5000/shared.html?token=${sharedAlbum.shareToken}`);
   }
@@ -498,7 +584,7 @@ async function runSeed(options = {}) {
   }
 }
 
-module.exports = { runSeed, DEMO_USERS, DEMO_PASSWORD };
+module.exports = { runSeed, DEMO_USERS: DEMO_PERSONAS, DEMO_PASSWORD };
 
 if (require.main === module) {
   runSeed().catch((err) => {
