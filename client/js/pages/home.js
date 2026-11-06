@@ -15,7 +15,7 @@ let feedHasMore = false;
 let feedLoading = false;
 let feedObserver = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initHomePage() {
   try {
     currentUser = await requireAuth();
   } catch {
@@ -30,7 +30,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSuggestions();
   loadOnThisDay();
   initFeed();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initHomePage);
+} else {
+  initHomePage();
+}
 
 function initGreeting() {
   const greetingEl = document.getElementById('greeting-title');

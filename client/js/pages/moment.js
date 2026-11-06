@@ -12,7 +12,7 @@ let currentMoment = null;
 let commentsList = [];
 let momentId = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initMomentPage() {
   try {
     const meRes = await getMe();
     currentUser = meRes.user;
@@ -42,8 +42,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  initCommentComposer();
   await loadMoment();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initMomentPage);
+} else {
+  initMomentPage();
+}
 
 async function loadMoment() {
   const skeleton = document.getElementById('moment-skeleton');

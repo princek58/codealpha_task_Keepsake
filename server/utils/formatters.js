@@ -88,6 +88,12 @@ const formatMoment = (moment, currentUserId = null, token = null) => {
       displayName: author.displayName || author.username || '',
       avatarUrl
     },
+    owner: {
+      id: authorId,
+      username: author.username || '',
+      displayName: author.displayName || author.username || '',
+      avatarUrl
+    },
     likesCount: likes.length,
     commentsCount: moment.commentsCount || 0,
     likedByMe,
@@ -126,6 +132,12 @@ const formatAlbum = (album, currentUserId = null, token = null) => {
     cover: formattedCover,
     mediaCount,
     author: {
+      id: authorId,
+      username: author.username || '',
+      displayName: author.displayName || author.username || '',
+      avatarUrl
+    },
+    owner: {
       id: authorId,
       username: author.username || '',
       displayName: author.displayName || author.username || '',

@@ -104,7 +104,7 @@ function buildNavbar(activeTab, user) {
   searchWrap.className = 'navbar-search';
 
   const searchIcon = icon('search', { size: 16 });
-  searchIcon.className = 'navbar-search-icon';
+  searchIcon.classList.add('navbar-search-icon');
   searchWrap.appendChild(searchIcon);
 
   const searchInput = document.createElement('input');

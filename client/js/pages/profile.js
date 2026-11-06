@@ -9,7 +9,7 @@ let profileUser = null;
 let targetUsername = null;
 let currentTab = 'moments';
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initProfilePage() {
   try {
     const meRes = await getMe();
     currentUser = meRes.user;
@@ -39,7 +39,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   initEditProfileModal();
   await loadProfile();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initProfilePage);
+} else {
+  initProfilePage();
+}
 
 async function loadProfile() {
   const skeleton = document.getElementById('profile-skeleton');

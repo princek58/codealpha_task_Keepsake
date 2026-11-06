@@ -14,7 +14,7 @@ let galleryInstance = null;
 let isSelectMode = false;
 let selectedMediaIds = new Set();
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initAlbumPage() {
   try {
     const meRes = await getMe();
     currentUser = meRes.user;
@@ -38,7 +38,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSelectionBar();
   initReorderMode();
   await loadAlbum();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAlbumPage);
+} else {
+  initAlbumPage();
+}
 
 async function loadAlbum() {
   const skeleton = document.getElementById('album-skeleton');

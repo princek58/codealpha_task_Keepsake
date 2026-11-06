@@ -163,8 +163,16 @@ export const bulkDeleteMedia = (ids) => request('/api/media/bulk-delete', { meth
 
 // 4. Moments
 export const createMoment = (body) => request('/api/moments', { method: 'POST', body });
-export const getFeedMoments = (page = 1, limit = 20) => request(`/api/moments/feed?page=${page}&limit=${limit}`);
-export const getExploreMoments = (page = 1, limit = 20) => request(`/api/moments/explore?page=${page}&limit=${limit}`);
+export const getFeedMoments = (page = 1, limit = 20) => {
+  const p = typeof page === 'object' && page !== null ? (page.page || 1) : page;
+  const l = typeof page === 'object' && page !== null ? (page.limit || 20) : limit;
+  return request(`/api/moments/feed?page=${p}&limit=${l}`);
+};
+export const getExploreMoments = (page = 1, limit = 20) => {
+  const p = typeof page === 'object' && page !== null ? (page.page || 1) : page;
+  const l = typeof page === 'object' && page !== null ? (page.limit || 20) : limit;
+  return request(`/api/moments/explore?page=${p}&limit=${l}`);
+};
 export const getUserMoments = (username, page = 1, limit = 20) =>
   request(`/api/moments/user/${encodeURIComponent(username)}?page=${page}&limit=${limit}`);
 export const getOnThisDay = () => request('/api/moments/on-this-day');
@@ -196,7 +204,11 @@ export const createAlbumShareToken = (id) => request(`/api/albums/${id}/share`, 
 export const deleteAlbumShareToken = (id) => request(`/api/albums/${id}/share`, { method: 'DELETE' });
 
 // 6. Notifications
-export const getNotifications = (page = 1, limit = 30) => request(`/api/notifications?page=${page}&limit=${limit}`);
+export const getNotifications = (page = 1, limit = 30) => {
+  const p = typeof page === 'object' && page !== null ? (page.page || 1) : page;
+  const l = typeof page === 'object' && page !== null ? (page.limit || 30) : limit;
+  return request(`/api/notifications?page=${p}&limit=${l}`);
+};
 export const getUnreadNotificationCount = () => request('/api/notifications/unread-count');
 export const markAllNotificationsRead = () => request('/api/notifications/read', { method: 'PUT' });
 export const markNotificationRead = (id) => request(`/api/notifications/${id}/read`, { method: 'PUT' });
@@ -210,5 +222,8 @@ export const getFeed = getFeedMoments;
 export const toggleLikeMoment = toggleMomentLike;
 export const getSuggestions = getUserSuggestions;
 export const followUser = toggleFollowUser;
+export const getMyAlbums = getAlbums;
+export const addMediaToAlbum = addAlbumMedia;
+export const getStorageStats = getStats;
 
 

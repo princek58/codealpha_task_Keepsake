@@ -66,7 +66,7 @@ app.use(
 
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'test' ? 1000 : 200,
+  max: process.env.NODE_ENV === 'production' ? 200 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests, please try again later' }

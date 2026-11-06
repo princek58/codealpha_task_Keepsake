@@ -36,7 +36,7 @@ export function showToast(message, type = 'info', duration = 3500) {
 }
 
 // 2. Focus Trap Helper
-function setupFocusTrap(container, onEscape) {
+export function setupFocusTrap(container, onEscape) {
   const focusable = container.querySelectorAll(
     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
   );
@@ -646,4 +646,8 @@ export function createAbortHelper() {
     }
   };
 }
+
+export const buildAvatar = createAvatar;
+export const showConfirmDialog = confirmDialog;
+
 
