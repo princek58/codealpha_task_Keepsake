@@ -30,7 +30,9 @@ describe('System and Scaffolding Endpoints', () => {
   test('GET /api/health returns status ok', async () => {
     const res = await request(app).get('/api/health');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ status: 'ok' });
+    expect(res.body.status).toBe('ok');
+    expect(res.body.database).toBe('connected');
+    expect(res.body).toHaveProperty('timestamp');
   });
 
   test('Unknown /api route returns 404 JSON', async () => {

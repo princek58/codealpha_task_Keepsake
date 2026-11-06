@@ -515,4 +515,4 @@ Comprehensive reference for all backend endpoints in Keepsake, a memory-keeping 
 
 ### GET `/api/health`
 - **Auth:** None
-- **Response:** `200 OK` with `{ status: "ok" }`
+- **Response:** `200 OK` with `{ status: "ok", database: "connected", timestamp: "..." }`

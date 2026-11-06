@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const path = require('path');
+const mongoose = require('mongoose');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
@@ -76,7 +77,12 @@ app.use('/api', csrfCheck);
 app.use('/api', generalLimiter);
 
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+  const isConnected = mongoose.connection.readyState === 1;
+  res.status(isConnected ? 200 : 503).json({
+    status: isConnected ? 'ok' : 'degraded',
+    database: isConnected ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.use('/api/auth', authRoutes);
