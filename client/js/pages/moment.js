@@ -1,5 +1,5 @@
 // Keepsake Moment Full Page Controller
-import { getMe, getMomentById, deleteMoment, toggleMomentLike, getMomentComments, createMomentComment, deleteComment, toggleFollowUser } from '../api.js';
+import { getMe, getMomentById, deleteMoment, toggleMomentLike, getMomentComments, createMomentComment, deleteComment, toggleFollowUser, updateMoment } from '../api.js';
 import { mountAppShell } from '../shell.js';
 import { renderLayout } from '../collage.js';
 import { openLightbox } from '../lightbox.js';
@@ -135,6 +135,31 @@ function renderMoment() {
     authorActions.innerHTML = '';
 
     if (isOwner) {
+      const visSelect = document.createElement('select');
+      visSelect.className = 'input input-sm';
+      visSelect.setAttribute('aria-label', 'Change visibility');
+      visSelect.style.padding = '4px 8px';
+      visSelect.style.fontSize = 'var(--text-xs)';
+      visSelect.style.borderRadius = 'var(--radius-md)';
+      visSelect.innerHTML = `
+        <option value="public"${m.visibility === 'public' ? ' selected' : ''}>Public</option>
+        <option value="followers"${m.visibility === 'followers' ? ' selected' : ''}>Followers only</option>
+        <option value="private"${m.visibility === 'private' ? ' selected' : ''}>Private</option>
+      `;
+      visSelect.onchange = async () => {
+        const newVis = visSelect.value;
+        try {
+          await updateMoment(m.id || m._id, { visibility: newVis });
+          m.visibility = newVis;
+          showToast(`Visibility updated to ${newVis}`);
+          renderHeaderDetails();
+        } catch (err) {
+          visSelect.value = m.visibility;
+          showToast(err.message || 'Failed to update visibility', 'error');
+        }
+      };
+      authorActions.appendChild(visSelect);
+
       const editBtn = document.createElement('a');
       editBtn.href = `/moment-new.html?edit=${m.id || m._id}`;
       editBtn.className = 'btn btn-sand btn-sm';

@@ -809,7 +809,7 @@ function initKeyboardShortcuts() {
       return;
     }
 
-    // Sequence "g" then "h" or "l"
+    // Sequence "g" then "h", "l", "c", "a", "e", "p"
     const now = Date.now();
     if (e.key === 'g' || e.key === 'G') {
       gKeyPressedTime = now;
@@ -817,10 +817,19 @@ function initKeyboardShortcuts() {
     }
 
     if (now - gKeyPressedTime < 800) {
-      if (e.key === 'h' || e.key === 'H') {
+      const key = e.key.toLowerCase();
+      if (key === 'h') {
         window.location.href = '/home.html';
-      } else if (e.key === 'l' || e.key === 'L') {
+      } else if (key === 'l') {
         window.location.href = '/library.html';
+      } else if (key === 'c') {
+        window.location.href = '/moment-new.html';
+      } else if (key === 'a') {
+        window.location.href = '/albums.html';
+      } else if (key === 'e') {
+        window.location.href = '/explore.html';
+      } else if (key === 'p') {
+        window.location.href = '/profile.html';
       }
       gKeyPressedTime = 0;
     }
@@ -836,7 +845,7 @@ function openShortcutsModal() {
 
     const modal = document.createElement('div');
     modal.className = 'modal';
-    modal.style.maxWidth = '460px';
+    modal.style.maxWidth = '480px';
 
     modal.innerHTML = `
       <div class="modal-header">
@@ -853,6 +862,10 @@ function openShortcutsModal() {
             <tr style="border-bottom: 1px solid var(--color-sand);"><td style="padding: 8px 0; font-weight: 500;">Search people</td><td style="text-align: right;"><kbd class="badge badge-stone">/</kbd></td></tr>
             <tr style="border-bottom: 1px solid var(--color-sand);"><td style="padding: 8px 0; font-weight: 500;">Go to Home</td><td style="text-align: right;"><kbd class="badge badge-stone">G</kbd> then <kbd class="badge badge-stone">H</kbd></td></tr>
             <tr style="border-bottom: 1px solid var(--color-sand);"><td style="padding: 8px 0; font-weight: 500;">Go to Library</td><td style="text-align: right;"><kbd class="badge badge-stone">G</kbd> then <kbd class="badge badge-stone">L</kbd></td></tr>
+            <tr style="border-bottom: 1px solid var(--color-sand);"><td style="padding: 8px 0; font-weight: 500;">Go to Create Moment</td><td style="text-align: right;"><kbd class="badge badge-stone">G</kbd> then <kbd class="badge badge-stone">C</kbd></td></tr>
+            <tr style="border-bottom: 1px solid var(--color-sand);"><td style="padding: 8px 0; font-weight: 500;">Go to Albums</td><td style="text-align: right;"><kbd class="badge badge-stone">G</kbd> then <kbd class="badge badge-stone">A</kbd></td></tr>
+            <tr style="border-bottom: 1px solid var(--color-sand);"><td style="padding: 8px 0; font-weight: 500;">Go to Explore</td><td style="text-align: right;"><kbd class="badge badge-stone">G</kbd> then <kbd class="badge badge-stone">E</kbd></td></tr>
+            <tr style="border-bottom: 1px solid var(--color-sand);"><td style="padding: 8px 0; font-weight: 500;">Go to Profile</td><td style="text-align: right;"><kbd class="badge badge-stone">G</kbd> then <kbd class="badge badge-stone">P</kbd></td></tr>
             <tr style="border-bottom: 1px solid var(--color-sand);"><td style="padding: 8px 0; font-weight: 500;">Close overlays</td><td style="text-align: right;"><kbd class="badge badge-stone">Esc</kbd></td></tr>
             <tr><td style="padding: 8px 0; font-weight: 500;">Keyboard help</td><td style="text-align: right;"><kbd class="badge badge-stone">?</kbd></td></tr>
           </tbody>

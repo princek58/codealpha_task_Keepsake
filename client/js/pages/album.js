@@ -1,5 +1,5 @@
 // Keepsake Album Detail & Management Controller
-import { getMe, getAlbumById, updateAlbum, deleteAlbum, addAlbumMedia, removeAlbumMedia, createAlbumShareToken, deleteAlbumShareToken, getMediaLibrary } from '../api.js';
+import { getMe, getAlbumById, updateAlbum, deleteAlbum, addAlbumMedia, removeAlbumMedia, createAlbumShareToken, deleteAlbumShareToken, getMediaLibrary, reorderAlbumMedia } from '../api.js';
 import { mountAppShell } from '../shell.js';
 import { JustifiedGallery } from '../gallery.js';
 import { openLightbox } from '../lightbox.js';
@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initShareModal();
   initPickerModal();
   initSelectionBar();
+  initReorderMode();
   await loadAlbum();
 });
 
@@ -304,6 +305,177 @@ function updateSelectionBar() {
   if (countText) countText.textContent = `${count} selected`;
   if (setCoverBtn) setCoverBtn.style.display = count === 1 ? 'inline-block' : 'none';
   if (removeBtn) removeBtn.disabled = count === 0;
+}
+
+// ============================================================================
+// Reorder Mode (Drag & Drop + Keyboard Move Buttons)
+// ============================================================================
+let isReorderMode = false;
+
+function initReorderMode() {
+  const reorderBtn = document.getElementById('btn-toggle-reorder');
+  const galleryMount = document.getElementById('album-gallery-mount');
+  const reorderMount = document.getElementById('album-reorder-mount');
+  if (!reorderBtn || !reorderMount) return;
+
+  function setReorder(enabled) {
+    isReorderMode = enabled;
+    reorderBtn.textContent = isReorderMode ? 'Done Reordering' : 'Reorder';
+    reorderBtn.className = isReorderMode ? 'btn btn-primary btn-sm' : 'btn btn-sand btn-sm';
+
+    if (galleryMount) galleryMount.style.display = isReorderMode ? 'none' : 'block';
+    reorderMount.style.display = isReorderMode ? 'block' : 'none';
+
+    if (isReorderMode) {
+      renderReorderGrid();
+    } else {
+      if (galleryInstance) galleryInstance.setItems(albumMedia);
+    }
+  }
+
+  reorderBtn.onclick = () => setReorder(!isReorderMode);
+}
+
+function renderReorderGrid() {
+  const mount = document.getElementById('album-reorder-mount');
+  if (!mount) return;
+
+  mount.innerHTML = '';
+  if (albumMedia.length === 0) {
+    mount.textContent = 'No photos to reorder.';
+    return;
+  }
+
+  const tip = document.createElement('p');
+  tip.className = 'text-muted';
+  tip.style.fontSize = 'var(--text-xs)';
+  tip.style.marginBottom = 'var(--space-md)';
+  tip.textContent = 'Drag cards to reorder, or use the Earlier and Later buttons for keyboard navigation.';
+  mount.appendChild(tip);
+
+  const grid = document.createElement('div');
+  grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
+  grid.style.gap = 'var(--space-sm)';
+
+  let draggedIndex = null;
+
+  albumMedia.forEach((item, index) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.setAttribute('draggable', 'true');
+    card.style.padding = 'var(--space-xs)';
+    card.style.cursor = 'grab';
+    card.style.position = 'relative';
+    card.style.backgroundColor = 'var(--color-white)';
+    card.style.borderRadius = 'var(--radius-md)';
+    card.style.border = '1px solid var(--color-sand)';
+
+    const img = document.createElement('img');
+    const thumbUrl = item.variants?.thumb?.url || item.url || `/api/media/${item.id || item._id}/file?variant=thumb`;
+    img.src = thumbUrl;
+    img.alt = item.originalName || `Photo ${index + 1}`;
+    img.style.width = '100%';
+    img.style.aspectRatio = '1/1';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = 'var(--radius-sm)';
+    img.style.display = 'block';
+    img.style.pointerEvents = 'none';
+    card.appendChild(img);
+
+    const badge = document.createElement('span');
+    badge.className = 'badge badge-sand';
+    badge.style.position = 'absolute';
+    badge.style.top = '8px';
+    badge.style.left = '8px';
+    badge.style.fontSize = '10px';
+    badge.textContent = `#${index + 1}`;
+    card.appendChild(badge);
+
+    const ctrlWrap = document.createElement('div');
+    ctrlWrap.style.display = 'flex';
+    ctrlWrap.style.justifyContent = 'space-between';
+    ctrlWrap.style.marginTop = 'var(--space-xs)';
+    ctrlWrap.style.gap = '4px';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'btn btn-sand btn-xs';
+    prevBtn.style.padding = '2px 8px';
+    prevBtn.style.fontSize = 'var(--text-xs)';
+    prevBtn.setAttribute('aria-label', `Move photo ${index + 1} earlier`);
+    prevBtn.textContent = '←';
+    prevBtn.disabled = index === 0;
+    prevBtn.onclick = async (e) => {
+      e.stopPropagation();
+      moveItem(index, index - 1);
+    };
+
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'btn btn-sand btn-xs';
+    nextBtn.style.padding = '2px 8px';
+    nextBtn.style.fontSize = 'var(--text-xs)';
+    nextBtn.setAttribute('aria-label', `Move photo ${index + 1} later`);
+    nextBtn.textContent = '→';
+    nextBtn.disabled = index === albumMedia.length - 1;
+    nextBtn.onclick = async (e) => {
+      e.stopPropagation();
+      moveItem(index, index + 1);
+    };
+
+    ctrlWrap.appendChild(prevBtn);
+    ctrlWrap.appendChild(nextBtn);
+    card.appendChild(ctrlWrap);
+
+    card.addEventListener('dragstart', (e) => {
+      draggedIndex = index;
+      card.style.opacity = '0.5';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    card.addEventListener('dragend', () => {
+      card.style.opacity = '1';
+      draggedIndex = null;
+    });
+
+    card.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      card.style.borderColor = 'var(--color-terracotta)';
+    });
+
+    card.addEventListener('dragleave', () => {
+      card.style.borderColor = 'var(--color-sand)';
+    });
+
+    card.addEventListener('drop', (e) => {
+      e.preventDefault();
+      card.style.borderColor = 'var(--color-sand)';
+      if (draggedIndex !== null && draggedIndex !== index) {
+        moveItem(draggedIndex, index);
+      }
+    });
+
+    grid.appendChild(card);
+  });
+
+  mount.appendChild(grid);
+}
+
+async function moveItem(fromIndex, toIndex) {
+  if (toIndex < 0 || toIndex >= albumMedia.length) return;
+  const item = albumMedia.splice(fromIndex, 1)[0];
+  albumMedia.splice(toIndex, 0, item);
+  renderReorderGrid();
+
+  try {
+    const ids = albumMedia.map(m => m.id || m._id);
+    await reorderAlbumMedia(albumId, ids);
+    showToast('Album order updated');
+  } catch (err) {
+    showToast(err.message || 'Failed to update order', 'error');
+  }
 }
 
 // ============================================================================

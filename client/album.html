@@ -145,6 +145,7 @@
             <div id="owner-actions" style="display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap;">
               <button id="btn-add-photos" class="btn btn-primary btn-sm">+ Add Photos</button>
               <button id="btn-toggle-select" class="btn btn-sand btn-sm">Select</button>
+              <button id="btn-toggle-reorder" class="btn btn-sand btn-sm">Reorder</button>
               <button id="btn-edit-details" class="btn btn-sand btn-sm">Edit Details</button>
               <button id="btn-share-modal" class="btn btn-sand btn-sm">Share Link</button>
               <button id="btn-delete-album" class="btn btn-ghost btn-sm" style="color: var(--color-terracotta);" aria-label="Delete album">Delete</button>
@@ -167,6 +168,9 @@
 
         <!-- Justified Gallery mount -->
         <div id="album-gallery-mount" style="min-height: 120px;"></div>
+
+        <!-- Album Reorder mount (drag & drop and keyboard buttons) -->
+        <div id="album-reorder-mount" style="display: none; padding: var(--space-md) 0;"></div>
       </div>
 
       <!-- Selection floating toolbar -->
