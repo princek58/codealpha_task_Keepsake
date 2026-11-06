@@ -40,10 +40,23 @@ async function startDemo() {
   console.log('Seeding initial demo dataset...');
   await runSeed({ keepConnection: true, mongodbUri: mongoUri });
 
-  const port = process.env.PORT || 5000;
-  server = app.listen(port, () => {
-    printBanner(port);
-  });
+  let port = Number(process.env.DEMO_PORT || process.env.PORT || 5000);
+  
+  function tryListen(p) {
+    server = app.listen(p, () => {
+      printBanner(p);
+    });
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${p} is in use, trying port ${p + 1}...`);
+        tryListen(p + 1);
+      } else {
+        throw err;
+      }
+    });
+  }
+
+  tryListen(port);
 
   setupShutdownHooks();
 }
