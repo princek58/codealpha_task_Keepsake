@@ -465,7 +465,7 @@
 .lightbox-counter {
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-charcoal-muted);
+  color: var(--color-white);
 }
 
 .lightbox-actions {
@@ -549,7 +549,7 @@
 
 .lightbox-meta {
   font-size: var(--text-xs);
-  color: var(--color-charcoal-muted);
+  color: var(--color-white);
 }
 
 /* ==========================================================================

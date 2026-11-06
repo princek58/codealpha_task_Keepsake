@@ -414,7 +414,6 @@ export function buildDropZone(uploader, container, options = {}) {
 
   zone.tabIndex = 0;
   zone.setAttribute('role', 'button');
-  zone.setAttribute('aria-label', 'Upload photos and videos');
   zone.onkeydown = (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();

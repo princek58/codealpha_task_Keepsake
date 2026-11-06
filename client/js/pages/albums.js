@@ -154,7 +154,7 @@ function renderAlbums() {
     footer.style.marginTop = 'auto';
     footer.style.paddingTop = 'var(--space-xs)';
     footer.style.fontSize = '11px';
-    footer.style.color = 'var(--color-stone-light)';
+    footer.style.color = 'var(--color-stone)';
     footer.textContent = `Updated ${formatTimeAgo(album.updatedAt || album.createdAt)}`;
     body.appendChild(footer);
 

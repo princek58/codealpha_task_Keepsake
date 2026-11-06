@@ -9,11 +9,14 @@
     "test": "jest --testPathIgnorePatterns=\"/client/\" --runInBand --detectOpenHandles --forceExit",
     "test:client": "jest --testMatch=\"**/client/tests/**/*.test.js\" --runInBand --detectOpenHandles --forceExit",
     "test:all": "npm test && npm run test:client",
-    "test:e2e": "node scripts/e2e_runner.js",
+    "test:e2e": "node scripts/e2e.js",
+    "test:privacy": "node scripts/privacy-audit.js",
+    "test:a11y": "node scripts/a11y.js",
     "audit:tokens": "node scripts/audit-tokens.js",
     "audit:contrast": "node scripts/audit-contrast.js",
     "verify:responsive": "node scripts/verify-responsive.js",
     "seed": "node scripts/seed.js",
+    "demo": "node scripts/demo.js",
     "verify:all": "node scripts/verify_all.js"
   },
   "keywords": [

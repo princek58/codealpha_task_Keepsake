@@ -400,8 +400,8 @@
   white-space: nowrap;
 }
 
-.badge-terracotta { background-color: var(--color-terracotta-tint); color: var(--color-terracotta); }
-.badge-teal { background-color: var(--color-teal-tint); color: var(--color-teal); }
+.badge-terracotta { background-color: var(--color-terracotta-tint); color: var(--color-terracotta-active); }
+.badge-teal { background-color: var(--color-teal-tint); color: var(--color-teal-active); }
 .badge-sage { background-color: var(--color-sage-tint); color: var(--color-ink); }
 .badge-mustard { background-color: var(--color-mustard-tint); color: var(--color-ink); }
 .badge-stone { background-color: var(--color-stone-faint); color: var(--color-stone); }
@@ -503,7 +503,7 @@
   padding: 6px 14px;
   font-size: var(--text-xs);
   font-weight: 600;
-  color: var(--color-stone);
+  color: var(--color-ink-muted);
   border-radius: var(--radius-pill);
   cursor: pointer;
   border: none;
