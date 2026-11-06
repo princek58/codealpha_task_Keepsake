@@ -23,7 +23,7 @@ let activeGalleryInstance = null;
 let timelineGalleries = [];
 let uploadManagerInstance = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initLibraryPage() {
   try {
     currentUser = await requireAuth();
   } catch {
@@ -43,7 +43,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (urlParams.get('upload') === '1') {
     openUploadModal();
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initLibraryPage);
+} else {
+  initLibraryPage();
+}
 
 async function initStorage() {
   const mount = document.getElementById('lib-storage-mount');

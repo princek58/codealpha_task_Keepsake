@@ -8,7 +8,7 @@ let currentUser = null;
 let selectedAvatarFile = null;
 let removeAvatarRequested = false;
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initSettingsPage() {
   try {
     currentUser = await requireAuth();
   } catch {
@@ -20,7 +20,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   initProfileForm();
   loadStorageInfo();
   initLogout();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSettingsPage);
+} else {
+  initSettingsPage();
+}
 
 function initProfileForm() {
   const form = document.getElementById('form-settings-profile');

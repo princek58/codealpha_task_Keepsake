@@ -6,5 +6,7 @@ server/storage/*
 !server/storage/.gitkeep
 coverage/
 .DS_Store
+Thumbs.db
+*.log
 screenshots/temp/
 tmp/

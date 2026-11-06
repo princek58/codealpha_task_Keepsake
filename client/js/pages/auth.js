@@ -3,16 +3,21 @@ import { login, register } from '../api.js';
 import { redirectIfAuthed, getSafeNextUrl } from '../guard.js';
 import { showToast } from '../ui.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // If already authenticated, redirect immediately
-  await redirectIfAuthed('/home.html');
-
+function initAuthPage() {
   initTabs();
   initPasswordToggles();
   initPasswordStrength();
   initLoginForm();
   initRegisterForm();
-});
+
+  redirectIfAuthed('/home.html');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAuthPage);
+} else {
+  initAuthPage();
+}
 
 function initTabs() {
   const tabLogin = document.getElementById('tab-login');

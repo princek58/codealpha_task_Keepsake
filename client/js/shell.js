@@ -636,8 +636,9 @@ function renderNotificationCard(n) {
   card.appendChild(iconEl);
 
   // Actor Avatar if present
-  if (n.actor) {
-    const av = buildAvatar(n.actor, 'xs');
+  const actor = n.actor || n.from;
+  if (actor) {
+    const av = buildAvatar(actor, 'xs');
     card.appendChild(av);
   }
 
@@ -648,7 +649,7 @@ function renderNotificationCard(n) {
   textContainer.style.lineHeight = '1.4';
 
   const sentence = document.createElement('div');
-  const actorName = n.actor?.displayName || n.actor?.username || 'Someone';
+  const actorName = actor?.displayName || actor?.username || 'Someone';
   let message = `${actorName} interacted with you`;
   if (n.type === 'like') message = `${actorName} liked your moment`;
   else if (n.type === 'comment') message = `${actorName} commented on your moment`;

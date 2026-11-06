@@ -43,7 +43,7 @@ const SWATCH_PALETTE = [
   'var(--color-charcoal)'
 ];
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initMomentNewPage() {
   try {
     currentUser = await requireAuth();
   } catch {
@@ -72,7 +72,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   initStep2Layout();
   initStep3Details();
   updateLivePreview();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initMomentNewPage);
+} else {
+  initMomentNewPage();
+}
 
 function loadDraftFromStorage() {
   try {

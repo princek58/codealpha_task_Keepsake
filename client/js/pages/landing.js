@@ -5,14 +5,20 @@ import { renderCollage } from '../collage.js';
 import { JustifiedGallery } from '../gallery.js';
 import { openLightbox } from '../lightbox.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function init() {
   initPreloader();
   checkAuthStatus();
   initHeroShowcase();
   initFeatureDemos();
   initStats();
   initAnimations();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 function initPreloader() {
   const preloader = document.getElementById('preloader');

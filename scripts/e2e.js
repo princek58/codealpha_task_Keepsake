@@ -216,9 +216,12 @@ async function runBrowserE2E() {
       document.getElementById('reg-password').value = 'Password123';
       document.getElementById('btn-reg-submit').click();
     `);
-    await wait(2500);
-
-    const currentUrlA = await clientA.eval(`window.location.pathname`);
+    let currentUrlA = '';
+    for (let i = 0; i < 12; i++) {
+      await wait(500);
+      currentUrlA = await clientA.eval(`window.location.pathname`);
+      if (currentUrlA.includes('home.html') || currentUrlA.includes('library.html') || currentUrlA === '/') break;
+    }
     const cookiesA = await clientA.send('Network.getCookies');
     console.log('User A cookies after reg:', cookiesA.cookies.map(c => c.name));
     assert(currentUrlA.includes('home.html') || currentUrlA.includes('library.html') || currentUrlA === '/', 'User A registered and redirected to authenticated shell');
@@ -238,9 +241,12 @@ async function runBrowserE2E() {
       document.getElementById('reg-password').value = 'Password123';
       document.getElementById('btn-reg-submit').click();
     `);
-    await wait(2500);
-
-    const currentUrlB = await clientB.eval(`window.location.pathname`);
+    let currentUrlB = '';
+    for (let i = 0; i < 12; i++) {
+      await wait(500);
+      currentUrlB = await clientB.eval(`window.location.pathname`);
+      if (currentUrlB.includes('home.html') || currentUrlB.includes('library.html') || currentUrlB === '/') break;
+    }
     assert(currentUrlB.includes('home.html') || currentUrlB.includes('library.html') || currentUrlB === '/', 'User B registered and authenticated in isolated session');
 
     // 3. Media Upload (User A)
@@ -388,11 +394,14 @@ async function runBrowserE2E() {
 
     // Navigate to User B home feed
     await clientB.navigate(`${BASE_URL}/home.html`);
-    await wait(2000);
-
-    const feedTitles = await clientB.eval(`
-      Array.from(document.querySelectorAll('h3, .moment-card h3')).map(el => el.textContent)
-    `);
+    let feedTitles = [];
+    for (let i = 0; i < 10; i++) {
+      await wait(600);
+      feedTitles = await clientB.eval(`
+        Array.from(document.querySelectorAll('h3, .moment-card h3')).map(el => el.textContent)
+      `);
+      if (feedTitles && feedTitles.length > 0) break;
+    }
 
     assert(feedTitles.some(t => t.includes('Seaside Light and Fog')), 'User B sees User A public moment in feed');
     assert(feedTitles.some(t => t.includes('Autumn By The Stream')), 'User B sees User A followers moment in feed');
@@ -452,13 +461,17 @@ async function runBrowserE2E() {
       const notifBtn = document.querySelector('button[aria-label="Notifications"]');
       if (notifBtn) notifBtn.click();
     `);
-    await wait(1000);
-
-    const hasNotifs = await clientA.eval(`
-      const panel = document.getElementById('notifications-drawer');
-      const items = panel ? panel.querySelectorAll('.notification-item') : [];
-      return items.length > 0;
-    `);
+    
+    let hasNotifs = false;
+    for (let i = 0; i < 10; i++) {
+      await wait(500);
+      hasNotifs = await clientA.eval(`
+        const panel = document.getElementById('notifications-drawer');
+        const items = panel ? panel.querySelectorAll('.notification-item') : [];
+        return items.length > 0;
+      `);
+      if (hasNotifs) break;
+    }
     assert(hasNotifs, 'User A sees notification drawer with social activity items');
     await clientA.screenshot('e2e-alice-notifications.png');
 

@@ -24,14 +24,14 @@ if (config.env === 'production' && !process.argv.includes('--force')) {
 
 const DEMO_PASSWORD = 'Password123';
 const DEMO_USERS = [
-  { username: 'willow', displayName: 'Willow Vance', bio: 'Film photography, quiet mornings, ceramic cups and seaside air.', color: '#2F7F79' },
+  { username: 'clara', displayName: 'Clara Dubois', bio: 'Boulangeries, morning walks by the Seine, and linen journals.', color: '#B4532A' },
+  { username: 'daisy', displayName: 'Daisy Miller', bio: 'Film photography, quiet mornings, ceramic cups and seaside air.', color: '#2F7F79' },
+  { username: 'leo', displayName: 'Leo Sterling', bio: 'Analog snapshots, train journeys across Hokkaido, and espresso.', color: '#4C6A92' },
+  { username: 'maya', displayName: 'Maya Lindqvist', bio: 'Nordic landscapes, sourdough baking, and soft wool blankets.', color: '#E0A53B' },
   { username: 'jasper', displayName: 'Jasper Reid', bio: 'Documenting rainy afternoons, vintage books, and wooden cabins.', color: '#B4532A' },
   { username: 'elena', displayName: 'Elena Rostova', bio: 'Architectural shadows, tea ceremonies, and film rolls from Kyoto.', color: '#A9B99B' },
-  { username: 'kai', displayName: 'Kai Takahashi', bio: 'Analog snapshots, train journeys across Hokkaido, and espresso.', color: '#4C6A92' },
-  { username: 'maya', displayName: 'Maya Lindqvist', bio: 'Nordic landscapes, sourdough baking, and soft wool blankets.', color: '#E0A53B' },
-  { username: 'sorin', displayName: 'Sorin Balea', bio: 'Carpentry, pine forests in Transylvania, and slow woodworking.', color: '#5F6B7A' },
-  { username: 'nora', displayName: 'Nora Chen', bio: 'Botanical gardens, watercolor sketches, and Sunday markets.', color: '#2F7F79' },
-  { username: 'clara', displayName: 'Clara Dubois', bio: 'Boulangeries, morning walks by the Seine, and linen journals.', color: '#B4532A' }
+  { username: 'kai', displayName: 'Kai Takahashi', bio: 'Train journeys across Hokkaido, film rolls, and espresso.', color: '#4C6A92' },
+  { username: 'nora', displayName: 'Nora Chen', bio: 'Botanical gardens, watercolor sketches, and Sunday markets.', color: '#2F7F79' }
 ];
 
 const PALETTE = [
@@ -130,9 +130,12 @@ async function findSampleVideoBuffer() {
   return null;
 }
 
-async function runSeed() {
-  console.log('Connecting to database:', config.mongodbUri);
-  await mongoose.connect(config.mongodbUri);
+async function runSeed(options = {}) {
+  if (mongoose.connection.readyState !== 1) {
+    const mongoUri = options.mongodbUri || config.mongodbUri;
+    console.log('Connecting to database:', mongoUri);
+    await mongoose.connect(mongoUri);
+  }
 
   console.log('Clearing previous demo seed data...');
   const existingUsers = await User.find({ username: { $in: DEMO_USERS.map((u) => u.username) } });
@@ -490,10 +493,16 @@ async function runSeed() {
   }
   console.log('======================================================\n');
 
-  await mongoose.disconnect();
+  if (!options.keepConnection) {
+    await mongoose.disconnect();
+  }
 }
 
-runSeed().catch((err) => {
-  console.error('Seed script error:', err);
-  process.exit(1);
-});
+module.exports = { runSeed, DEMO_USERS, DEMO_PASSWORD };
+
+if (require.main === module) {
+  runSeed().catch((err) => {
+    console.error('Seed script error:', err);
+    process.exit(1);
+  });
+}

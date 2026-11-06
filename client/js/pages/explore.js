@@ -13,7 +13,7 @@ let momentsList = [];
 let searchAbortController = null;
 let sentinelObserver = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initExplorePage() {
   try {
     const meRes = await getMe();
     currentUser = meRes.user;
@@ -42,7 +42,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     loadMoments(1, true);
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initExplorePage);
+} else {
+  initExplorePage();
+}
 
 function initTabs() {
   const btnMoments = document.getElementById('tab-btn-moments');

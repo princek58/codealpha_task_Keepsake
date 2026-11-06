@@ -8,7 +8,7 @@ let currentAlbum = null;
 let mediaList = [];
 let shareToken = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initSharedPage() {
   const params = new URLSearchParams(window.location.search);
   shareToken = params.get('token');
 
@@ -18,7 +18,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   await loadSharedAlbum();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSharedPage);
+} else {
+  initSharedPage();
+}
 
 async function loadSharedAlbum() {
   const skeleton = document.getElementById('shared-skeleton');
