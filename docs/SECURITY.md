@@ -1,6 +1,5 @@
 # Keepsake Security Architecture & Audit Report
 
-**Date:** November 2026  
 **Status:** Passed (Production Ready)  
 **Scope:** Backend API (`server/`), Client Modules (`client/`), Data Layer (`MongoDB`), Media Pipeline  
 
@@ -13,31 +12,22 @@ Keepsake is designed with a defense-in-depth security architecture. As a private
 Every request passes through multiple defensive layers:
 1. Strict HTTP security headers and CSP via Helmet
 2. State-changing CSRF origin/referer validation
-3. NoSQL injection query sanitization
+3. NoSQL injection query sanitization (`express-mongo-sanitize`)
 4. Rate limiting per IP on auth and write operations
-5. Session authentication with httpOnly/SameSite cookies
+5. Session authentication with httpOnly/SameSite/Secure cookies
 6. Fine-grained multi-tenant authorization guards
 7. Isolated file processing with EXIF metadata stripping
-8. Client-side XSS prevention through safe DOM textContent rendering
-
-A comprehensive automated privacy audit (`scripts/privacy-audit.js`) verifying 586 assertions across 4 simulated user personas confirms zero unauthorized data leaks across all visibility tiers.
+8. Client-side XSS prevention through safe DOM `textContent` rendering
+9. Path traversal protection with `path.relative` assertions
+10. Magic byte verification on uploads rejecting spoofed extensions
 
 ---
 
 ## 2. Dependency Audit (`npm audit`)
 
-A full dependency audit was executed against the project dependencies:
-
-```bash
-npm audit --omit=dev
-```
-
-### Production Dependencies
-- **Status:** **0 vulnerabilities found in runtime production dependencies.**
-- Core runtime packages (`express`, `mongoose`, `jsonwebtoken`, `bcryptjs`, `helmet`, `cors`, `compression`, `express-rate-limit`, `express-mongo-sanitize`, `express-validator`, `multer`, `sharp`) are up-to-date and maintain zero known CVEs.
-
-### Development Dependencies
-- 14 low-to-moderate vulnerabilities are present solely within the testing toolchain (`jest` and its transitive `@babel/*` dependencies). These tools are used exclusively during CI/CD test runs and are never bundled, served, or executed in production runtime environments.
+A full dependency audit was executed against runtime and development dependencies:
+- **Production Dependencies:** 0 vulnerabilities in runtime dependencies. Core packages (`express`, `mongoose`, `jsonwebtoken`, `bcryptjs`, `helmet`, `cors`, `compression`, `express-rate-limit`, `express-mongo-sanitize`, `express-validator`, `multer`, `sharp`) maintain zero known CVEs.
+- **Development Dependencies:** Testing and build toolchain vulnerabilities reside solely in local development tools (`jest`, `babel`) and are never bundled, served, or executed in production runtime environments.
 
 ---
 
@@ -58,30 +48,26 @@ The application uses `helmet` configured with strict policies in `server/app.js`
 
 ## 4. CSRF Protection Architecture
 
-State-changing HTTP operations (`POST`, `PUT`, `PATCH`, `DELETE`) are guarded by custom origin verification middleware (`server/middleware/csrf.js`):
-
-- **Algorithm:** Checks the request's `Origin` or `Referer` headers against `CLIENT_ORIGIN` (configured via environment variable, defaulting to `http://localhost:5000`).
+State-changing HTTP operations (`POST`, `PUT`, `PATCH`, `DELETE`) are guarded by origin verification middleware:
+- **Algorithm:** Checks the request's `Origin` or `Referer` headers against allowed origins (`PUBLIC_URL`, `RENDER_EXTERNAL_URL`, `CLIENT_ORIGIN`, or `ALLOWED_ORIGINS`).
 - **Exemptions:** Safe read methods (`GET`, `HEAD`, `OPTIONS`) are exempt.
 - **Fail-Closed:** State-changing requests lacking both `Origin` and `Referer` headers are rejected with `403 Forbidden` (`{ message: "CSRF check failed: missing origin or referer" }`).
-- **Benefit:** Provides complete protection against Cross-Site Request Forgery without requiring stateful token synchronization in Single Page Applications.
 
 ---
 
 ## 5. NoSQL Injection Prevention
 
 Protection against NoSQL query manipulation is enforced through three complementary controls:
-
 1. **Global Request Sanitization:** `express-mongo-sanitize` is attached in `server/app.js` prior to route dispatching. It recursively strips all keys containing dollar signs (`$`) or dots (`.`) from `req.body`, `req.query`, and `req.params`.
 2. **Strict Mongoose Schemas:** All queries are filtered through typed Mongoose schemas (`strict: true`), preventing arbitrary property injection.
-3. **Mongoose CastError Handling:** Invalid ObjectId formats (e.g. `{ $ne: null }` passed as an ID) trigger an automatic `400 Bad Request` or `404 Not Found` response via the centralized error handler (`server/middleware/errorHandler.js`).
+3. **Mongoose CastError Handling:** Invalid ObjectId formats trigger an automatic `400 Bad Request` or `404 Not Found` response via the centralized error handler (`server/middleware/errorHandler.js`).
 
 ---
 
 ## 6. Authentication & Session Security
 
 Authentication is managed via `server/controllers/authController.js` and `server/middleware/auth.js`:
-
-- **Credentials Storage:** Passwords are never stored in plaintext. They are salted and hashed using `bcryptjs` with a work factor of 12 rounds (`salt = 12`).
+- **Credentials Storage:** Passwords are salted and hashed using `bcryptjs` with a work factor of 12 rounds.
 - **Constant-Time Comparison:** Password verification uses `bcrypt.compare` to mitigate timing attacks.
 - **Enumeration Protection:** Login failure returns an identical generic error message (`Invalid email or password`) regardless of whether the email exists or the password was incorrect.
 - **Cookie Security:**
@@ -102,7 +88,7 @@ Keepsake implements strict boundary checks at the controller level:
 
 ### Moment & Album Visibility Engine
 - **`public`**: Accessible by all authenticated users and visible on the Explore feed.
-- **`friends`**: Accessible only by mutual follows (reciprocal follower relationship).
+- **`followers`**: Accessible only by confirmed followers of the creator.
 - **`private`**: Accessible strictly by the author and explicitly invited collaborators.
 
 ### Anonymous Secret Link Tokens
@@ -112,7 +98,7 @@ Keepsake implements strict boundary checks at the controller level:
 
 ### Horizontal Privilege Escalation Defenses
 - Attempting to update or delete another user's moment, album, or comment returns `403 Forbidden`.
-- Adding media to another user's private album without collaborator status returns `403 Forbidden`.
+- Adding media to another user's album without collaborator status returns `403 Forbidden`.
 - Direct ID probing on private moments or media by non-owners returns `404 Not Found` to prevent resource existence disclosure.
 
 ---
@@ -120,28 +106,19 @@ Keepsake implements strict boundary checks at the controller level:
 ## 8. File Upload & Processing Security
 
 Uploaded files undergo validation in `server/middleware/upload.js` and `server/controllers/mediaController.js`:
-
-1. **Storage Isolation:** Uploaded raw files are buffered in memory and processed into `uploads/` outside the web root. Files are never exposed via directory browsing.
-2. **MIME & Extension Whitelist:**
-   - Allowed Images: `image/jpeg` (`.jpg`, `.jpeg`), `image/png` (`.png`), `image/webp` (`.webp`), `image/gif` (`.gif`).
-   - Allowed Videos: `video/mp4` (`.mp4`), `video/quicktime` (`.mov`), `video/webm` (`.webm`).
-   - Disallowed files (e.g. `.exe`, `.html`, `.svg`, `.sh`) are rejected with `400 Bad Request`.
-3. **Payload Size Caps:**
-   - Images capped at 10 MB.
-   - Videos capped at 50 MB.
-4. **EXIF Privacy Stripping:**
-   - Sharp processes all images on ingestion (`sharp(buffer).rotate()`), creating optimized variants (`original`, `preview`, `thumbnail`) while completely stripping EXIF metadata, preventing geolocation leakage or device fingerprinting.
+1. **Path Traversal Defense:** Storage driver resolves paths using `path.relative` assertions, preventing directory traversal attacks.
+2. **MIME & Magic Bytes Sniffing:** File types are validated using `file-type` header inspection, rejecting spoofed extensions (e.g. `.exe` disguised as `.png`).
+3. **Sanitized Execution:** All external video processing (`ffmpeg`, `ffprobe`) is invoked via `child_process.spawn` with explicit argument arrays; zero shell execution is permitted.
+4. **EXIF Privacy Stripping:** Sharp processes all images on ingestion (`sharp(buffer).rotate()`), creating optimized variants (`original`, `preview`, `thumbnail`) while completely stripping EXIF metadata, preventing geolocation leakage or device fingerprinting.
 
 ---
 
 ## 9. Client-Side XSS Mitigation
 
 The frontend client (`client/js/`) operates under strict DOM rendering rules:
-
 - **Zero Untrusted `innerHTML`:** User-generated content (display names, usernames, captions, locations, comments, album titles) is inserted solely using `element.textContent = ...` or `document.createTextNode(...)`.
 - **SVG Safe DOM Generation:** Icons and badges are instantiated using `document.createElementNS('http://www.w3.org/2000/svg', ...)` rather than innerHTML strings.
 - **Link Protocol Sanitization:** Any external links validate `http://` or `https://` schemas before attribute assignment to prevent `javascript:` pseudoprotocol execution.
-- **Verification:** Verified via `scripts/e2e.js` test 16 (`Prevents XSS script execution in captions, comments, and locations`).
 
 ---
 
@@ -151,7 +128,7 @@ The frontend client (`client/js/`) operates under strict DOM rendering rules:
 | :--- | :--- | :--- |
 | `server/tests/security.test.js` | CSP headers, CSRF rejection, NoSQL injection, timing attacks, rate limiting | **PASS** |
 | `server/tests/auth.test.js` | Cookie flags, password hashing, enumeration prevention, password security | **PASS** |
-| `scripts/privacy-audit.js` | 586 fine-grained visibility assertions across 4 user personas | **PASS (0 leaks)** |
+| `scripts/privacy-audit.js` | 739 fine-grained visibility assertions across 4 user personas | **PASS (0 leaks)** |
 | `scripts/e2e.js` | Real browser navigation, token protection, XSS injection deterrence | **PASS (18/18)** |
 | `scripts/a11y.js` | WCAG 2.1 AA axe-core compliance across 16 targets | **PASS (0 violations)** |
 

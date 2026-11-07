@@ -1,26 +1,27 @@
 {
   "name": "keepsake",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A memory-keeping social web app",
   "main": "server/server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node server/server.js",
     "dev": "nodemon server/server.js",
+    "demo": "node scripts/demo.js",
+    "seed": "node scripts/seed.js",
     "test": "jest --testPathIgnorePatterns=\"/client/\" --runInBand --detectOpenHandles --forceExit",
     "test:client": "jest --testMatch=\"**/client/tests/**/*.test.js\" --runInBand --detectOpenHandles --forceExit",
-    "test:all": "npm test && npm run test:client",
     "test:e2e": "node scripts/e2e.js",
-    "test:privacy": "node scripts/privacy-audit.js",
     "test:a11y": "node scripts/a11y.js",
     "test:images": "node scripts/check-images.js",
-    "fetch-demo-media": "node scripts/fetch-demo-media.js",
-    "build:landing-assets": "node scripts/build-landing-assets.js",
     "audit:tokens": "node scripts/audit-tokens.js",
     "audit:contrast": "node scripts/audit-contrast.js",
-    "verify:responsive": "node scripts/verify-responsive.js",
-    "seed": "node scripts/seed.js",
-    "demo": "node scripts/demo.js",
-    "verify:all": "node scripts/verify_all.js"
+    "privacy-audit": "node scripts/privacy-audit.js",
+    "verify:all": "node scripts/verify_all.js",
+    "fetch-demo-media": "node scripts/fetch-demo-media.js",
+    "build-demo-bundle": "node scripts/build-demo-bundle.js"
   },
   "keywords": [
     "social",
@@ -28,7 +29,7 @@
     "mongoose"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.5",
@@ -60,6 +61,11 @@
     "mongodb-memory-server": "^10.1.4",
     "nodemon": "^3.1.9",
     "supertest": "^7.0.0"
+  },
+  "babel": {
+    "presets": [
+      ["@babel/preset-env", { "targets": { "node": "current" } }]
+    ]
   },
   "jest": {
     "testEnvironment": "node",

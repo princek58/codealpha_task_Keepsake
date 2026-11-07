@@ -64,7 +64,7 @@ async function verifyResponsive() {
   const pages = [
     { url: 'http://localhost:5000/', name: 'Landing' },
     { url: 'http://localhost:5000/styleguide.html', name: 'Styleguide' },
-    { url: 'http://localhost:5000/dev/playground.html', name: 'Playground' },
+    { url: 'http://localhost:5000/playground.html', name: 'Playground' },
     { url: 'http://localhost:5000/404.html', name: '404 Page' }
   ];
 

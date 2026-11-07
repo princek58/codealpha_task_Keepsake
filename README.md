@@ -195,7 +195,7 @@ erDiagram
 
 ## 📋 API & Scripts Overview
 
-Comprehensive documentation of all backend endpoints is maintained in [`API.md`](API.md).
+Comprehensive documentation of all backend endpoints is maintained in [`API.md`](docs/API.md).
 
 ### Development & Operational Scripts
 

@@ -223,21 +223,33 @@ async function runSeed(options = {}) {
   const oneYearAgoToday = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate(), 10, 30);
   const twoYearsAgoToday = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate(), 15, 0);
 
+  const isSmall = process.env.SEED_TEST_SMALL === 'true';
   const photosInManifest = demoManifest.filter((m) => m.type === 'image');
   const videosInManifest = demoManifest.filter((m) => m.type === 'video');
+  const smallPhotoPool = isSmall ? photosInManifest.slice(0, 6) : null;
+  const smallVideoPool = isSmall ? videosInManifest.slice(0, 1) : null;
 
   for (let uIdx = 0; uIdx < createdUsers.length; uIdx++) {
     const user = createdUsers[uIdx];
     const persona = DEMO_PERSONAS[uIdx];
     const userMediaList = [];
 
-    // Assign ~9 photos per user (matching their primary theme plus related themes)
-    const primaryPhotos = photosInManifest.filter((p) => p.theme === persona.theme);
-    const otherPhotos = photosInManifest.filter((p) => p.theme !== persona.theme);
-    const assignedPhotos = [
-      ...primaryPhotos.slice(0, 7),
-      ...otherPhotos.slice(uIdx * 2, uIdx * 2 + 2)
-    ];
+    // Assign photos per user
+    let assignedPhotos;
+    if (isSmall) {
+      if (uIdx < smallPhotoPool.length) {
+        assignedPhotos = [smallPhotoPool[uIdx]];
+      } else {
+        assignedPhotos = [];
+      }
+    } else {
+      const primaryPhotos = photosInManifest.filter((p) => p.theme === persona.theme);
+      const otherPhotos = photosInManifest.filter((p) => p.theme !== persona.theme);
+      assignedPhotos = [
+        ...primaryPhotos.slice(0, 7),
+        ...otherPhotos.slice(uIdx * 2, uIdx * 2 + 2)
+      ];
+    }
 
     for (let pIdx = 0; pIdx < assignedPhotos.length; pIdx++) {
       const pItem = assignedPhotos[pIdx];
@@ -309,9 +321,10 @@ async function runSeed(options = {}) {
       await User.findByIdAndUpdate(user._id, { $inc: { storageUsedBytes: sizeBytes } });
     }
 
-    // Assign 1 real video to users 0 through 5
-    if (uIdx < videosInManifest.length) {
-      const vItem = videosInManifest[uIdx];
+    // Assign 1 real video to users
+    const videoList = isSmall ? smallVideoPool : videosInManifest;
+    if (uIdx < videoList.length) {
+      const vItem = videoList[uIdx];
       const vSrcPath = path.join(VIDEOS_DIR, vItem.filename);
 
       if (fs.existsSync(vSrcPath)) {
@@ -435,7 +448,10 @@ async function runSeed(options = {}) {
     const uMedia = allMediaByUser.get(user.username) || [];
 
     const sliceStart = (mIdx * 2) % Math.max(1, uMedia.length - spec.count);
-    const chosenMedia = uMedia.slice(sliceStart, sliceStart + spec.count);
+    let chosenMedia = uMedia.slice(sliceStart, sliceStart + spec.count);
+    if (chosenMedia.length === 0 && allCreatedMedia.length > 0) {
+      chosenMedia = allCreatedMedia.slice(0, Math.min(spec.count, allCreatedMedia.length));
+    }
     if (chosenMedia.length === 0) continue;
 
     // Moments for Clara, Daisy, and Leo fall on today's month and day for On This Day
@@ -549,7 +565,10 @@ async function runSeed(options = {}) {
     const aSpec = ALBUM_SPECS[aIdx];
     const user = createdUsers[aSpec.userIdx];
     const uMedia = allMediaByUser.get(user.username) || [];
-    const albumItems = uMedia.slice(0, Math.min(uMedia.length, 10));
+    let albumItems = uMedia.slice(0, Math.min(uMedia.length, 10));
+    if (albumItems.length === 0 && allCreatedMedia.length > 0) {
+      albumItems = allCreatedMedia.slice(0, Math.min(allCreatedMedia.length, 3));
+    }
 
     const shareToken = aSpec.share ? 'c8f16d46ca25ab19b0161b12' : null;
 

@@ -1,12 +1,22 @@
+# Dependencies
 node_modules/
+
+# Environment Variables
 .env
+.env.local
+.env.*.local
+
+# Storage and Uploads (keep directory structure)
 server/uploads/*
 !server/uploads/.gitkeep
 server/storage/*
 !server/storage/.gitkeep
+
+# Temporary and Output Directories
+tmp/
 coverage/
+*.log
+
+# OS Metadata
 .DS_Store
 Thumbs.db
-*.log
-screenshots/temp/
-tmp/

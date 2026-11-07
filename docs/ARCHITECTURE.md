@@ -1,4 +1,4 @@
-# ARCHITECTURE_V2.md — Keepsake Technical Specification
+# Keepsake Technical Specification & Architecture
 
 This document is the definitive technical specification and single source of truth for **Keepsake**, a calm, editorial, memory-keeping social web application.
 
@@ -189,44 +189,57 @@ Moments display media collections in three distinct layout formats:
 ```
 client/
 ├── assets/
+│   ├── brand/       # Keepsake logo, wordmark, and favicons
+│   ├── demo/        # Curated showcase photo/video assets for landing page
 │   ├── icons/       # Original 24px SVG stroke icons
-│   ├── stickers/    # 12 original palette stickers
-│   ├── demo/        # Generated demo image assets for showcase & playground
-│   └── brand/       # Keepsake logo, wordmark, and favicons
+│   └── stickers/    # 12 original palette stickers
 ├── css/
-│   ├── tokens.css   # Custom properties, colors, fluid typography, scales
+│   ├── tokens.css   # Design tokens: palette, typography clamps, radii, scrims
 │   ├── base.css     # Modern reset, typography, focus rings, base styles
-│   ├── components.css # Reusable UI component styles
-│   └── pages.css    # Landing page, gallery, lightbox, and layout styles
+│   ├── components.css # Reusable UI components (buttons, cards, badges, nav)
+│   └── pages.css    # Page layouts, feeds, collages, lightboxes, galleries
 ├── js/
-│   ├── api.js       # Fetch client, structured errors, XHR upload progress
-│   ├── ui.js        # Safe element builders, toasts, modals, formatters
-│   ├── animations.js# Reduced-motion aware transitions, GSAP / CSS fallbacks
-│   ├── icons.js     # SVG icon and sticker rendering helpers
-│   ├── media-url.js # Media file variant URL builder with token support
-│   ├── gallery.js   # Justified gallery layout engine and timeline grouping
-│   ├── lightbox.js  # Accessible full-screen media viewer
-│   ├── collage-templates.js # Definitions for all 12 collage templates
+│   ├── animations.js# Motion helpers, reduced-motion fallbacks
+│   ├── api.js       # Typed fetch client, structured errors, upload progress
+│   ├── collage-templates.js # Grid definitions for all 12 collage templates
 │   ├── collage.js   # Collage layout renderer, canvas PNG export
-│   ├── upload-manager.js # Queue, drag-and-drop, validation, status polling
-│   └── pages/
-│       └── landing.js # Landing page interactive showcase & stats loader
-├── dev/
-│   └── playground.html # Dev testbed against backend
-├── index.html       # Finished, editorial landing page
-├── styleguide.html  # Interactive design system & component catalog
-├── auth.html        # Placeholder shell
-├── home.html        # Placeholder shell
-├── library.html     # Placeholder shell
-├── moment-new.html  # Placeholder shell
-├── moment.html      # Placeholder shell
-├── albums.html      # Placeholder shell
-├── album.html       # Placeholder shell
-├── profile.html     # Placeholder shell
-├── explore.html     # Placeholder shell
-├── notifications.html # Placeholder shell
-├── settings.html    # Placeholder shell
-└── 404.html         # Finished editorial 404 page
+│   ├── gallery.js   # Justified gallery layout engine and timeline grouping
+│   ├── guard.js     # Auth route guard and redirection logic
+│   ├── icons.js     # SVG icon and sticker rendering helpers
+│   ├── lightbox.js  # Accessible full-screen media viewer
+│   ├── media-url.js # Media file variant URL builder with token support
+│   ├── shell.js     # Navigation shell, mobile drawer, notification drawer
+│   ├── ui.js        # Safe DOM builders, toasts, modals, formatters
+│   ├── upload-manager.js # Upload queue, validation, status polling
+│   └── pages/       # Page-specific controllers
+│       ├── album.js
+│       ├── albums.js
+│       ├── auth.js
+│       ├── explore.js
+│       ├── home.js
+│       ├── landing.js
+│       ├── library.js
+│       ├── moment-new.js
+│       ├── moment.js
+│       ├── profile.js
+│       ├── settings.js
+│       └── shared.js
+├── tests/           # Jest + jsdom client unit test suites
+├── 404.html         # Editorial 404 error page
+├── album.html       # Album detail & media grid page
+├── albums.html      # Curated albums index
+├── auth.html        # Authentication (sign in / register)
+├── explore.html     # Public explore feed
+├── home.html        # Chronological personal feed
+├── index.html       # Editorial landing page with showcase & video
+├── library.html     # User media library and timeline view
+├── moment-new.html  # Multi-media moment creation flow
+├── moment.html      # Single moment detail with comments & likes
+├── playground.html  # Developer component & template testbed
+├── profile.html     # User profile and memory collection
+├── settings.html    # Profile editing and preference controls
+├── shared.html      # Anonymous secret-link shared album viewer
+└── styleguide.html  # Interactive design system & component catalog
 ```
 
 ---
@@ -237,3 +250,85 @@ client/
 - **Design Tokens Audit:** `npm run audit:tokens` verifying zero hard-coded colors outside `tokens.css` and SVGs.
 - **Contrast Audit:** `npm run audit:contrast` verifying WCAG AA compliance across all palette pairs.
 - **Visual Verification:** Browser inspection at 375px, 768px, and 1440px with zero console warnings, zero horizontal overflow, and complete accessibility support.
+
+---
+
+## 15. Repository Structure (Two Levels Deep)
+```
+keepsake/
+├── .env.example
+├── .gitignore
+├── LICENSE
+├── README.md
+├── package-lock.json
+├── package.json
+├── render.persistent.yaml
+├── render.yaml
+├── client/
+│   ├── 404.html
+│   ├── album.html
+│   ├── albums.html
+│   ├── assets/
+│   ├── auth.html
+│   ├── css/
+│   ├── explore.html
+│   ├── favicon.png
+│   ├── favicon.svg
+│   ├── home.html
+│   ├── index.html
+│   ├── js/
+│   ├── library.html
+│   ├── moment-new.html
+│   ├── moment.html
+│   ├── playground.html
+│   ├── profile.html
+│   ├── settings.html
+│   ├── shared.html
+│   ├── styleguide.html
+│   └── tests/
+├── demo-bundle/
+│   ├── bundle.json
+│   └── media/
+├── demo-media/
+│   ├── CREDITS.md
+│   ├── README.md
+│   ├── manifest.json
+│   ├── photos/
+│   └── videos/
+├── docs/
+│   ├── API.md
+│   ├── ARCHITECTURE.md
+│   ├── DEMO_SCRIPT.md
+│   ├── DEPLOY.md
+│   ├── PERFORMANCE.md
+│   ├── SECURITY.md
+│   └── images/
+├── scripts/
+│   ├── a11y.js
+│   ├── audit-contrast.js
+│   ├── audit-tokens.js
+│   ├── build-demo-bundle.js
+│   ├── build-landing-assets.js
+│   ├── capture-screenshots.js
+│   ├── check-images.js
+│   ├── demo.js
+│   ├── e2e.js
+│   ├── fetch-demo-media.js
+│   ├── privacy-audit.js
+│   ├── seed.js
+│   ├── verify-responsive.js
+│   └── verify_all.js
+└── server/
+    ├── app.js
+    ├── config/
+    ├── controllers/
+    ├── middleware/
+    ├── models/
+    ├── routes/
+    ├── server.js
+    ├── services/
+    ├── storage/
+    ├── tests/
+    ├── uploads/
+    └── utils/
+```
