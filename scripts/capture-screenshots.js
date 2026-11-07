@@ -10,7 +10,7 @@ const Moment = require('../server/models/Moment');
 const Album = require('../server/models/Album');
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const OUT_DIR = path.resolve(__dirname, '../docs/screenshots');
+const OUT_DIR = path.resolve(__dirname, '../tmp/screenshots');
 const PORT = 9444;
 
 function wait(ms) {

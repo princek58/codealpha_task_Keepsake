@@ -16,7 +16,8 @@ const Album = require('../server/models/Album');
 const Media = require('../server/models/Media');
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const SCREENSHOTS_DIR = path.resolve(__dirname, '../docs/screenshots');
+const recordScreenshots = process.argv.includes('--screenshots');
+const SCREENSHOTS_DIR = path.resolve(__dirname, '../tmp/screenshots');
 const PORT_A = 9450;
 const PORT_B = 9451;
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5000';
@@ -112,6 +113,10 @@ class CDPClient {
   }
 
   async screenshot(filename) {
+    if (!recordScreenshots) return;
+    if (!fs.existsSync(SCREENSHOTS_DIR)) {
+      fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+    }
     const res = await this.send('Page.captureScreenshot', { format: 'png' });
     const buffer = Buffer.from(res.data, 'base64');
     fs.writeFileSync(path.join(SCREENSHOTS_DIR, filename), buffer);

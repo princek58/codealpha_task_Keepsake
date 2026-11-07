@@ -10,19 +10,19 @@
 Keepsake is a social space designed for slow, authentic memory preservation. Photos, short videos, and journals are shared in chronological order, with flexible collage layouts, quiet interactions, and fine-grained privacy controls.
 
 ### Desktop Experience (1440px)
-![Keepsake Landing Hero](docs/screenshots/landing-desktop.png)
+![Keepsake Landing Hero](docs/images/landing.webp)
 
 ### Multi-Device Responsive Experience
 
 | Mobile Landing (375px) | Feed Experience (1440px) | Fullscreen Charcoal Lightbox |
 | :---: | :---: | :---: |
-| ![Mobile Landing](docs/screenshots/landing-mobile.png) | ![Feed View](docs/screenshots/feed-desktop.png) | ![Lightbox](docs/screenshots/lightbox-desktop.png) |
+| ![Mobile Landing](docs/images/mobile-home.webp) | ![Feed View](docs/images/home-feed.webp) | ![Lightbox](docs/images/lightbox.webp) |
 | *Polaroid tilt & touch layout* | *Chronological moments & on-this-day* | *Full-resolution view with credits* |
 
-| Editorial Collage Moments | Curated Album Gallery | Secret Token Access |
+| Editorial Collage Moments | Curated Album Gallery | Library Timeline |
 | :---: | :---: | :---: |
-| ![Moment Collage](docs/screenshots/moment-collage.png) | ![Album View](docs/screenshots/album-desktop.png) | ![Shared Album](docs/screenshots/shared-1440px.png) |
-| *Handcrafted CSS grid templates* | *Justified aspect-ratio rows* | *Cryptographic read-only sharing* |
+| ![Moment Collage](docs/images/moment-collage.webp) | ![Album View](docs/images/album-gallery.webp) | ![Library Timeline](docs/images/library-timeline.webp) |
+| *Handcrafted CSS grid templates* | *Justified aspect-ratio rows* | *Chronological media archive* |
 
 ---
 
