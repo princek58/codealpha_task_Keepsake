@@ -21,8 +21,19 @@ const notificationsRoutes = require('./routes/notifications');
 const statsRoutes = require('./routes/stats');
 const csrfCheck = require('./middleware/csrfCheck');
 const errorHandler = require('./middleware/errorHandler');
+const config = require('./config');
 
 const app = express();
+
+let demoReadyState = !config.demoMode;
+const setDemoReady = (ready) => {
+  demoReadyState = Boolean(ready);
+};
+app.setDemoReady = setDemoReady;
+
+if (config.trustProxy !== false) {
+  app.set('trust proxy', config.trustProxy);
+}
 
 app.use(
   helmet({
@@ -57,17 +68,29 @@ app.use(cookieParser());
 
 app.use(mongoSanitize());
 
-const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5000';
 app.use(
   cors({
-    origin: clientOrigin,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const isAllowed = config.allowedOrigins.some((allowed) => {
+        try {
+          return new URL(origin).host === new URL(allowed).host;
+        } catch {
+          return false;
+        }
+      });
+      if (isAllowed || (!config.isProduction && (origin.includes('localhost') || origin.includes('127.0.0.1')))) {
+        return callback(null, true);
+      }
+      callback(null, false);
+    },
     credentials: true
   })
 );
 
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 200 : 5000,
+  max: config.isProduction ? 200 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests, please try again later' }
@@ -78,10 +101,26 @@ app.use('/api', generalLimiter);
 
 app.get('/api/health', (req, res) => {
   const isConnected = mongoose.connection.readyState === 1;
-  res.status(isConnected ? 200 : 503).json({
-    status: isConnected ? 'ok' : 'degraded',
+  const isReady = isConnected && demoReadyState;
+  res.status(isReady ? 200 : 503).json({
+    status: isReady ? 'ok' : 'degraded',
+    uptime: Math.round(process.uptime() * 10) / 10,
     database: isConnected ? 'connected' : 'disconnected',
+    demoReady: demoReadyState,
     timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/config', (req, res) => {
+  res.json({
+    demoMode: config.demoMode,
+    limits: {
+      maxImageMb: config.maxImageMb,
+      maxVideoMb: config.maxVideoMb,
+      maxVideoSeconds: config.maxVideoSeconds,
+      userQuotaMb: config.userQuotaMb,
+      maxFilesPerRequest: config.maxFilesPerRequest
+    }
   });
 });
 

@@ -24,8 +24,9 @@ export function mountAppShell({ activeTab = 'home', user = null, pageTitle = '' 
   // 1. Skip link
   insertSkipLink();
 
-  // 2. Offline banner
+  // 2. Offline banner & Demo notice
   initOfflineBanner();
+  initDemoNotice();
 
   // 3. Navbar and Tab Bar
   buildNavbar(activeTab, user);
@@ -73,6 +74,44 @@ function initOfflineBanner() {
   window.addEventListener('online', updateOnlineStatus);
   window.addEventListener('offline', updateOnlineStatus);
   if (!navigator.onLine) banner.classList.add('active');
+}
+
+export async function initDemoNotice() {
+  if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('dismissed-demo-notice')) return;
+  if (typeof document !== 'undefined' && document.querySelector('.demo-notice')) return;
+
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.demoMode) return;
+
+    const notice = document.createElement('div');
+    notice.className = 'demo-notice';
+    notice.setAttribute('role', 'status');
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'demo-notice-text';
+    textSpan.textContent = 'Demo deployment: uploaded files reset when the server goes to sleep.';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'demo-notice-close';
+    closeBtn.setAttribute('aria-label', 'Dismiss demo deployment notice');
+    closeBtn.textContent = '✕';
+    closeBtn.onclick = () => {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('dismissed-demo-notice', 'true');
+      }
+      notice.remove();
+    };
+
+    notice.appendChild(textSpan);
+    notice.appendChild(closeBtn);
+    if (typeof document !== 'undefined') {
+      document.body.prepend(notice);
+    }
+  } catch {}
 }
 
 function buildNavbar(activeTab, user) {

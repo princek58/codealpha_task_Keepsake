@@ -3,11 +3,11 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const parsePositiveInt = (name, val, defaultValue) => {
+const parsePositiveInt = (name, val, defaultValue, max = Infinity) => {
   if (val === undefined || val === '') return defaultValue;
   const parsed = Number(val);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(`Invalid configuration: ${name} must be a positive integer, got "${val}"`);
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > max) {
+    throw new Error(`Invalid configuration: ${name} must be a positive integer between 1 and ${max}, got "${val}"`);
   }
   return parsed;
 };
@@ -19,15 +19,70 @@ const resolveStorageDir = (dirVal) => {
   return path.isAbsolute(dirVal) ? path.normalize(dirVal) : path.resolve(process.cwd(), dirVal);
 };
 
+const parseTrustProxy = (val, isProd) => {
+  if (val === undefined || val === '') {
+    return isProd ? 1 : false;
+  }
+  if (val === 'true' || val === '1') return 1;
+  if (val === 'false' || val === '0') return false;
+  const num = Number(val);
+  if (!Number.isNaN(num) && num >= 0) return num;
+  return val; // Allow string like 'loopback'
+};
+
+const env = process.env.NODE_ENV || 'development';
+const isProduction = env === 'production';
+const port = parsePositiveInt('PORT', process.env.PORT, 5000, 65535);
+
+const publicUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || process.env.CLIENT_ORIGIN || `http://localhost:${port}`;
+const clientOrigin = process.env.CLIENT_ORIGIN || publicUrl;
+
+const collectAllowedOrigins = () => {
+  const origins = new Set();
+  const add = (urlStr) => {
+    if (!urlStr) return;
+    try {
+      const u = new URL(urlStr);
+      origins.add(u.origin);
+    } catch {
+      origins.add(urlStr.trim());
+    }
+  };
+
+  add(publicUrl);
+  add(clientOrigin);
+  add(process.env.RENDER_EXTERNAL_URL);
+
+  if (process.env.ALLOWED_ORIGINS) {
+    process.env.ALLOWED_ORIGINS.split(',').forEach((o) => add(o.trim()));
+  }
+
+  // Localhost defaults for development/test
+  if (!isProduction) {
+    origins.add(`http://localhost:${port}`);
+    origins.add(`http://127.0.0.1:${port}`);
+  }
+
+  return Array.from(origins);
+};
+
 const config = {
-  env: process.env.NODE_ENV || 'development',
-  port: parsePositiveInt('PORT', process.env.PORT, 5000),
+  env,
+  isProduction,
+  port,
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY, isProduction),
+  publicUrl,
+  clientOrigin,
+  allowedOrigins: collectAllowedOrigins(),
   mongodbUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/keepsake',
   jwtSecret: process.env.JWT_SECRET || 'dev_secret_key_keepsake_change_in_production',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5000',
 
   storageDir: resolveStorageDir(process.env.STORAGE_DIR),
+  demoMode: process.env.DEMO_MODE === 'true',
+  seedDemoOnBoot: process.env.SEED_DEMO_ON_BOOT === 'true',
+  reconcileStorageOnBoot: process.env.RECONCILE_STORAGE_ON_BOOT === 'true',
+
   maxImageMb: parsePositiveInt('MAX_IMAGE_MB', process.env.MAX_IMAGE_MB, 20),
   maxVideoMb: parsePositiveInt('MAX_VIDEO_MB', process.env.MAX_VIDEO_MB, 150),
   maxVideoSeconds: parsePositiveInt('MAX_VIDEO_SECONDS', process.env.MAX_VIDEO_SECONDS, 180),
@@ -49,4 +104,3 @@ const config = {
 };
 
 module.exports = config;
-

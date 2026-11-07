@@ -1,0 +1,42 @@
+# Keepsake - Render Blueprint (Free Demo Mode)
+# Deploys on Render's free tier with ephemeral storage and automated demo bundle restore.
+services:
+  - type: web
+    name: keepsake
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STORAGE_DIR
+        value: /tmp/keepsake-storage
+      - key: DEMO_MODE
+        value: "true"
+      - key: SEED_DEMO_ON_BOOT
+        value: "true"
+      - key: RECONCILE_STORAGE_ON_BOOT
+        value: "true"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: MAX_VIDEO_MB
+        value: "25"
+      - key: MAX_VIDEO_SECONDS
+        value: "30"
+      - key: USER_QUOTA_MB
+        value: "100"
+      - key: MAX_IMAGE_MB
+        value: "10"
+      - key: VIDEO_CONCURRENCY
+        value: "1"
+

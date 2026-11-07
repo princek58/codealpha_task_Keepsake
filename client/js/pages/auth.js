@@ -9,14 +9,19 @@ function initAuthPage() {
   initPasswordStrength();
   initLoginForm();
   initRegisterForm();
+  initDemoLoginHint();
 
   redirectIfAuthed('/home.html');
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initAuthPage);
-} else {
-  initAuthPage();
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (document.getElementById('form-login')) initAuthPage();
+    });
+  } else if (document.getElementById('form-login')) {
+    initAuthPage();
+  }
 }
 
 function initTabs() {
@@ -280,4 +285,44 @@ function clearErrors() {
     el.style.display = 'none';
   });
 }
+
+export async function initDemoLoginHint() {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.demoMode) return;
+
+    const form = document.getElementById('form-login');
+    if (!form || document.querySelector('.auth-demo-hint')) return;
+
+    const hintContainer = document.createElement('div');
+    hintContainer.className = 'auth-demo-hint';
+
+    const hintTitle = document.createElement('strong');
+    hintTitle.textContent = 'Demo Mode Active';
+
+    const hintDesc = document.createElement('span');
+    hintDesc.textContent = 'Demo account: clara@example.com / Password123';
+
+    const fillBtn = document.createElement('button');
+    fillBtn.type = 'button';
+    fillBtn.className = 'btn btn-sand btn-sm auth-demo-btn';
+    fillBtn.textContent = 'Use demo account';
+    fillBtn.onclick = () => {
+      const idInput = document.getElementById('login-identifier');
+      const passInput = document.getElementById('login-password');
+      if (idInput) idInput.value = 'clara@example.com';
+      if (passInput) passInput.value = 'Password123';
+      document.getElementById('btn-login-submit')?.focus();
+    };
+
+    hintContainer.appendChild(hintTitle);
+    hintContainer.appendChild(hintDesc);
+    hintContainer.appendChild(fillBtn);
+
+    form.appendChild(hintContainer);
+  } catch {}
+}
+
 

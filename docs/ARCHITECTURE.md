@@ -332,3 +332,55 @@ keepsake/
     ├── uploads/
     └── utils/
 ```
+
+---
+
+## 16. Deployment & Storage Topology
+
+Keepsake is designed to deploy cleanly as a containerized or native Node.js web service on cloud platforms such as [Render](https://render.com) using Infrastructure-as-Code [Blueprints](https://render.com/docs/blueprint-spec).
+
+### Deployment Architecture
+
+```mermaid
+flowchart TD
+    subgraph Cloud["Cloud Infrastructure (Render / AWS / Self-Hosted)"]
+        ClientBrowser["User Browser / Client"]
+        ReverseProxy["Render TLS Reverse Proxy (Edge)"]
+
+        subgraph WebService["Keepsake Web Service (Node.js 20+)"]
+            App["Express.js Server (trust proxy, CORS, CSRF, Helmet)"]
+            Auth["Auth & Session Controller"]
+            MediaPipe["Sharp & FFmpeg Processing"]
+            Boot["Boot Service (Reconcile & Demo Restore)"]
+        end
+
+        subgraph DataTier["Storage & Database Tiers"]
+            Atlas[("MongoDB Atlas (M0 / Dedicated Cluster)")]
+            subgraph StorageOptions["Media Storage Options"]
+                Ephemeral["Ephemeral Storage (/tmp/storage)<br/>Free Demo Tier"]
+                Persistent["Persistent SSD Disk (/var/data/storage)<br/>Starter+ Tier"]
+            end
+            Bundle["Demo Bundle (demo-bundle/)<br/>Seeded Assets & JSON DB Dump"]
+        end
+    end
+
+    ClientBrowser -->|"HTTPS (Cookies, Range Requests)"| ReverseProxy
+    ReverseProxy -->|"HTTP (X-Forwarded-For, X-Forwarded-Proto)"| App
+    App --> Auth
+    App --> MediaPipe
+    App --> Boot
+    App <-->|"Mongoose Driver (TLS)"| Atlas
+    MediaPipe -->|"Store Variants"| Ephemeral
+    MediaPipe -->|"Store Variants"| Persistent
+    Boot -.->|"Auto-restore on restart if empty"| Bundle
+    Bundle -.->|"Seed personas & copy media"| Ephemeral
+    Bundle -.->|"Seed personas & copy media"| Atlas
+```
+
+### Boot & Recovery Lifecycle
+
+1. **Database Connection:** Connects to MongoDB Atlas using `MONGODB_URI` with connection pooling and retry logic.
+2. **Storage Audit & Reconciliation (`RECONCILE_STORAGE_ON_BOOT=true`):** Audits physical media files against database records. If media files were lost due to ephemeral disk recreation, references are cleaned safely and storage quotas are re-calculated to prevent broken links.
+3. **Demo Bundle Auto-Restore (`SEED_DEMO_ON_BOOT=true`):** If the database has 0 moments, or if demo personas are missing their media files, `server/services/demoBundle.js` automatically restores 8 personas, 28 moments, 10 albums, and all media variants from `demo-bundle/` in under 3 seconds.
+4. **Asynchronous Queue Recovery:** Scans for any media items stuck in `processing` state from interrupted server instances and marks them cleanly as `failed`.
+5. **Server Listening & Graceful Shutdown:** Listens on `0.0.0.0:${PORT}` and listens for `SIGTERM`/`SIGINT` signals to finish inflight requests, close DB connections, and exit cleanly without data corruption.

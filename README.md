@@ -49,6 +49,42 @@ npm start
 
 ---
 
+## 🚀 Deploy to Render
+
+Deploy your own instance of Keepsake with a single click.
+
+<!-- REPLACE YOUR_GITHUB_USERNAME with your GitHub username or organization -->
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/YOUR_GITHUB_USERNAME/keepsake)
+
+Keepsake includes two pre-configured [Render Blueprints](https://render.com/docs/blueprint-spec):
+
+1. **Free Demo Mode (`render.yaml` - Default):**  
+   Deploys on Render's free web tier using ephemeral `/tmp` storage. On initial boot or container restart, Keepsake automatically restores its 8 demo personas and media library from the bundled `demo-bundle/` package in under 3 seconds. Ideal for portfolio reviews, live client previews, and evaluations.
+
+2. **Persistent Production Mode (`render.persistent.yaml`):**  
+   Attaches a persistent SSD disk (`keepsake-data` mounted at `/var/data`) so user uploads, collages, and full albums persist permanently across deployments and restarts.
+
+For full step-by-step setup (including free MongoDB Atlas configuration and custom domain setup), see the complete [Deployment Guide](docs/DEPLOY.md).
+
+### Environment Variables
+
+| Variable | Required | Default | Purpose |
+| :--- | :--- | :--- | :--- |
+| `MONGODB_URI` | **Yes** | — | MongoDB Atlas or self-hosted connection string |
+| `JWT_SECRET` | **Yes** | — | Secure random secret for signing authentication cookies |
+| `NODE_ENV` | No | `development` | Runtime environment (`production` enables secure cookies & strict security) |
+| `PORT` | No | `5000` | Port for the Express HTTP server |
+| `PUBLIC_URL` | No | `http://localhost:5000` | Canonical public URL used for CORS and CSRF validation |
+| `CLIENT_ORIGIN` | No | `http://localhost:5000` | Origin URL permitted for state-changing browser requests |
+| `ALLOWED_ORIGINS`| No | — | Comma-separated list of additional permitted origins |
+| `STORAGE_DIR` | No | `./server/storage` | Path for uploaded media files (e.g. `/var/data/storage` or `/tmp/storage`) |
+| `DEMO_MODE` | No | `false` | Enables demo banner, guest-friendly notices, and login autofill |
+| `SEED_DEMO_ON_BOOT` | No | `false` | Automatically restores demo personas and media from `demo-bundle/` on empty database |
+| `RECONCILE_STORAGE_ON_BOOT` | No | `false` | Audits disk against DB records on startup and fixes missing files safely |
+| `TRUST_PROXY` | No | `false` | Set to `true` or hop count behind reverse proxies (Render, Cloudflare) |
+
+---
+
 ## 🖼 Demo Media & Pexels Integration
 
 Keepsake comes bundled with **70 high-resolution stock photographs** and **6 short video clips** organized across 7 core life themes in `demo-media/`:
@@ -205,6 +241,7 @@ Comprehensive documentation of all backend endpoints is maintained in [`API.md`]
 | `npm start` | Launches production server on port 5000 |
 | `npm run dev` | Launches development server with nodemon |
 | `npm run seed` | Seeds database with 8 personas, 28 moments, and 10 albums |
+| `npm run build-demo-bundle` | Packages database seed and normalized media into `demo-bundle/` for instant ephemeral deploy recovery |
 | `npm run fetch-demo-media` | Ingests and normalizes stock media from Pexels API / direct CDN |
 | `npm run build:landing-assets` | Builds WebP & fallback JPEG assets for landing, playground & styleguide |
 | `npm test` | Runs complete Jest backend test suite (integration & unit) |

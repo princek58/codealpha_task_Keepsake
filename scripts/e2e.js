@@ -7,7 +7,6 @@ const path = require('path');
 const os = require('os');
 const sharp = require('sharp');
 const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
 
 const config = require('../server/config');
 const User = require('../server/models/User');
@@ -61,17 +60,6 @@ class CDPClient {
         if (msg.method === 'Runtime.consoleAPICalled') {
           const text = msg.params.args.map((a) => a.value || JSON.stringify(a)).join(' ');
           this.consoleLogs.push({ type: msg.params.type, text });
-        }
-        if (msg.method === 'Runtime.exceptionThrown') {
-          const desc = msg.params.exceptionDetails?.exception?.description || msg.params.exceptionDetails?.text;
-          this.consoleLogs.push({ type: 'error', text: `EXCEPTION: ${desc}` });
-          console.error(`  [Browser Exception] ${desc}`);
-        }
-        if (msg.method === 'Network.responseReceived') {
-          const { url, status, statusText } = msg.params.response;
-          if (url.includes('/api/')) {
-            this.consoleLogs.push({ type: 'network', text: `${status} ${statusText} - ${url}` });
-          }
         }
         if (msg.id && this.callbacks.has(msg.id)) {
           const { resolve, reject } = this.callbacks.get(msg.id);
@@ -166,7 +154,6 @@ async function launchChrome(port) {
   await client.send('Page.enable');
   await client.send('Runtime.enable');
   await client.send('Network.enable');
-  await client.send('Log.enable');
 
   return { proc, client, tmpProfile };
 }
@@ -221,14 +208,9 @@ async function runBrowserE2E() {
       document.getElementById('reg-password').value = 'Password123';
       document.getElementById('btn-reg-submit').click();
     `);
-    let currentUrlA = '';
-    for (let i = 0; i < 12; i++) {
-      await wait(500);
-      currentUrlA = await clientA.eval(`window.location.pathname`);
-      if (currentUrlA.includes('home.html') || currentUrlA.includes('library.html') || currentUrlA === '/') break;
-    }
-    const cookiesA = await clientA.send('Network.getCookies');
-    console.log('User A cookies after reg:', cookiesA.cookies.map(c => c.name));
+    await wait(2500);
+
+    const currentUrlA = await clientA.eval(`window.location.pathname`);
     assert(currentUrlA.includes('home.html') || currentUrlA.includes('library.html') || currentUrlA === '/', 'User A registered and redirected to authenticated shell');
     await clientA.screenshot('e2e-alice-home.png');
 
@@ -246,12 +228,9 @@ async function runBrowserE2E() {
       document.getElementById('reg-password').value = 'Password123';
       document.getElementById('btn-reg-submit').click();
     `);
-    let currentUrlB = '';
-    for (let i = 0; i < 12; i++) {
-      await wait(500);
-      currentUrlB = await clientB.eval(`window.location.pathname`);
-      if (currentUrlB.includes('home.html') || currentUrlB.includes('library.html') || currentUrlB === '/') break;
-    }
+    await wait(2500);
+
+    const currentUrlB = await clientB.eval(`window.location.pathname`);
     assert(currentUrlB.includes('home.html') || currentUrlB.includes('library.html') || currentUrlB === '/', 'User B registered and authenticated in isolated session');
 
     // 3. Media Upload (User A)
@@ -339,15 +318,6 @@ async function runBrowserE2E() {
       shareToken: 'test_token_' + timestamp
     });
 
-    // Check directly via fetch with clientA cookie
-    const cookiesObjA = await clientA.send('Network.getCookies');
-    const tokenVal = cookiesObjA.cookies.find(c => c.name === 'token')?.value;
-    console.log('clientA token cookie value:', tokenVal ? tokenVal.substring(0, 20) + '...' : 'NONE');
-    if (tokenVal) {
-      const decoded = jwt.decode(tokenVal);
-      console.log('clientA token decoded id:', decoded?.id, 'vs dbUserA._id:', dbUserA._id.toString());
-    }
-
     await clientA.navigate(`${BASE_URL}/album.html?id=${album._id}`);
     await wait(2000);
     const urlA = await clientA.eval(`window.location.href`);
@@ -359,9 +329,7 @@ async function runBrowserE2E() {
     console.log('albumTitleInUI value:', JSON.stringify(albumTitleInUI));
     if (!albumTitleInUI) {
       const errText = await clientA.eval(`document.getElementById('album-error-title')?.textContent || document.body.innerText`);
-      const errDesc = await clientA.eval(`document.getElementById('album-error-desc')?.textContent`);
-      console.log('Album error title:', errText, 'desc:', errDesc);
-      console.log('clientA console logs on album.html:', clientA.consoleLogs);
+      console.log('Album error or body text:', errText);
     }
     assert(albumTitleInUI.includes('Collected Driftwood'), 'Album page renders correctly in User A browser');
     await clientA.screenshot('e2e-alice-album.png');
@@ -399,14 +367,11 @@ async function runBrowserE2E() {
 
     // Navigate to User B home feed
     await clientB.navigate(`${BASE_URL}/home.html`);
-    let feedTitles = [];
-    for (let i = 0; i < 10; i++) {
-      await wait(600);
-      feedTitles = await clientB.eval(`
-        Array.from(document.querySelectorAll('h3, .moment-card h3')).map(el => el.textContent)
-      `);
-      if (feedTitles && feedTitles.length > 0) break;
-    }
+    await wait(2000);
+
+    const feedTitles = await clientB.eval(`
+      Array.from(document.querySelectorAll('h3, .moment-card h3')).map(el => el.textContent)
+    `);
 
     assert(feedTitles.some(t => t.includes('Seaside Light and Fog')), 'User B sees User A public moment in feed');
     assert(feedTitles.some(t => t.includes('Autumn By The Stream')), 'User B sees User A followers moment in feed');
@@ -428,29 +393,24 @@ async function runBrowserE2E() {
     // 8. Social Interaction: User B Likes & Comments on User A Moment
     console.log('\n8. User B: Liking and commenting on User A moment...');
     await clientB.navigate(`${BASE_URL}/moment.html?id=${publicMoment._id}`);
-    await wait(2500);
+    await wait(2000);
 
     await clientB.eval(`
       const likeBtn = document.getElementById('btn-moment-like');
       if (likeBtn) likeBtn.click();
     `);
-    await wait(800);
+    await wait(600);
 
     await clientB.eval(`
       const input = document.getElementById('comment-input');
       const form = document.getElementById('comment-form');
-      const postBtn = document.getElementById('btn-post-comment');
-      if (input) {
+      if (input && form) {
         input.value = 'Pure serenity! ${xssPayload}';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        if (postBtn && !postBtn.disabled) {
-          postBtn.click();
-        } else if (form) {
-          form.dispatchEvent(new Event('submit', { cancelable: true }));
-        }
+        input.dispatchEvent(new Event('input'));
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
       }
     `);
-    await wait(2500);
+    await wait(1500);
 
     const commentsInUI = await clientB.eval(`
       Array.from(document.querySelectorAll('#comments-list, .comment-item')).map(el => el.textContent).join(' ')
@@ -466,17 +426,13 @@ async function runBrowserE2E() {
       const notifBtn = document.querySelector('button[aria-label="Notifications"]');
       if (notifBtn) notifBtn.click();
     `);
-    
-    let hasNotifs = false;
-    for (let i = 0; i < 10; i++) {
-      await wait(500);
-      hasNotifs = await clientA.eval(`
-        const panel = document.getElementById('notifications-drawer');
-        const items = panel ? panel.querySelectorAll('.notification-item') : [];
-        return items.length > 0;
-      `);
-      if (hasNotifs) break;
-    }
+    await wait(1000);
+
+    const hasNotifs = await clientA.eval(`
+      const panel = document.getElementById('notifications-drawer');
+      const items = panel ? panel.querySelectorAll('.notification-item') : [];
+      return items.length > 0;
+    `);
     assert(hasNotifs, 'User A sees notification drawer with social activity items');
     await clientA.screenshot('e2e-alice-notifications.png');
 

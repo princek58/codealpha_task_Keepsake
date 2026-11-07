@@ -1,3 +1,5 @@
+const config = require('../config');
+
 function csrfCheck(req, res, next) {
   const stateChangingMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
   if (!stateChangingMethods.includes(req.method)) {
@@ -8,7 +10,7 @@ function csrfCheck(req, res, next) {
   const referer = req.headers['referer'];
   const host = req.get('host');
 
-  // If both origin and referer are missing (e.g. server-to-server or test runner without origin header)
+  // If both origin and referer are missing (e.g. server-to-server or test runner)
   if (!origin && !referer) {
     return next();
   }
@@ -17,23 +19,27 @@ function csrfCheck(req, res, next) {
   try {
     const parsed = new URL(checkUrl);
 
-    // If host matches
-    if (host && parsed.host === host) {
+    // If host matches the incoming host header
+    if (host && (parsed.host === host || parsed.hostname === host.split(':')[0])) {
       return next();
     }
 
-    const clientOrigin = process.env.CLIENT_ORIGIN;
-    if (clientOrigin) {
+    // Match against configured allowed origins
+    const isAllowed = config.allowedOrigins.some((allowed) => {
       try {
-        const clientParsed = new URL(clientOrigin);
-        if (parsed.host === clientParsed.host) {
-          return next();
-        }
-      } catch {}
+        const allowedParsed = new URL(allowed);
+        return parsed.host === allowedParsed.host;
+      } catch {
+        return false;
+      }
+    });
+
+    if (isAllowed) {
+      return next();
     }
 
-    // Allow localhost/127.0.0.1 during development/test
-    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+    // Allow localhost during development or testing
+    if (!config.isProduction && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')) {
       return next();
     }
 

@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: [50, 'Display name cannot exceed 50 characters'],
     default: function () {
-      return this.username || '';
+      return (this && this.username) ? this.username : '';
     }
   },
   bio: {
