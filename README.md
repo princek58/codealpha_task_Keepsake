@@ -51,12 +51,7 @@ npm start
 
 ## 🚀 Deploy to Render
 
-Deploy your own instance of Keepsake with a single click.
-
-<!-- REPLACE YOUR_GITHUB_USERNAME with your GitHub username or organization -->
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/YOUR_GITHUB_USERNAME/keepsake)
-
-Keepsake includes two pre-configured [Render Blueprints](https://render.com/docs/blueprint-spec):
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/princek58/codealpha_task_Keepsake)
 
 1. **Free Demo Mode (`render.yaml` - Default):**  
    Deploys on Render's free web tier using ephemeral `/tmp` storage. On initial boot or container restart, Keepsake automatically restores its 8 demo personas and media library from the bundled `demo-bundle/` package in under 3 seconds. Ideal for portfolio reviews, live client previews, and evaluations.
